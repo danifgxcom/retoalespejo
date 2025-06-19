@@ -54,7 +54,7 @@ const GameControls: React.FC<GameControlsProps> = ({
       </div>
 
       {/* Piece Controls - compact layout */}
-      <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-2">
+      <div className="mt-2 grid grid-cols-2 md:grid-cols-4 gap-2">
         {pieces.map(piece => (
           <div key={piece.id} className="bg-gray-50 p-2 rounded-lg text-center border">
             <div className="text-sm font-semibold mb-1 text-gray-700">

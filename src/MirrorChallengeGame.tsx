@@ -44,43 +44,42 @@ const MirrorChallengeGame: React.FC = () => {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 p-2">
-      <div className="max-w-7xl mx-auto">
-        <GameControls
-          pieces={pieces}
-          showInstructions={showInstructions}
-          onToggleInstructions={() => setShowInstructions(!showInstructions)}
-          onResetLevel={resetLevel}
-          onNextChallenge={nextChallenge}
-          onRotatePiece={rotatePiece}
-          onFlipPiece={flipPiece}
-        />
-
-        {/* Área de juego */}
-        <div className="bg-white rounded-lg shadow-lg p-2">
-          <div className="flex justify-center">
-            <GameCanvas
-              ref={canvasRef}
+      <div className="h-screen overflow-hidden bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 p-1">
+        <div className="max-w-7xl mx-auto h-full flex flex-col">
+          <GameControls
               pieces={pieces}
-              currentChallenge={currentChallenge}
-              challenges={challenges}
-              onMouseDown={handleMouseDown}
-              onMouseMove={handleMouseMove}
-              onMouseUp={handleMouseUp}
-              onContextMenu={handleContextMenu}
-            />
+              showInstructions={showInstructions}
+              onToggleInstructions={() => setShowInstructions(!showInstructions)}
+              onResetLevel={resetLevel}
+              onNextChallenge={nextChallenge}
+              onRotatePiece={rotatePiece}
+              onFlipPiece={flipPiece}
+          />
+
+          {/* Área de juego */}
+          <div className="bg-white rounded shadow p-1 flex-1 flex flex-col min-h-0">
+            <div className="flex justify-center items-start flex-1 overflow-hidden pt-4">
+              <GameCanvas
+                  ref={canvasRef}
+                  pieces={pieces}
+                  currentChallenge={currentChallenge}
+                  challenges={challenges}
+                  onMouseDown={handleMouseDown}
+                  onMouseMove={handleMouseMove}
+                  onMouseUp={handleMouseUp}
+                  onContextMenu={handleContextMenu}
+              />
+            </div>
+
+            {/* Footer integrado */}
+            <div className="text-center py-1">
+              <p className="text-gray-400 text-xs">
+                Basado en "Reto al Espejo" de Educa
+              </p>
+            </div>
           </div>
-
-        </div>
-
-        {/* Footer muy compacto */}
-        <div className="bg-white rounded shadow p-1 mt-1 text-center">
-          <p className="text-gray-500 text-xs">
-            Basado en "Reto al Espejo" de Educa
-          </p>
         </div>
       </div>
-    </div>
   );
 };
 

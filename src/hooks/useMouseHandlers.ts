@@ -10,51 +10,123 @@ interface UseMouseHandlersProps {
   setDragOffset: (offset: { x: number; y: number }) => void;
   isPieceHit: (piece: Piece, x: number, y: number) => boolean;
   canvasRef: React.RefObject<{ getCanvas: () => HTMLCanvasElement | null }>;
-  rotatePiece: (pieceId: number) => void;
+  rotatePiece: (pieceId: number) => void; // Nueva función añadida
 }
 
+/**
+ * Calcula el cuadro delimitador (bounding box) exacto de una pieza,
+ * teniendo en cuenta su rotación. Esto es crucial para la detección
+ * precisa de colisiones con los bordes y el espejo.
+ */
+const getPieceBoundingBox = (piece: Piece) => {
+  const size = 80;
+  const unit = size * 1.28;
+  const rad = (piece.rotation * Math.PI) / 180;
+  const cos = Math.cos(rad);
+  const sin = Math.sin(rad);
+
+  // Vértices que definen el contorno exterior de la forma de la pieza.
+  // Usar todos los vértices garantiza que capturemos los puntos extremos.
+  const shapeVertices = [
+    [0, 0], [1, 0], [2, 0], [2.5, 0.5], [2, 1], [1.5, 1.5], [1, 1],
+  ];
+
+  let minRotX = Infinity, maxRotX = -Infinity;
+  let minRotY = Infinity, maxRotY = -Infinity;
+
+  for (const [x_u, y_u] of shapeVertices) {
+    // Transforma las coordenadas de la unidad local al sistema de dibujo (relativo al centro de rotación)
+    const localX = x_u * unit;
+    const localY = -y_u * unit; // El eje Y del canvas está invertido
+
+    // Aplica la rotación a cada vértice
+    const rotatedX = localX * cos - localY * sin;
+    const rotatedY = localX * sin + localY * cos;
+
+    // Encuentra los puntos extremos (mínimos y máximos) después de la rotación
+    minRotX = Math.min(minRotX, rotatedX);
+    maxRotX = Math.max(maxRotX, rotatedX);
+    minRotY = Math.min(minRotY, rotatedY);
+    maxRotY = Math.max(maxRotY, rotatedY);
+  }
+
+  // El centro de rotación real en el canvas
+  const centerX = piece.x + size / 2;
+  const centerY = piece.y + size / 2;
+
+  // Devuelve las coordenadas absolutas del cuadro delimitador en el canvas
+  return {
+    left: centerX + minRotX,
+    right: centerX + maxRotX,
+    top: centerY + minRotY,
+    bottom: centerY + maxRotY,
+  };
+};
+
+/**
+ * Determina si una pieza está en el área de juego (donde debe aparecer el reflejo)
+ */
+const isPieceInGameArea = (piece: Piece) => {
+  const gameAreaMaxY = 500; // Área de juego actualizada va desde Y=0 hasta Y=500
+  return piece.y < gameAreaMaxY;
+};
+
+/**
+ * Ajusta la posición de una pieza para que no salga de los límites permitidos
+ */
+const constrainPiecePosition = (piece: Piece, canvasWidth: number, canvasHeight: number, mirrorLine: number) => {
+  const bbox = getPieceBoundingBox(piece);
+  let newX = piece.x;
+  let newY = piece.y;
+
+  // Ajustar para que no cruce los límites horizontales
+  if (bbox.right > mirrorLine) {
+    newX -= (bbox.right - mirrorLine);
+  }
+  if (bbox.left < 0) {
+    newX += -bbox.left;
+  }
+
+  // Ajustar para que no cruce los límites verticales
+  if (bbox.bottom > canvasHeight) {
+    newY -= (bbox.bottom - canvasHeight);
+  }
+  if (bbox.top < 0) {
+    newY += -bbox.top;
+  }
+
+  return { x: newX, y: newY };
+};
+
 export const useMouseHandlers = ({
-  pieces,
-  draggedPiece,
-  dragOffset,
-  setPieces,
-  setDraggedPiece,
-  setDragOffset,
-  isPieceHit,
-  canvasRef,
-  rotatePiece,
-}: UseMouseHandlersProps) => {
+                                   pieces,
+                                   draggedPiece,
+                                   dragOffset,
+                                   setPieces,
+                                   setDraggedPiece,
+                                   setDragOffset,
+                                   isPieceHit,
+                                   canvasRef,
+                                   rotatePiece, // Nueva función recibida
+                                 }: UseMouseHandlersProps) => {
+  const mirrorLine = 700; // Línea del espejo
 
   const handleMouseDown = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
-    console.log('Mouse down event triggered');
     const canvas = canvasRef.current?.getCanvas();
-    if (!canvas) {
-      console.log('No canvas found');
-      return;
-    }
+    if (!canvas) return;
 
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
     const x = (e.clientX - rect.left) * scaleX;
     const y = (e.clientY - rect.top) * scaleY;
-    console.log('Click coordinates (scaled):', { x, y, scaleX, scaleY });
-    console.log('Available pieces:', pieces.length);
 
-    const clickedPiece = pieces.slice().reverse().find(piece => 
-      isPieceHit(piece, x, y)
-    );
-
-    console.log('Clicked piece:', clickedPiece);
+    const clickedPiece = pieces.slice().reverse().find((piece) => isPieceHit(piece, x, y));
     if (clickedPiece) {
       setDraggedPiece(clickedPiece);
-      setDragOffset({
-        x: x - clickedPiece.x,
-        y: y - clickedPiece.y
-      });
-      console.log('Drag started');
+      setDragOffset({ x: x - clickedPiece.x, y: y - clickedPiece.y });
     }
-  }, [pieces, isPieceHit, setDraggedPiece, setDragOffset, canvasRef]);
+  }, [canvasRef, pieces, isPieceHit, setDraggedPiece, setDragOffset]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!draggedPiece) return;
@@ -68,90 +140,58 @@ export const useMouseHandlers = ({
     let x = (e.clientX - rect.left) * scaleX - dragOffset.x;
     let y = (e.clientY - rect.top) * scaleY - dragOffset.y;
 
-    const mirrorLine = 700; // Línea del espejo
+    // Crea una pieza temporal para calcular su BBox en la nueva posición
+    const tempPiece = { ...draggedPiece, x, y };
+    const constrainedPosition = constrainPiecePosition(tempPiece, canvas.width, canvas.height, mirrorLine);
 
-    // Usar un tamaño fijo conservador para evitar problemas complejos de bounding box
-    // La pieza real máxima es aproximadamente 200px en cualquier orientación
-    const conservativeSize = 200;
+    // Actualiza la posición de la pieza y determina si está en el área de juego
+    setPieces((prevPieces) =>
+        prevPieces.map((p) => {
+          if (p.id === draggedPiece.id) {
+            const updatedPiece = { ...p, x: constrainedPosition.x, y: constrainedPosition.y };
+            // Marcar como 'placed' si está en el área de juego
+            updatedPiece.placed = isPieceInGameArea(updatedPiece);
+            return updatedPiece;
+          }
+          return p;
+        })
+    );
+  }, [draggedPiece, dragOffset, setPieces, canvasRef]);
 
-    // Aplicar restricciones durante el movimiento
-    x = Math.max(0, Math.min(1400 - conservativeSize, x));
-    y = Math.max(0, Math.min(600 - conservativeSize, y));
-
-    // RESTRICCIÓN DEL ESPEJO: La pieza NO puede entrar en el área del espejo (muro sólido)
-    // Agregamos un margen de seguridad de 5px para evitar superposición
-    if (x + conservativeSize > mirrorLine - 5) {
-      x = mirrorLine - conservativeSize - 5;
+  const handleMouseUp = useCallback(() => {
+    if (draggedPiece) {
+      // Al soltar la pieza, asegurarse de que el estado 'placed' esté actualizado
+      setPieces((prevPieces) =>
+          prevPieces.map((p) => {
+            if (p.id === draggedPiece.id) {
+              const updatedPiece = { ...p };
+              // Marcar como 'placed' si está en el área de juego
+              updatedPiece.placed = isPieceInGameArea(updatedPiece);
+              return updatedPiece;
+            }
+            return p;
+          })
+      );
     }
+    setDraggedPiece(null);
+  }, [draggedPiece, setDraggedPiece, setPieces]);
 
-    setPieces(pieces.map(piece => 
-      piece.id === draggedPiece.id 
-        ? { ...piece, x, y }
-        : piece
-    ));
-  }, [draggedPiece, dragOffset, pieces, setPieces, canvasRef]);
-
-  const handleMouseUp = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!draggedPiece) return;
-
+  const handleContextMenu = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+    e.preventDefault();
     const canvas = canvasRef.current?.getCanvas();
     if (!canvas) return;
 
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
-    const x = (e.clientX - rect.left) * scaleX - dragOffset.x;
-    const y = (e.clientY - rect.top) * scaleY - dragOffset.y;
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
 
-    const mirrorLine = 700; // Línea del espejo
-    const gameAreaHeight = 350; // Altura del área de juego
-    const piecesAreaStart = 350; // Inicio del área de piezas disponibles
-
-    // Usar el mismo tamaño conservador que en handleMouseMove
-    const conservativeSize = 200;
-
-    let finalX = x;
-    let finalY = y;
-
-    // Restricciones SUAVES (sin saltos):
-
-    // Restricciones generales del canvas
-    finalX = Math.max(0, Math.min(1400 - conservativeSize, finalX));
-    finalY = Math.max(0, Math.min(600 - conservativeSize, finalY));
-
-    // RESTRICCIÓN DEL ESPEJO: La pieza NO puede entrar en el área del espejo
-    console.log('Checking mirror restriction:', { 
-      finalX, 
-      conservativeSize,
-      mirrorLine, 
-      rightEdge: finalX + conservativeSize,
-      wouldCross: finalX + conservativeSize > mirrorLine,
-      rotation: draggedPiece.rotation
-    });
-
-    if (finalX + conservativeSize > mirrorLine - 5) {
-      console.log('RESTRICCIÓN APLICADA: Pieza intentó cruzar espejo');
-      finalX = mirrorLine - conservativeSize - 5;
-      console.log('Nueva posición X:', finalX);
+    const clickedPiece = pieces.slice().reverse().find((p) => isPieceHit(p, x, y));
+    if (clickedPiece) {
+      rotatePiece(clickedPiece.id); // Usar la función de rotación de 45 grados
     }
-
-    // Determinar si está colocada (placed) en el área de juego
-    const placed = finalY < gameAreaHeight;
-
-    setPieces(pieces.map(piece => 
-      piece.id === draggedPiece.id 
-        ? { ...piece, x: finalX, y: finalY, placed }
-        : piece
-    ));
-
-    setDraggedPiece(null);
-    setDragOffset({ x: 0, y: 0 });
-  }, [draggedPiece, dragOffset, pieces, setPieces, setDraggedPiece, setDragOffset, canvasRef]);
-
-  const handleContextMenu = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
-    e.preventDefault();
-    if (draggedPiece) rotatePiece(draggedPiece.id);
-  }, [draggedPiece, rotatePiece]);
+  }, [canvasRef, pieces, isPieceHit, rotatePiece]);
 
   return {
     handleMouseDown,

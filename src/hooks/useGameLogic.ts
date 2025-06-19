@@ -12,19 +12,19 @@ export const useGameLogic = () => {
 
   // Configuración de piezas
   const pieceTemplates = [
-    { 
-      id: 1, 
-      type: 'A' as const, 
+    {
+      id: 1,
+      type: 'A' as const,
       face: 'front' as const,
-      centerColor: '#FFD700', 
-      triangleColor: '#FF4444' 
+      centerColor: '#FFD700',
+      triangleColor: '#FF4444'
     },
-    { 
-      id: 2, 
-      type: 'B' as const, 
+    {
+      id: 2,
+      type: 'B' as const,
       face: 'front' as const,
-      centerColor: '#FF4444', 
-      triangleColor: '#FFD700' 
+      centerColor: '#FF4444',
+      triangleColor: '#FFD700'
     }
   ];
 
@@ -40,7 +40,7 @@ export const useGameLogic = () => {
     },
     {
       id: 2,
-      name: "Corazón Reto 2", 
+      name: "Corazón Reto 2",
       description: "Patrón de rombos rojos sobre fondo amarillo",
       piecesNeeded: 2,
       difficulty: "Fácil",
@@ -59,7 +59,7 @@ export const useGameLogic = () => {
       name: "Patrón Complejo 2",
       description: "Desafío avanzado de simetría",
       piecesNeeded: 4,
-      difficulty: "Difícil", 
+      difficulty: "Difícil",
       targetPattern: "complex2"
     }
   ];
@@ -85,22 +85,52 @@ export const useGameLogic = () => {
 
   // Verificar si un punto está dentro de una pieza
   const isPieceHit = (piece: Piece, x: number, y: number): boolean => {
-    // Usar el mismo tamaño conservador para consistencia
-    const conservativeSize = 200;
+    const size = 80; // Tamaño base de la pieza
+    const unit = size * 1.28; // Factor de escala
 
-    console.log('Checking hit:', { 
-      pieceX: piece.x, 
-      pieceY: piece.y, 
-      clickX: x, 
-      clickY: y, 
-      conservativeSize,
-      rotation: piece.rotation
-    });
+    // La pieza se dibuja con translate(x + size/2, y + size/2) y luego rotate
+    // Necesitamos hacer la transformación inversa
+    const pieceDrawCenterX = piece.x + size/2;
+    const pieceDrawCenterY = piece.y + size/2;
 
-    const hit = x >= piece.x && x <= piece.x + conservativeSize && 
-                y >= piece.y && y <= piece.y + conservativeSize;
+    // Traducir el punto al origen de la pieza
+    const translatedX = x - pieceDrawCenterX;
+    const translatedY = y - pieceDrawCenterY;
 
-    console.log('Hit result:', hit);
+    // Rotar en sentido contrario para "desrotar" el punto
+    const rad = (-piece.rotation * Math.PI) / 180;
+    const cos = Math.cos(rad);
+    const sin = Math.sin(rad);
+    const rotatedX = translatedX * cos - translatedY * sin;
+    const rotatedY = translatedX * sin + translatedY * cos;
+
+    // Convertir a coordenadas unitarias de la pieza (el sistema coord(x,y))
+    const unitX = rotatedX / unit;
+    const unitY = -rotatedY / unit; // Invertir Y porque el canvas Y+ es hacia abajo
+
+    // Función para verificar si un punto está dentro de un triángulo
+    const isPointInTriangle = (px: number, py: number, x1: number, y1: number, x2: number, y2: number, x3: number, y3: number): boolean => {
+      const denom = (y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3);
+      const a = ((y2 - y3) * (px - x3) + (x3 - x2) * (py - y3)) / denom;
+      const b = ((y3 - y1) * (px - x3) + (x1 - x3) * (py - y3)) / denom;
+      const c = 1 - a - b;
+      return a >= 0 && b >= 0 && c >= 0;
+    };
+
+    // Verificar si está en el cuadrado central (1,0), (2,0), (2,1), (1,1)
+    const inSquare = unitX >= 1 && unitX <= 2 && unitY >= 0 && unitY <= 1;
+
+    // Verificar si está en el triángulo izquierdo (0,0), (1,0), (1,1)
+    const inLeftTriangle = isPointInTriangle(unitX, unitY, 0, 0, 1, 0, 1, 1);
+
+    // Verificar si está en el triángulo superior (1,1), (2,1), (1.5,1.5)
+    const inTopTriangle = isPointInTriangle(unitX, unitY, 1, 1, 2, 1, 1.5, 1.5);
+
+    // Verificar si está en el triángulo derecho (2,0), (2,1), (2.5,0.5)
+    const inRightTriangle = isPointInTriangle(unitX, unitY, 2, 0, 2, 1, 2.5, 0.5);
+
+    const hit = inSquare || inLeftTriangle || inTopTriangle || inRightTriangle;
+
     return hit;
   };
 
@@ -108,17 +138,23 @@ export const useGameLogic = () => {
   useEffect(() => {
     const challenge = challenges[currentChallenge];
     const piecesCount = challenge.piecesNeeded;
-    const baseSize = 80 * 1.28; // 102.4px
-    const maxPieceWidth = 2.5 * baseSize; // Ancho máximo de la pieza ≈ 256px
-    const maxPieceHeight = 1.5 * baseSize; // Alto máximo de la pieza ≈ 153px
+
+    // Constantes del layout actualizado
+    const gameAreaHeight = 500; // Nueva altura del área de juego
+    const availableAreaStart = gameAreaHeight; // El área disponible empieza donde termina el área de juego
 
     const initialPieces: Piece[] = [];
     for (let i = 0; i < piecesCount; i++) {
       const templateIndex = i % 2;
-      // Calcular posición para que las piezas estén dentro del área de "Piezas disponibles"
-      // El área de piezas disponibles es de 0 a 700 en X, y de 350 a 600 en Y
-      const pieceX = 50 + (i % 3) * 200; // Distribuir horizontalmente, máximo 3 piezas por fila
-      const pieceY = 420 + Math.floor(i / 3) * 120; // Nueva fila cada 3 piezas, empezar en y=420
+      // Posicionar las piezas en el área de "PIEZAS DISPONIBLES"
+      // Área disponible: X de 0 a 700, Y de 500 a 600 (nueva distribución)
+      const pieceSpacing = 150; // Espaciado entre piezas
+      const startX = 100; // Margen izquierdo
+      const startY = availableAreaStart + 50; // Dentro del área de disponibles (500-600)
+
+      const pieceX = startX + (i % 4) * pieceSpacing; // Máximo 4 piezas por fila
+      const pieceY = startY + Math.floor(i / 4) * 80; // Nueva fila cada 4 piezas
+
       initialPieces.push({
         ...pieceTemplates[templateIndex],
         id: i + 1,
@@ -132,36 +168,42 @@ export const useGameLogic = () => {
     setPieces(initialPieces);
   }, [currentChallenge]);
 
-  // Funciones de control
+  // Funciones de control - ROTACIÓN EN INCREMENTOS DE 45 GRADOS
   const rotatePiece = (pieceId: number) => {
-    setPieces(pieces.map(piece => 
-      piece.id === pieceId 
-        ? { ...piece, rotation: (piece.rotation + 90) % 360 }
-        : piece
+    setPieces(pieces.map(piece =>
+        piece.id === pieceId
+            ? { ...piece, rotation: (piece.rotation + 45) % 360 } // CAMBIO: 90° → 45°
+            : piece
     ));
   };
 
   const flipPiece = (pieceId: number) => {
-    setPieces(pieces.map(piece => 
-      piece.id === pieceId 
-        ? togglePieceFace(piece)
-        : piece
+    setPieces(pieces.map(piece =>
+        piece.id === pieceId
+            ? togglePieceFace(piece)
+            : piece
     ));
   };
 
   const resetLevel = () => {
     const challenge = challenges[currentChallenge];
     const piecesCount = challenge.piecesNeeded;
-    const baseSize = 80 * 1.28; // 102.4px
-    const maxPieceWidth = 2.5 * baseSize; // Ancho máximo de la pieza ≈ 256px
-    const maxPieceHeight = 1.5 * baseSize; // Alto máximo de la pieza ≈ 153px
+
+    // Usar las mismas constantes que en la inicialización
+    const gameAreaHeight = 500;
+    const availableAreaStart = gameAreaHeight;
 
     const resetPieces: Piece[] = [];
     for (let i = 0; i < piecesCount; i++) {
       const templateIndex = i % 2;
       // Usar la misma lógica de posicionamiento que en la inicialización
-      const pieceX = 50 + (i % 3) * 200; // Distribuir horizontalmente, máximo 3 piezas por fila
-      const pieceY = 420 + Math.floor(i / 3) * 120; // Nueva fila cada 3 piezas, empezar en y=420
+      const pieceSpacing = 150;
+      const startX = 100;
+      const startY = availableAreaStart + 50;
+
+      const pieceX = startX + (i % 4) * pieceSpacing;
+      const pieceY = startY + Math.floor(i / 4) * 80;
+
       resetPieces.push({
         ...pieceTemplates[templateIndex],
         id: i + 1,

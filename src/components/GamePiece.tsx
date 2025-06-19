@@ -30,10 +30,12 @@ export const drawPiece = (ctx: CanvasRenderingContext2D, piece: Piece, x: number
   // Transformar coordenadas: (x,y) -> (-y*unit, x*unit) para centrar correctamente
   const coord = (x: number, y: number): [number, number] => [x * unit, -y * unit];
 
-  // Dibujar cuadrado central - vértices (1,0), (2,0), (2,1), (1,1)  
+  // Configuración de líneas: grosor fino para bordes seamless
+  ctx.lineWidth = 1;
+
+  // Dibujar cuadrado central - vértices (1,0), (2,0), (2,1), (1,1)
   ctx.fillStyle = piece.centerColor;
-  ctx.strokeStyle = '#333';
-  ctx.lineWidth = 2;
+  ctx.strokeStyle = piece.centerColor; // BORDE DEL MISMO COLOR QUE EL RELLENO
   const [cx1, cy1] = coord(1, 0);
   const [cx2, cy2] = coord(2, 0);
   const [cx3, cy3] = coord(2, 1);
@@ -47,8 +49,9 @@ export const drawPiece = (ctx: CanvasRenderingContext2D, piece: Piece, x: number
   ctx.fill();
   ctx.stroke();
 
-  // Dibujar los tres triángulos
+  // Dibujar los tres triángulos con bordes del mismo color
   ctx.fillStyle = piece.triangleColor;
+  ctx.strokeStyle = piece.triangleColor; // BORDE DEL MISMO COLOR QUE EL RELLENO
 
   // Triángulo rectángulo izquierdo - vértices (0,0), (1,0), (1,1)
   ctx.beginPath();
