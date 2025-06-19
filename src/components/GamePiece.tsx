@@ -20,12 +20,22 @@ interface GamePieceProps {
   size?: number;
 }
 
+// Función auxiliar para determinar si una pieza está en área de disponibles
+export const isPieceInAvailableArea = (piece: Piece, gameAreaHeight: number): boolean => {
+  return piece.y >= gameAreaHeight;
+};
+
+// Función auxiliar para determinar si una pieza puede mostrar reflejo
+export const canPieceShowReflection = (piece: Piece, gameAreaHeight: number): boolean => {
+  return piece.placed && piece.y < gameAreaHeight && !isPieceInAvailableArea(piece, gameAreaHeight);
+};
+
 export const drawPiece = (ctx: CanvasRenderingContext2D, piece: Piece, x: number, y: number, size = 80) => {
   ctx.save();
   ctx.translate(x + size/2, y + size/2);
   ctx.rotate((piece.rotation * Math.PI) / 180);
 
-  const unit = size * 1.28; // Escala 8 veces más grande (0.16 * 8 = 1.28)
+  const unit = size * 1.28;
 
   // Transformar coordenadas: (x,y) -> (-y*unit, x*unit) para centrar correctamente
   const coord = (x: number, y: number): [number, number] => [x * unit, -y * unit];
@@ -35,7 +45,7 @@ export const drawPiece = (ctx: CanvasRenderingContext2D, piece: Piece, x: number
 
   // Dibujar cuadrado central - vértices (1,0), (2,0), (2,1), (1,1)
   ctx.fillStyle = piece.centerColor;
-  ctx.strokeStyle = piece.centerColor; // BORDE DEL MISMO COLOR QUE EL RELLENO
+  ctx.strokeStyle = piece.centerColor;
   const [cx1, cy1] = coord(1, 0);
   const [cx2, cy2] = coord(2, 0);
   const [cx3, cy3] = coord(2, 1);
@@ -51,7 +61,7 @@ export const drawPiece = (ctx: CanvasRenderingContext2D, piece: Piece, x: number
 
   // Dibujar los tres triángulos con bordes del mismo color
   ctx.fillStyle = piece.triangleColor;
-  ctx.strokeStyle = piece.triangleColor; // BORDE DEL MISMO COLOR QUE EL RELLENO
+  ctx.strokeStyle = piece.triangleColor;
 
   // Triángulo rectángulo izquierdo - vértices (0,0), (1,0), (1,1)
   ctx.beginPath();
@@ -65,11 +75,11 @@ export const drawPiece = (ctx: CanvasRenderingContext2D, piece: Piece, x: number
   ctx.fill();
   ctx.stroke();
 
-  // Triángulo superior - vértices (1,1), (2,1), (1.5,1.5) - pico hacia arriba FUERA del cuadrado
+  // Triángulo superior - vértices (1,1), (2,1), (1.5,1.5)
   ctx.beginPath();
   const [t2x1, t2y1] = coord(1, 1);
   const [t2x2, t2y2] = coord(2, 1);
-  const [t2x3, t2y3] = coord(1.5, 1.5); // pico hacia arriba (Y mayor = más arriba)
+  const [t2x3, t2y3] = coord(1.5, 1.5);
   ctx.moveTo(t2x1, t2y1);
   ctx.lineTo(t2x2, t2y2);
   ctx.lineTo(t2x3, t2y3);
@@ -77,7 +87,7 @@ export const drawPiece = (ctx: CanvasRenderingContext2D, piece: Piece, x: number
   ctx.fill();
   ctx.stroke();
 
-  // Triángulo derecho - vértices (2,0), (2,1), (2.5,0.5) - continuación del superior, rotado 90°
+  // Triángulo derecho - vértices (2,0), (2,1), (2.5,0.5)
   ctx.beginPath();
   const [t3x1, t3y1] = coord(2, 0);
   const [t3x2, t3y2] = coord(2, 1);
@@ -88,8 +98,6 @@ export const drawPiece = (ctx: CanvasRenderingContext2D, piece: Piece, x: number
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
-
-  // Indicador de ID de pieza (removido para limpieza visual)
 
   ctx.restore();
 };
