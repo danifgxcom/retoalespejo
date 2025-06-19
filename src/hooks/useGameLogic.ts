@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Piece } from '../components/GamePiece';
-import { Challenge } from '../components/ChallengeCard';
+import { Challenge, PiecePosition } from '../components/ChallengeCard';
 
 export const useGameLogic = () => {
   // Estados del juego
@@ -36,7 +36,11 @@ export const useGameLogic = () => {
       description: "Rectángulo amarillo central con triángulos rojos",
       piecesNeeded: 2,
       difficulty: "Fácil",
-      targetPattern: "heart1"
+      targetPattern: "heart1",
+      targetPieces: [
+        { type: 'A', face: 'front', x: 150, y: 150, rotation: 0 },
+        { type: 'A', face: 'front', x: 230, y: 150, rotation: 0 }
+      ]
     },
     {
       id: 2,
@@ -44,7 +48,11 @@ export const useGameLogic = () => {
       description: "Patrón de rombos rojos sobre fondo amarillo",
       piecesNeeded: 2,
       difficulty: "Fácil",
-      targetPattern: "heart2"
+      targetPattern: "heart2",
+      targetPieces: [
+        { type: 'B', face: 'back', x: 150, y: 200, rotation: 45 },
+        { type: 'B', face: 'back', x: 230, y: 200, rotation: 45 }
+      ]
     },
     {
       id: 3,
@@ -52,7 +60,13 @@ export const useGameLogic = () => {
       description: "Combina ambos tipos de piezas",
       piecesNeeded: 4,
       difficulty: "Difícil",
-      targetPattern: "complex1"
+      targetPattern: "complex1",
+      targetPieces: [
+        { type: 'A', face: 'front', x: 120, y: 120, rotation: 0 },
+        { type: 'B', face: 'back', x: 200, y: 120, rotation: 90 },
+        { type: 'A', face: 'back', x: 120, y: 200, rotation: 180 },
+        { type: 'B', face: 'front', x: 200, y: 200, rotation: 270 }
+      ]
     },
     {
       id: 4,
@@ -60,7 +74,13 @@ export const useGameLogic = () => {
       description: "Desafío avanzado de simetría",
       piecesNeeded: 4,
       difficulty: "Difícil",
-      targetPattern: "complex2"
+      targetPattern: "complex2",
+      targetPieces: [
+        { type: 'A', face: 'front', x: 100, y: 150, rotation: 45 },
+        { type: 'B', face: 'front', x: 180, y: 150, rotation: 135 },
+        { type: 'A', face: 'back', x: 260, y: 150, rotation: 225 },
+        { type: 'B', face: 'back', x: 340, y: 150, rotation: 315 }
+      ]
     }
   ];
 
@@ -139,27 +159,49 @@ export const useGameLogic = () => {
     const challenge = challenges[currentChallenge];
     const piecesCount = challenge.piecesNeeded;
 
-    // Constantes del layout actualizado
-    const gameAreaHeight = 500; // Nueva altura del área de juego
-    const availableAreaStart = gameAreaHeight; // El área disponible empieza donde termina el área de juego
+    // Coordenadas del área de piezas disponibles (inferior izquierda del canvas)
+    // Área 3: Piezas disponibles = (0,600) a (700,1000) - Color gris #e9ecef
+    const availableAreaX = 0; // Inicio X del área de piezas disponibles
+    const availableAreaY = 600; // Inicio Y del área de piezas disponibles (SUBIDO de 700 a 600)
+    const availableAreaWidth = 700; // Ancho del área de piezas disponibles
+    const availableAreaHeight = 400; // Altura del área de piezas disponibles (600 a 1000)
+    
+    // Tamaño de la pieza (tamaño lógico base)
+    const pieceSize = 80; // Tamaño base de la pieza
+    
+    // Márgenes para posicionar las piezas
+    const marginX = 50; // Margen desde los bordes horizontales
+    const absolutePieceY = 900; // Posición Y absoluta - cerca del final del área de piezas disponibles
 
     const initialPieces: Piece[] = [];
     for (let i = 0; i < piecesCount; i++) {
       const templateIndex = i % 2;
-      // Posicionar las piezas en el área de "PIEZAS DISPONIBLES"
-      // Área disponible: X de 0 a 700, Y de 500 a 600 (nueva distribución)
-      const pieceSpacing = 150; // Espaciado entre piezas
-      const startX = 100; // Margen izquierdo
-      const startY = availableAreaStart + 50; // Dentro del área de disponibles (500-600)
-
-      const pieceX = startX + (i % 4) * pieceSpacing; // Máximo 4 piezas por fila
-      const pieceY = startY + Math.floor(i / 4) * 80; // Nueva fila cada 4 piezas
+      
+      // Calcular cuántas piezas caben por fila sin solaparse en el área de piezas disponibles
+      const spacing = 120; // Espacio entre piezas para que no se superpongan visualmente
+      const usableWidth = availableAreaWidth - (2 * marginX); // Espacio disponible horizontal
+      const piecesPerRow = Math.floor(usableWidth / (pieceSize + spacing));
+      
+      // Calcular posición en la grilla dentro del área de piezas disponibles
+      const row = Math.floor(i / piecesPerRow);
+      const col = i % piecesPerRow;
+      
+      // Posición real en el área de piezas disponibles (inferior izquierda)
+      const pieceX = availableAreaX + marginX + col * (pieceSize + spacing);
+      const pieceY = absolutePieceY + row * (pieceSize + spacing); // Usar posición Y absoluta
+      
+      // Verificar que la pieza está completamente dentro del área de piezas disponibles
+      const maxX = availableAreaX + availableAreaWidth - pieceSize - marginX;
+      const maxY = availableAreaY + availableAreaHeight - pieceSize; // Sin margen para maxY ya que usamos posición absoluta
+      
+      const finalX = Math.min(pieceX, maxX);
+      const finalY = Math.min(pieceY, maxY);
 
       initialPieces.push({
         ...pieceTemplates[templateIndex],
         id: i + 1,
-        x: pieceX,
-        y: pieceY,
+        x: finalX,
+        y: finalY,
         rotation: 0,
         placed: false
       });
@@ -190,25 +232,40 @@ export const useGameLogic = () => {
     const piecesCount = challenge.piecesNeeded;
 
     // Usar las mismas constantes que en la inicialización
-    const gameAreaHeight = 500;
-    const availableAreaStart = gameAreaHeight;
+    const availableAreaX = 0;
+    const availableAreaY = 600; // ACTUALIZADO: coincide con inicialización
+    const availableAreaWidth = 700;
+    const availableAreaHeight = 400; // ACTUALIZADO: coincide con inicialización
+    const pieceSize = 80;
+    const marginX = 50; // Igual que inicialización
+    const absolutePieceY = 900; // Igual que inicialización - posición Y absoluta
 
     const resetPieces: Piece[] = [];
     for (let i = 0; i < piecesCount; i++) {
       const templateIndex = i % 2;
+      
       // Usar la misma lógica de posicionamiento que en la inicialización
-      const pieceSpacing = 150;
-      const startX = 100;
-      const startY = availableAreaStart + 50;
-
-      const pieceX = startX + (i % 4) * pieceSpacing;
-      const pieceY = startY + Math.floor(i / 4) * 80;
+      const spacing = 120;
+      const usableWidth = availableAreaWidth - (2 * marginX);
+      const piecesPerRow = Math.floor(usableWidth / (pieceSize + spacing));
+      
+      const row = Math.floor(i / piecesPerRow);
+      const col = i % piecesPerRow;
+      
+      const pieceX = availableAreaX + marginX + col * (pieceSize + spacing);
+      const pieceY = absolutePieceY + row * (pieceSize + spacing); // Usar posición Y absoluta
+      
+      const maxX = availableAreaX + availableAreaWidth - pieceSize - marginX;
+      const maxY = availableAreaY + availableAreaHeight - pieceSize; // Sin margen para maxY ya que usamos posición absoluta
+      
+      const finalX = Math.min(pieceX, maxX);
+      const finalY = Math.min(pieceY, maxY);
 
       resetPieces.push({
         ...pieceTemplates[templateIndex],
         id: i + 1,
-        x: pieceX,
-        y: pieceY,
+        x: finalX,
+        y: finalY,
         rotation: 0,
         placed: false
       });
@@ -219,6 +276,70 @@ export const useGameLogic = () => {
 
   const nextChallenge = () => {
     setCurrentChallenge((currentChallenge + 1) % challenges.length);
+  };
+
+  // Función para comparar la configuración actual con el objetivo
+  const checkSolution = (): boolean => {
+    const challenge = challenges[currentChallenge];
+    const placedPieces = pieces.filter(piece => piece.placed && piece.y < 600); // Solo piezas en área de juego
+    
+    // Verificar que el número de piezas colocadas coincida
+    if (placedPieces.length !== challenge.targetPieces.length) {
+      return false;
+    }
+
+    // Tolerancia para posición (en píxeles)
+    const POSITION_TOLERANCE = 20;
+    const ROTATION_TOLERANCE = 15; // en grados
+
+    // Para cada pieza objetivo, buscar una pieza colocada que coincida
+    return challenge.targetPieces.every(targetPiece => {
+      return placedPieces.some(placedPiece => {
+        // Verificar tipo y cara
+        const typeMatch = placedPiece.type === targetPiece.type;
+        const faceMatch = placedPiece.face === targetPiece.face;
+        
+        // Verificar posición con tolerancia
+        const positionMatch = Math.abs(placedPiece.x - targetPiece.x) <= POSITION_TOLERANCE &&
+                             Math.abs(placedPiece.y - targetPiece.y) <= POSITION_TOLERANCE;
+        
+        // Verificar rotación con tolerancia (considerando que 360° = 0°)
+        const rotationDiff = Math.abs(placedPiece.rotation - targetPiece.rotation);
+        const normalizedRotationDiff = Math.min(rotationDiff, 360 - rotationDiff);
+        const rotationMatch = normalizedRotationDiff <= ROTATION_TOLERANCE;
+        
+        return typeMatch && faceMatch && positionMatch && rotationMatch;
+      });
+    });
+  };
+
+  // Crear piezas objetivo para visualización
+  const getTargetPiecesForDisplay = (): Piece[] => {
+    const challenge = challenges[currentChallenge];
+    return challenge.targetPieces.map((targetPiece, index) => {
+      const template = pieceTemplates.find(t => t.type === targetPiece.type) || pieceTemplates[0];
+      
+      let centerColor = template.centerColor;
+      let triangleColor = template.triangleColor;
+      
+      // Si la cara está volteada, intercambiar colores
+      if (targetPiece.face === 'back') {
+        centerColor = template.triangleColor;
+        triangleColor = template.centerColor;
+      }
+      
+      return {
+        id: 1000 + index, // IDs únicos para evitar conflictos
+        type: targetPiece.type,
+        face: targetPiece.face,
+        centerColor,
+        triangleColor,
+        x: targetPiece.x + 700, // Mover al área de objetivo (lado derecho)
+        y: targetPiece.y + 700, // Mover al área de objetivo (parte inferior)
+        rotation: targetPiece.rotation,
+        placed: true
+      };
+    });
   };
 
   return {
@@ -240,5 +361,7 @@ export const useGameLogic = () => {
     resetLevel,
     nextChallenge,
     isPieceHit,
+    checkSolution,
+    getTargetPiecesForDisplay,
   };
 };

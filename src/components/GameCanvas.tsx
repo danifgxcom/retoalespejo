@@ -36,8 +36,8 @@ const GameCanvas = forwardRef<GameCanvasRef, GameCanvasProps>(
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         const gameAreaWidth = 700;
-        const gameAreaHeight = 700;
-        const bottomAreaHeight = 300;
+        const gameAreaHeight = 600; // Reducido de 700 a 600
+        const bottomAreaHeight = 400; // Aumentado de 300 a 400 
         const mirrorLine = 700;
 
         // DIBUJAR ÁREAS
@@ -91,7 +91,17 @@ const GameCanvas = forwardRef<GameCanvasRef, GameCanvasProps>(
 
         pieces.forEach(piece => {
           // Solo reflejar piezas que están total o parcialmente en el área de juego
-          if (piece.y < gameAreaHeight) {
+          // Verificar si cualquier parte de la pieza intersecta con el área de juego
+          
+          // Para detectar entrada temprana desde abajo (lo que funcionaba bien antes)
+          const entryMargin = 60; // Margen generoso para detectar entrada temprana desde abajo
+          const pieceBottomWithMargin = piece.y + PIECE_SIZE + entryMargin;
+          const isEnteringFromBelow = pieceBottomWithMargin > gameAreaHeight;
+          
+          // Para mantener el reflejo cuando la pieza está dentro del área
+          const isInsideGameArea = piece.y < gameAreaHeight;
+          
+          if (isEnteringFromBelow || isInsideGameArea) {
             ctx.save();
             // 2. Recortar la pieza por si está a caballo entre el área de juego y la de disponibles
             const clipHeight = gameAreaHeight - piece.y;

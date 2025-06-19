@@ -1,5 +1,13 @@
 import React from 'react';
 
+export interface PiecePosition {
+  type: 'A' | 'B';
+  face: 'front' | 'back';
+  x: number;
+  y: number;
+  rotation: number;
+}
+
 export interface Challenge {
   id: number;
   name: string;
@@ -7,6 +15,7 @@ export interface Challenge {
   piecesNeeded: number;
   difficulty: string;
   targetPattern: string;
+  targetPieces: PiecePosition[];
 }
 
 interface ChallengeCardProps {
