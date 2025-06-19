@@ -1,5 +1,5 @@
 import React from 'react';
-import { RotateCcw, SkipForward, HelpCircle, RotateCw, RefreshCw } from 'lucide-react';
+import { RotateCcw, SkipForward, HelpCircle, RotateCw, FlipHorizontal, CheckCircle } from 'lucide-react';
 import { Piece } from './GamePiece';
 
 interface GameControlsProps {
@@ -10,6 +10,7 @@ interface GameControlsProps {
   onNextChallenge: () => void;
   onRotatePiece: (pieceId: number) => void;
   onFlipPiece: (pieceId: number) => void;
+  onCheckSolution?: () => boolean;
 }
 
 const GameControls: React.FC<GameControlsProps> = ({
@@ -20,7 +21,17 @@ const GameControls: React.FC<GameControlsProps> = ({
   onNextChallenge,
   onRotatePiece,
   onFlipPiece,
+  onCheckSolution,
 }) => {
+  const [solutionMessage, setSolutionMessage] = React.useState<string | null>(null);
+
+  const handleCheckSolution = () => {
+    if (onCheckSolution) {
+      const isCorrect = onCheckSolution();
+      setSolutionMessage(isCorrect ? "¡Correcto! Has resuelto el objetivo." : "Aún no coincide con el objetivo.");
+      setTimeout(() => setSolutionMessage(null), 3000);
+    }
+  };
   return (
     <>
       {/* Header Controls */}
@@ -43,6 +54,14 @@ const GameControls: React.FC<GameControlsProps> = ({
             >
               <RotateCcw size={20} />
             </button>
+            {onCheckSolution && (
+              <button 
+                onClick={handleCheckSolution}
+                className="bg-amber-500 hover:bg-amber-600 text-white p-3 rounded-lg transition-colors"
+              >
+                <CheckCircle size={20} />
+              </button>
+            )}
             <button 
               onClick={onNextChallenge}
               className="bg-purple-500 hover:bg-purple-600 text-white p-3 rounded-lg transition-colors"
@@ -51,31 +70,50 @@ const GameControls: React.FC<GameControlsProps> = ({
             </button>
           </div>
         </div>
+        
+        {/* Solution Message */}
+        {solutionMessage && (
+          <div className={`mt-4 p-3 rounded-lg text-center font-semibold ${
+            solutionMessage.includes('Correcto') 
+              ? 'bg-green-100 text-green-800 border border-green-200' 
+              : 'bg-yellow-100 text-yellow-800 border border-yellow-200'
+          }`}>
+            {solutionMessage}
+          </div>
+        )}
       </div>
 
-      {/* Piece Controls - compact layout */}
-      <div className="mt-2 grid grid-cols-2 md:grid-cols-4 gap-2">
+      {/* Piece Controls - elegante y compacto */}
+      <div className="mt-2 grid grid-cols-2 md:grid-cols-4 gap-3">
         {pieces.map(piece => (
-          <div key={piece.id} className="bg-gray-50 p-2 rounded-lg text-center border">
-            <div className="text-sm font-semibold mb-1 text-gray-700">
-              Pieza {piece.id} (Tipo {piece.type})
+          <div key={piece.id} className="bg-gradient-to-br from-white to-gray-50 p-3 rounded-xl shadow-md border border-gray-200 hover:shadow-lg transition-shadow">
+            <div className="text-sm font-bold mb-2 text-gray-800 text-center">
+              🧩 Pieza {piece.id} ({piece.type})
             </div>
-            <div className="flex gap-1 mb-1">
+            <div className="flex gap-2 mb-2">
               <button
                 onClick={() => onRotatePiece(piece.id)}
-                className="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs flex items-center justify-center gap-1 flex-1"
+                className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white p-2 rounded-lg flex items-center justify-center flex-1 shadow-sm transition-all transform hover:scale-105"
+                title="Rotar 45° horario"
               >
-                <RotateCw size={12} /> Rotar
+                <RotateCw size={16} />
               </button>
               <button
                 onClick={() => onFlipPiece(piece.id)}
-                className="bg-orange-500 hover:bg-orange-600 text-white px-2 py-1 rounded text-xs flex items-center justify-center gap-1 flex-1"
+                className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white p-2 rounded-lg flex items-center justify-center flex-1 shadow-sm transition-all transform hover:scale-105"
+                title="Voltear pieza"
               >
-                <RefreshCw size={12} /> Voltear
+                <FlipHorizontal size={16} />
               </button>
             </div>
-            <div className="text-xs text-gray-500">
-              Cara: {piece.face === 'front' ? 'A' : 'B'}
+            <div className="text-xs text-center">
+              <span className={`px-2 py-1 rounded-full text-white font-medium ${
+                piece.face === 'front' 
+                  ? 'bg-green-500' 
+                  : 'bg-purple-500'
+              }`}>
+                Cara {piece.face === 'front' ? 'A' : 'B'}
+              </span>
             </div>
           </div>
         ))}
@@ -83,38 +121,125 @@ const GameControls: React.FC<GameControlsProps> = ({
 
       {/* Instructions Modal */}
       {showInstructions && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onToggleInstructions}>
-          <div className="bg-white rounded-lg shadow-xl p-6 max-w-2xl max-h-[80vh] overflow-y-auto m-4" onClick={(e) => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="font-bold text-gray-800 text-xl">📝 Cómo jugar al Reto al Espejo</h3>
-              <button
-                onClick={onToggleInstructions}
-                className="text-gray-500 hover:text-gray-700 text-2xl"
-              >
-                ×
-              </button>
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4" onClick={onToggleInstructions}>
+          <div className="bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-2xl max-w-4xl max-h-[85vh] overflow-y-auto border border-gray-200" onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6 rounded-t-2xl">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="font-bold text-2xl mb-2">🪞 Cómo jugar al Reto al Espejo</h3>
+                  <p className="text-blue-100 text-sm">Domina la simetría y resuelve los desafíos geométricos</p>
+                </div>
+                <button
+                  onClick={onToggleInstructions}
+                  className="text-white hover:text-red-200 text-3xl font-bold transition-colors p-2 hover:bg-white hover:bg-opacity-20 rounded-lg"
+                >
+                  ×
+                </button>
+              </div>
             </div>
-            <div className="text-gray-700 space-y-4">
-              <div>
-                <p><strong>🎯 Objetivo:</strong> Forma el patrón mostrado en el área "OBJETIVO" usando las piezas y sus reflejos en el espejo.</p>
+
+            {/* Content */}
+            <div className="p-6">
+              <div className="grid md:grid-cols-2 gap-6">
+                {/* Left Column */}
+                <div className="space-y-5">
+                  <div className="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
+                    <div className="flex items-start">
+                      <span className="text-2xl mr-3">🎯</span>
+                      <div>
+                        <h4 className="font-bold text-green-800 mb-2">Objetivo del Juego</h4>
+                        <p className="text-green-700 leading-relaxed">
+                          Tu misión es recrear el patrón mostrado en el área "OBJETIVO" utilizando las piezas geométricas 
+                          y aprovechando el poder del espejo para completar la figura simétrica.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
+                    <div className="flex items-start">
+                      <span className="text-2xl mr-3">🔄</span>
+                      <div>
+                        <h4 className="font-bold text-blue-800 mb-2">Movimiento de Piezas</h4>
+                        <p className="text-blue-700 leading-relaxed">
+                          Arrastra las piezas desde el área "PIEZAS DISPONIBLES" (parte inferior izquierda) 
+                          hacia el "ÁREA DE JUEGO" (parte superior izquierda). Las piezas se pueden mover libremente 
+                          dentro de las áreas permitidas.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-purple-50 border-l-4 border-purple-400 p-4 rounded-r-lg">
+                    <div className="flex items-start">
+                      <span className="text-2xl mr-3">🪞</span>
+                      <div>
+                        <h4 className="font-bold text-purple-800 mb-2">Magia del Espejo</h4>
+                        <p className="text-purple-700 leading-relaxed">
+                          Cada pieza que coloques en el área de juego se reflejará automáticamente en el lado derecho 
+                          del espejo. Esta reflexión es instantánea y mantiene las propiedades de la pieza original, 
+                          creando patrones simétricos perfectos.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Column */}
+                <div className="space-y-5">
+                  <div className="bg-orange-50 border-l-4 border-orange-400 p-4 rounded-r-lg">
+                    <div className="flex items-start">
+                      <span className="text-2xl mr-3">⚙️</span>
+                      <div>
+                        <h4 className="font-bold text-orange-800 mb-2">Controles de Piezas</h4>
+                        <div className="text-orange-700 leading-relaxed space-y-2">
+                          <p><strong>🔄 Rotar:</strong> Haz clic en el botón de rotación o clic derecho sobre una pieza 
+                          para rotarla 45° en sentido horario. Úsalo para orientar las piezas correctamente.</p>
+                          <p><strong>🔀 Voltear:</strong> El botón de voltear cambia la cara de la pieza, 
+                          intercambiando los colores (amarillo ↔ rojo). Esencial para conseguir patrones específicos.</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded-r-lg">
+                    <div className="flex items-start">
+                      <span className="text-2xl mr-3">🚫</span>
+                      <div>
+                        <h4 className="font-bold text-red-800 mb-2">Restricciones</h4>
+                        <p className="text-red-700 leading-relaxed">
+                          Las piezas no pueden atravesar la línea del espejo ni salirse de las áreas designadas. 
+                          Respeta los límites de cada zona para mantener el orden del juego.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
+                    <div className="flex items-start">
+                      <span className="text-2xl mr-3">⭐</span>
+                      <div>
+                        <h4 className="font-bold text-yellow-800 mb-2">Estrategia y Desafíos</h4>
+                        <p className="text-yellow-700 leading-relaxed">
+                          Cada reto presenta diferentes niveles de dificultad y requiere un número específico de piezas. 
+                          Piensa en la simetría, experimenta con rotaciones y combinaciones de colores. 
+                          ¡El espejo es tu mejor aliado!
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div>
-                <p><strong>🔄 Movimiento:</strong> Arrastra las piezas desde el área "PIEZAS DISPONIBLES" (abajo izquierda) al área "ÁREA DE JUEGO" (arriba izquierda).</p>
-              </div>
-              <div>
-                <p><strong>🪞 Espejo:</strong> Cada pieza colocada en el área de juego se refleja automáticamente en el lado derecho del espejo.</p>
-              </div>
-              <div>
-                <p><strong>🔄 Rotación:</strong> Usa los botones "Rotar" o haz clic derecho en una pieza para rotarla 90° en sentido horario.</p>
-              </div>
-              <div>
-                <p><strong>🔀 Voltear:</strong> Usa el botón "Voltear" para cambiar la cara de la pieza (los colores se intercambian: amarillo ↔ rojo).</p>
-              </div>
-              <div>
-                <p><strong>🚫 Restricciones:</strong> Las piezas no pueden cruzar la línea del espejo ni salirse de las áreas designadas.</p>
-              </div>
-              <div>
-                <p><strong>⭐ Desafíos:</strong> Cada reto tiene diferente dificultad y número de piezas requeridas. ¡Usa la simetría del espejo a tu favor!</p>
+
+              {/* Footer */}
+              <div className="mt-6 pt-4 border-t border-gray-200">
+                <div className="bg-gradient-to-r from-gray-50 to-blue-50 p-4 rounded-lg text-center">
+                  <p className="text-gray-600 text-sm">
+                    💡 <strong>Consejo:</strong> Observa detenidamente el patrón objetivo y planifica tus movimientos. 
+                    La simetría del espejo puede sorprenderte con soluciones elegantes.
+                  </p>
+                </div>
               </div>
             </div>
           </div>

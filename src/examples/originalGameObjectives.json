@@ -1,0 +1,174 @@
+{
+  "gameInfo": {
+    "title": "Reto al Espejo - Actividades con Espejo",
+    "origin": "XIII Feria de la Ciencia Sevilla",
+    "reference": "Juego descatalogado de Educa",
+    "description": "Juego de simetría con espejo usando 4 piezas trapezoidales y 14 tarjetas-reto"
+  },
+  "pieces": {
+    "total": 4,
+    "shape": "right_trapezoid",
+    "components": {
+      "center": "1 square",
+      "triangles": "4 right triangles",
+      "faces": "2 (front/back with different colors)",
+      "colors": ["red", "yellow", "green", "blue"]
+    }
+  },
+  "originalChallenges": [
+    {
+      "id": 1,
+      "name": "Tarjeta 1: Corazón Simple",
+      "description": "Forma básica de corazón usando dos piezas en vertical",
+      "difficulty": "Principiante",
+      "piecesNeeded": 2,
+      "pattern": "heart_simple",
+      "concept": "Dos piezas con caras opuestas crean la forma de corazón cuando se reflejan",
+      "objective": {
+        "playerPieces": [
+          { "type": "A", "face": "front", "x": 280, "y": 180, "rotation": 0 },
+          { "type": "A", "face": "back", "x": 280, "y": 260, "rotation": 180 }
+        ],
+        "symmetricPattern": [
+          { "type": "A", "face": "front", "x": 280, "y": 180, "rotation": 0 },
+          { "type": "A", "face": "back", "x": 280, "y": 260, "rotation": 180 },
+          { "type": "A", "face": "front", "x": 340, "y": 180, "rotation": 0 },
+          { "type": "A", "face": "back", "x": 340, "y": 260, "rotation": 180 }
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "name": "Tarjeta 2: Mariposa Básica",
+      "description": "Mariposa con alas extendidas usando rotaciones diagonales",
+      "difficulty": "Fácil",
+      "piecesNeeded": 2,
+      "pattern": "butterfly_basic",
+      "concept": "Rotaciones en 45° y 315° crean alas de mariposa simétricas",
+      "objective": {
+        "playerPieces": [
+          { "type": "B", "face": "front", "x": 260, "y": 160, "rotation": 45 },
+          { "type": "B", "face": "front", "x": 260, "y": 240, "rotation": 315 }
+        ],
+        "symmetricPattern": [
+          { "type": "B", "face": "front", "x": 260, "y": 160, "rotation": 45 },
+          { "type": "B", "face": "front", "x": 260, "y": 240, "rotation": 315 },
+          { "type": "B", "face": "front", "x": 360, "y": 160, "rotation": 135 },
+          { "type": "B", "face": "front", "x": 360, "y": 240, "rotation": 225 }
+        ]
+      }
+    },
+    {
+      "id": 3,
+      "name": "Tarjeta 3: Flor de Pétalos",
+      "description": "Flor simétrica de cuatro pétalos con rotaciones específicas",
+      "difficulty": "Fácil",
+      "piecesNeeded": 2,
+      "pattern": "flower_petals",
+      "concept": "Rotaciones de 30° y 330° crean pétalos florales elegantes",
+      "objective": {
+        "playerPieces": [
+          { "type": "A", "face": "back", "x": 270, "y": 150, "rotation": 30 },
+          { "type": "A", "face": "back", "x": 270, "y": 250, "rotation": 330 }
+        ],
+        "symmetricPattern": [
+          { "type": "A", "face": "back", "x": 270, "y": 150, "rotation": 30 },
+          { "type": "A", "face": "back", "x": 270, "y": 250, "rotation": 330 },
+          { "type": "A", "face": "back", "x": 350, "y": 150, "rotation": 150 },
+          { "type": "A", "face": "back", "x": 350, "y": 250, "rotation": 210 }
+        ]
+      }
+    },
+    {
+      "id": 4,
+      "name": "Tarjeta 4: Casa con Tejado",
+      "description": "Casa simétrica con tejado triangular usando tres piezas",
+      "difficulty": "Intermedio",
+      "piecesNeeded": 3,
+      "pattern": "house_roof",
+      "concept": "Combinación de piezas verticales para crear estructura arquitectónica",
+      "objective": {
+        "playerPieces": [
+          { "type": "B", "face": "front", "x": 280, "y": 120, "rotation": 0 },
+          { "type": "A", "face": "front", "x": 250, "y": 200, "rotation": 0 },
+          { "type": "A", "face": "front", "x": 250, "y": 280, "rotation": 0 }
+        ],
+        "symmetricPattern": [
+          { "type": "B", "face": "front", "x": 280, "y": 120, "rotation": 0 },
+          { "type": "A", "face": "front", "x": 250, "y": 200, "rotation": 0 },
+          { "type": "A", "face": "front", "x": 250, "y": 280, "rotation": 0 },
+          { "type": "B", "face": "front", "x": 340, "y": 120, "rotation": 0 },
+          { "type": "A", "face": "front", "x": 370, "y": 200, "rotation": 0 },
+          { "type": "A", "face": "front", "x": 370, "y": 280, "rotation": 0 }
+        ]
+      }
+    },
+    {
+      "id": 5,
+      "name": "Tarjeta 5: Corona Real",
+      "description": "Corona simétrica con picos decorativos usando múltiples rotaciones",
+      "difficulty": "Intermedio",
+      "piecesNeeded": 3,
+      "pattern": "crown_royal",
+      "concept": "Rotaciones de 60° y 300° crean picos de corona elegantes",
+      "objective": {
+        "playerPieces": [
+          { "type": "A", "face": "back", "x": 280, "y": 140, "rotation": 0 },
+          { "type": "B", "face": "front", "x": 220, "y": 200, "rotation": 60 },
+          { "type": "B", "face": "front", "x": 220, "y": 260, "rotation": 300 }
+        ],
+        "symmetricPattern": [
+          { "type": "A", "face": "back", "x": 280, "y": 140, "rotation": 0 },
+          { "type": "B", "face": "front", "x": 220, "y": 200, "rotation": 60 },
+          { "type": "B", "face": "front", "x": 220, "y": 260, "rotation": 300 },
+          { "type": "A", "face": "back", "x": 340, "y": 140, "rotation": 0 },
+          { "type": "B", "face": "front", "x": 400, "y": 200, "rotation": 120 },
+          { "type": "B", "face": "front", "x": 400, "y": 260, "rotation": 240 }
+        ]
+      }
+    },
+    {
+      "id": 6,
+      "name": "Tarjeta 6: Estrella Cuádruple",
+      "description": "Estrella de cuatro puntas perfecta usando las 4 piezas",
+      "difficulty": "Difícil",
+      "piecesNeeded": 4,
+      "pattern": "star_quad",
+      "concept": "Rotaciones en incrementos de 90° crean simetría radial perfecta",
+      "objective": {
+        "playerPieces": [
+          { "type": "A", "face": "front", "x": 280, "y": 100, "rotation": 0 },
+          { "type": "B", "face": "back", "x": 340, "y": 200, "rotation": 90 },
+          { "type": "A", "face": "back", "x": 280, "y": 300, "rotation": 180 },
+          { "type": "B", "face": "front", "x": 220, "y": 200, "rotation": 270 }
+        ],
+        "symmetricPattern": [
+          { "type": "A", "face": "front", "x": 280, "y": 100, "rotation": 0 },
+          { "type": "B", "face": "back", "x": 340, "y": 200, "rotation": 90 },
+          { "type": "A", "face": "back", "x": 280, "y": 300, "rotation": 180 },
+          { "type": "B", "face": "front", "x": 220, "y": 200, "rotation": 270 },
+          { "type": "A", "face": "front", "x": 340, "y": 100, "rotation": 0 },
+          { "type": "B", "face": "back", "x": 280, "y": 200, "rotation": 90 },
+          { "type": "A", "face": "back", "x": 340, "y": 300, "rotation": 180 },
+          { "type": "B", "face": "front", "x": 400, "y": 200, "rotation": 270 }
+        ]
+      }
+    }
+  ],
+  "designPrinciples": {
+    "authenticity": "Basado en las 14 tarjetas originales del juego de Educa",
+    "symmetry": "Todos los patrones deben ser perfectamente simétricos",
+    "mirror_dependency": "El reflejo debe ser esencial para completar la figura",
+    "geometric_beauty": "Los patrones deben ser reconocibles y estéticamente agradables",
+    "progressive_difficulty": "Incrementa de 2 a 4 piezas según la complejidad",
+    "color_harmony": "Aprovecha las dos caras de cada pieza para crear contrastes",
+    "cultural_recognition": "Formas familiares: corazones, mariposas, flores, casas, coronas, estrellas"
+  },
+  "implementation_notes": {
+    "coordinate_system": "X: 0-700 (área de juego), Y: 0-600 (altura)",
+    "mirror_line": "X = 700 (línea vertical del espejo)",
+    "piece_size": "80x80 píxeles lógicos",
+    "rotation_increments": "45° (0°, 45°, 90°, 135°, 180°, 225°, 270°, 315°)",
+    "validation_tolerance": "Posición ±20px, Rotación ±15°"
+  }
+}

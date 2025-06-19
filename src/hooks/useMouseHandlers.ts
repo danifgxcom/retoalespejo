@@ -10,13 +10,11 @@ interface UseMouseHandlersProps {
   setDragOffset: (offset: { x: number; y: number }) => void;
   isPieceHit: (piece: Piece, x: number, y: number) => boolean;
   canvasRef: React.RefObject<{ getCanvas: () => HTMLCanvasElement | null }>;
-  rotatePiece: (pieceId: number) => void; // Nueva función añadida
+  rotatePiece: (pieceId: number) => void;
 }
 
 /**
- * Calcula el cuadro delimitador (bounding box) exacto de una pieza,
- * teniendo en cuenta su rotación. Esto es crucial para la detección
- * precisa de colisiones con los bordes y el espejo.
+ * Calcula el cuadro delimitador de una pieza considerando su rotación
  */
 const getPieceBoundingBox = (piece: Piece) => {
   const size = 80;
@@ -25,8 +23,7 @@ const getPieceBoundingBox = (piece: Piece) => {
   const cos = Math.cos(rad);
   const sin = Math.sin(rad);
 
-  // Vértices que definen el contorno exterior de la forma de la pieza.
-  // Usar todos los vértices garantiza que capturemos los puntos extremos.
+  // Vértices del contorno de la pieza
   const shapeVertices = [
     [0, 0], [1, 0], [2, 0], [2.5, 0.5], [2, 1], [1.5, 1.5], [1, 1],
   ];
@@ -36,8 +33,13 @@ const getPieceBoundingBox = (piece: Piece) => {
 
   for (const [x_u, y_u] of shapeVertices) {
     // Transforma las coordenadas de la unidad local al sistema de dibujo (relativo al centro de rotación)
-    const localX = x_u * unit;
+    let localX = x_u * unit;
     const localY = -y_u * unit; // El eje Y del canvas está invertido
+
+    // Si es pieza tipo B, aplicar el volteo horizontal
+    if (piece.type === 'B') {
+      localX = -localX;
+    }
 
     // Aplica la rotación a cada vértice
     const rotatedX = localX * cos - localY * sin;
@@ -67,32 +69,41 @@ const getPieceBoundingBox = (piece: Piece) => {
  * Determina si una pieza está en el área de juego (donde debe aparecer el reflejo)
  */
 const isPieceInGameArea = (piece: Piece) => {
-  const gameAreaMaxY = 500; // Área de juego actualizada va desde Y=0 hasta Y=500
+  const gameAreaMaxY = 600; // Área de juego actualizada va desde Y=0 hasta Y=600
   return piece.y < gameAreaMaxY;
 };
 
 /**
  * Ajusta la posición de una pieza para que no salga de los límites permitidos
+ * Permite que las piezas toquen la línea del espejo pero no se metan completamente
  */
 const constrainPiecePosition = (piece: Piece, canvasWidth: number, canvasHeight: number, mirrorLine: number) => {
   const bbox = getPieceBoundingBox(piece);
   let newX = piece.x;
   let newY = piece.y;
 
-  // Ajustar para que no cruce los límites horizontales
-  if (bbox.right > mirrorLine) {
-    newX -= (bbox.right - mirrorLine);
-  }
+  // Límite izquierdo del canvas
   if (bbox.left < 0) {
-    newX += -bbox.left;
+    const overlap = -bbox.left;
+    newX = piece.x + overlap;
   }
 
-  // Ajustar para que no cruce los límites verticales
-  if (bbox.bottom > canvasHeight) {
-    newY -= (bbox.bottom - canvasHeight);
+  // Límite del espejo: ninguna parte de la pieza puede meterse en el espejo
+  if (bbox.right > mirrorLine) {
+    // Alguna parte de la pieza se está metiendo en el espejo
+    const overlap = bbox.right - mirrorLine;
+    newX = piece.x - overlap; // Mover la pieza hacia atrás exactamente lo necesario
   }
+
+  // Límites verticales
+  if (bbox.bottom > canvasHeight) {
+    const overlap = bbox.bottom - canvasHeight;
+    newY = piece.y - overlap;
+  }
+  
   if (bbox.top < 0) {
-    newY += -bbox.top;
+    const overlap = -bbox.top;
+    newY = piece.y + overlap;
   }
 
   return { x: newX, y: newY };
@@ -107,49 +118,54 @@ export const useMouseHandlers = ({
                                    setDragOffset,
                                    isPieceHit,
                                    canvasRef,
-                                   rotatePiece, // Nueva función recibida
+                                   rotatePiece
                                  }: UseMouseHandlersProps) => {
   const mirrorLine = 700; // Línea del espejo
 
-  const handleMouseDown = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+  // Helper para obtener coordenadas del mouse en el canvas
+  const getCanvasCoordinates = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current?.getCanvas();
-    if (!canvas) return;
+    if (!canvas) return null;
 
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
-    const x = (e.clientX - rect.left) * scaleX;
-    const y = (e.clientY - rect.top) * scaleY;
+    return {
+      x: (e.clientX - rect.left) * scaleX,
+      y: (e.clientY - rect.top) * scaleY,
+      canvas
+    };
+  };
 
-    const clickedPiece = pieces.slice().reverse().find((piece) => isPieceHit(piece, x, y));
+  const handleMouseDown = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+    const coords = getCanvasCoordinates(e);
+    if (!coords) return;
+
+    const clickedPiece = pieces.slice().reverse().find((piece) => isPieceHit(piece, coords.x, coords.y));
     if (clickedPiece) {
       setDraggedPiece(clickedPiece);
-      setDragOffset({ x: x - clickedPiece.x, y: y - clickedPiece.y });
+      setDragOffset({ x: coords.x - clickedPiece.x, y: coords.y - clickedPiece.y });
     }
   }, [canvasRef, pieces, isPieceHit, setDraggedPiece, setDragOffset]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!draggedPiece) return;
 
-    const canvas = canvasRef.current?.getCanvas();
-    if (!canvas) return;
+    const coords = getCanvasCoordinates(e);
+    if (!coords) return;
 
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-    let x = (e.clientX - rect.left) * scaleX - dragOffset.x;
-    let y = (e.clientY - rect.top) * scaleY - dragOffset.y;
+    const x = coords.x - dragOffset.x;
+    const y = coords.y - dragOffset.y;
 
     // Crea una pieza temporal para calcular su BBox en la nueva posición
     const tempPiece = { ...draggedPiece, x, y };
-    const constrainedPosition = constrainPiecePosition(tempPiece, canvas.width, canvas.height, mirrorLine);
+    const constrainedPosition = constrainPiecePosition(tempPiece, coords.canvas.width, coords.canvas.height, mirrorLine);
 
     // Actualiza la posición de la pieza y determina si está en el área de juego
     setPieces((prevPieces) =>
         prevPieces.map((p) => {
           if (p.id === draggedPiece.id) {
             const updatedPiece = { ...p, x: constrainedPosition.x, y: constrainedPosition.y };
-            // Marcar como 'placed' si está en el área de juego
             updatedPiece.placed = isPieceInGameArea(updatedPiece);
             return updatedPiece;
           }
@@ -178,18 +194,12 @@ export const useMouseHandlers = ({
 
   const handleContextMenu = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     e.preventDefault();
-    const canvas = canvasRef.current?.getCanvas();
-    if (!canvas) return;
+    const coords = getCanvasCoordinates(e);
+    if (!coords) return;
 
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-    const x = (e.clientX - rect.left) * scaleX;
-    const y = (e.clientY - rect.top) * scaleY;
-
-    const clickedPiece = pieces.slice().reverse().find((p) => isPieceHit(p, x, y));
+    const clickedPiece = pieces.slice().reverse().find((p) => isPieceHit(p, coords.x, coords.y));
     if (clickedPiece) {
-      rotatePiece(clickedPiece.id); // Usar la función de rotación de 45 grados
+      rotatePiece(clickedPiece.id);
     }
   }, [canvasRef, pieces, isPieceHit, rotatePiece]);
 

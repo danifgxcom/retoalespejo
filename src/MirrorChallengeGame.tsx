@@ -1,6 +1,5 @@
 import React, { useRef } from 'react';
 import GameCanvas, { GameCanvasRef } from './components/GameCanvas';
-import ChallengeCard from './components/ChallengeCard';
 import GameControls from './components/GameControls';
 import { useGameLogic } from './hooks/useGameLogic';
 import { useMouseHandlers } from './hooks/useMouseHandlers';
@@ -24,6 +23,7 @@ const MirrorChallengeGame: React.FC = () => {
     resetLevel,
     nextChallenge,
     isPieceHit,
+    checkSolutionWithMirrors,
   } = useGameLogic();
 
   const {
@@ -54,6 +54,7 @@ const MirrorChallengeGame: React.FC = () => {
               onNextChallenge={nextChallenge}
               onRotatePiece={rotatePiece}
               onFlipPiece={flipPiece}
+              onCheckSolution={checkSolutionWithMirrors}
           />
 
           {/* Área de juego */}

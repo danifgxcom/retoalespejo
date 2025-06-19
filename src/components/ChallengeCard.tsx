@@ -8,6 +8,14 @@ export interface PiecePosition {
   rotation: number;
 }
 
+export interface ObjectivePattern {
+  // Piezas que el jugador debe colocar en el área de juego
+  playerPieces: PiecePosition[];
+  // Patrón completo simétrico que debe formarse (jugador + reflejos automáticos)
+  // Esto incluye TODAS las piezas que deberían ser visibles: las del área de juego + las del área del espejo
+  symmetricPattern: PiecePosition[];
+}
+
 export interface Challenge {
   id: number;
   name: string;
@@ -15,6 +23,9 @@ export interface Challenge {
   piecesNeeded: number;
   difficulty: string;
   targetPattern: string;
+  // Definición del patrón objetivo completo (piezas + reflejos)
+  objective: ObjectivePattern;
+  // Backward compatibility - mantener targetPieces por ahora
   targetPieces: PiecePosition[];
 }
 
