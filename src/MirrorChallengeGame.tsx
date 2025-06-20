@@ -19,11 +19,13 @@ const MirrorChallengeGame: React.FC = () => {
     setDragOffset,
     setShowInstructions,
     rotatePiece,
+    rotatePieceCounterClockwise,
     flipPiece,
     resetLevel,
     nextChallenge,
     isPieceHit,
     checkSolutionWithMirrors,
+    geometry,
   } = useGameLogic();
 
   const {
@@ -41,6 +43,7 @@ const MirrorChallengeGame: React.FC = () => {
     isPieceHit,
     canvasRef,
     rotatePiece,
+    geometry,
   });
 
   return (
@@ -53,6 +56,7 @@ const MirrorChallengeGame: React.FC = () => {
               onResetLevel={resetLevel}
               onNextChallenge={nextChallenge}
               onRotatePiece={rotatePiece}
+              onRotatePieceCounterClockwise={rotatePieceCounterClockwise}
               onFlipPiece={flipPiece}
               onCheckSolution={checkSolutionWithMirrors}
           />
@@ -69,6 +73,7 @@ const MirrorChallengeGame: React.FC = () => {
                   onMouseMove={handleMouseMove}
                   onMouseUp={handleMouseUp}
                   onContextMenu={handleContextMenu}
+                  geometry={geometry}
               />
             </div>
 

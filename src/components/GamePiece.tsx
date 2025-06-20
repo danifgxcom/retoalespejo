@@ -38,7 +38,7 @@ const drawShape = (ctx: CanvasRenderingContext2D, coordinates: [number, number][
   ctx.stroke();
 };
 
-export const drawPiece = (ctx: CanvasRenderingContext2D, piece: Piece, x: number, y: number, size = 80) => {
+export const drawPiece = (ctx: CanvasRenderingContext2D, piece: Piece, x: number, y: number, size = 100) => {
   ctx.save();
   ctx.translate(x + size/2, y + size/2);
   ctx.rotate((piece.rotation * Math.PI) / 180);

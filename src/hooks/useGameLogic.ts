@@ -1,8 +1,22 @@
 import { useState, useEffect } from 'react';
 import { Piece } from '../components/GamePiece';
 import { Challenge, PiecePosition, ObjectivePattern } from '../components/ChallengeCard';
+import { GameGeometry, GameAreaConfig } from '../utils/GameGeometry.ts';
+import { ChallengeGenerator } from '../utils/ChallengeGenerator.ts';
 
 export const useGameLogic = () => {
+  // Configuración de geometría del juego
+  const gameAreaConfig: GameAreaConfig = {
+    width: 700,
+    height: 600,
+    mirrorLineX: 700,
+    pieceSize: 100
+  };
+
+  // Inicializar clases de geometría y generador de challenges
+  const geometry = new GameGeometry(gameAreaConfig);
+  const challengeGenerator = new ChallengeGenerator(geometry);
+
   // Estados del juego
   const [currentChallenge, setCurrentChallenge] = useState(0);
   const [pieces, setPieces] = useState<Piece[]>([]);
@@ -10,149 +24,32 @@ export const useGameLogic = () => {
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [showInstructions, setShowInstructions] = useState(true);
 
-  // Configuración de piezas
-  const pieceTemplates = [
-    {
-      id: 1,
-      type: 'A' as const,
-      face: 'front' as const,
-      centerColor: '#FFD700',
-      triangleColor: '#FF4444'
-    },
-    {
-      id: 2,
-      type: 'B' as const,
-      face: 'front' as const,
-      centerColor: '#FF4444',
-      triangleColor: '#FFD700'
+  // Configuración de plantillas de piezas
+  const createPieceTemplate = (type: 'A' | 'B', face: 'front' | 'back') => {
+    if (type === 'A') {
+      return {
+        type,
+        face,
+        centerColor: face === 'front' ? '#FFD700' : '#FF4444',
+        triangleColor: face === 'front' ? '#FF4444' : '#FFD700'
+      };
+    } else {
+      return {
+        type,
+        face,
+        centerColor: face === 'front' ? '#FF4444' : '#FFD700',
+        triangleColor: face === 'front' ? '#FFD700' : '#FF4444'
+      };
     }
-  ];
-
-  // Función helper para calcular el reflejo de una pieza
-  // Espejo horizontal simple: solo cambia posición X, mantiene rotación y colores
-  const calculateMirrorPiece = (piece: PiecePosition, mirrorLine: number = 700): PiecePosition => {
-    const reflectedX = 2 * mirrorLine - piece.x - 80; // 80 es PIECE_SIZE
-    return {
-      ...piece,
-      x: reflectedX
-      // Mantener rotation y face iguales para espejo horizontal simple
-    };
   };
 
-  // Función helper para crear objetivos con patrón simétrico completo
-  const createSymmetricObjective = (playerPieces: PiecePosition[]): ObjectivePattern => {
-    const mirrorPieces = playerPieces.map(piece => calculateMirrorPiece(piece));
-    return {
-      playerPieces,
-      symmetricPattern: [...playerPieces, ...mirrorPieces]
-    };
+  // Función helper para calcular el reflejo de una pieza usando la clase de geometría
+  const calculateMirrorPiece = (piece: PiecePosition): PiecePosition => {
+    return geometry.reflectPieceAcrossMirror(piece);
   };
 
-  // Desafíos auténticos basados en el juego original de Educa
-  const challenges: Challenge[] = [
-    {
-      id: 1,
-      name: "Tarjeta 1: Corazón Simple",
-      description: "Forma un corazón con una pieza A rotada 270° pegada al espejo",
-      piecesNeeded: 1,
-      difficulty: "Principiante",
-      targetPattern: "heart_simple",
-      objective: createSymmetricObjective([
-        { type: 'A', face: 'front', x: 620, y: 280, rotation: 270 }
-      ]),
-      targetPieces: [
-        { type: 'A', face: 'front', x: 620, y: 280, rotation: 270 }
-      ]
-    },
-    {
-      id: 2,
-      name: "Tarjeta 2: Figura Simétrica",
-      description: "Patrón simétrico usando una pieza A y una pieza B",
-      piecesNeeded: 2,
-      difficulty: "Fácil",
-      targetPattern: "symmetric_pattern",
-      objective: createSymmetricObjective([
-        { type: 'A', face: 'front', x: 580, y: 260, rotation: 0 },
-        { type: 'B', face: 'front', x: 580, y: 340, rotation: 180 }
-      ]),
-      targetPieces: [
-        { type: 'A', face: 'front', x: 580, y: 260, rotation: 0 },
-        { type: 'B', face: 'front', x: 580, y: 340, rotation: 180 }
-      ]
-    },
-    {
-      id: 3,
-      name: "Tarjeta 3: Flor de Pétalos",
-      description: "Flor simétrica de cuatro pétalos con rotaciones específicas",
-      piecesNeeded: 2,
-      difficulty: "Fácil",
-      targetPattern: "flower_petals",
-      objective: createSymmetricObjective([
-        { type: 'A', face: 'back', x: 620, y: 150, rotation: 30 },
-        { type: 'A', face: 'back', x: 620, y: 250, rotation: 330 }
-      ]),
-      targetPieces: [
-        { type: 'A', face: 'back', x: 620, y: 150, rotation: 30 },
-        { type: 'A', face: 'back', x: 620, y: 250, rotation: 330 }
-      ]
-    },
-    {
-      id: 4,
-      name: "Tarjeta 4: Casa con Tejado",
-      description: "Casa simétrica con tejado triangular usando tres piezas",
-      piecesNeeded: 3,
-      difficulty: "Intermedio",
-      targetPattern: "house_roof",
-      objective: createSymmetricObjective([
-        { type: 'B', face: 'front', x: 620, y: 120, rotation: 0 },
-        { type: 'A', face: 'front', x: 590, y: 200, rotation: 0 },
-        { type: 'A', face: 'front', x: 590, y: 280, rotation: 0 }
-      ]),
-      targetPieces: [
-        { type: 'B', face: 'front', x: 620, y: 120, rotation: 0 },
-        { type: 'A', face: 'front', x: 590, y: 200, rotation: 0 },
-        { type: 'A', face: 'front', x: 590, y: 280, rotation: 0 }
-      ]
-    },
-    {
-      id: 5,
-      name: "Tarjeta 5: Corona Real",
-      description: "Corona simétrica con picos decorativos usando múltiples rotaciones",
-      piecesNeeded: 3,
-      difficulty: "Intermedio",
-      targetPattern: "crown_royal",
-      objective: createSymmetricObjective([
-        { type: 'A', face: 'back', x: 620, y: 140, rotation: 0 },
-        { type: 'B', face: 'front', x: 560, y: 200, rotation: 60 },
-        { type: 'B', face: 'front', x: 560, y: 260, rotation: 300 }
-      ]),
-      targetPieces: [
-        { type: 'A', face: 'back', x: 620, y: 140, rotation: 0 },
-        { type: 'B', face: 'front', x: 560, y: 200, rotation: 60 },
-        { type: 'B', face: 'front', x: 560, y: 260, rotation: 300 }
-      ]
-    },
-    {
-      id: 6,
-      name: "Tarjeta 6: Estrella Cuádruple",
-      description: "Estrella de cuatro puntas perfecta usando las 4 piezas",
-      piecesNeeded: 4,
-      difficulty: "Difícil",
-      targetPattern: "star_quad",
-      objective: createSymmetricObjective([
-        { type: 'A', face: 'front', x: 620, y: 100, rotation: 0 },
-        { type: 'B', face: 'back', x: 680, y: 200, rotation: 90 },
-        { type: 'A', face: 'back', x: 620, y: 300, rotation: 180 },
-        { type: 'B', face: 'front', x: 560, y: 200, rotation: 270 }
-      ]),
-      targetPieces: [
-        { type: 'A', face: 'front', x: 620, y: 100, rotation: 0 },
-        { type: 'B', face: 'back', x: 680, y: 200, rotation: 90 },
-        { type: 'A', face: 'back', x: 620, y: 300, rotation: 180 },
-        { type: 'B', face: 'front', x: 560, y: 200, rotation: 270 }
-      ]
-    }
-  ];
+  // Generar challenges usando el generador
+  const challenges: Challenge[] = challengeGenerator.generateAllChallenges();
 
   // Función para alternar cara de la pieza
   const togglePieceFace = (piece: Piece): Piece => {
@@ -169,39 +66,119 @@ export const useGameLogic = () => {
     };
   };
 
-  // Función helper para crear piezas iniciales - evita duplicación de código
-  const createInitialPieces = (piecesCount: number): Piece[] => {
+  // Función para generar piezas basándose en lo que necesita el challenge específico
+  const createChallengeSpecificPieces = (challenge: Challenge): Piece[] => {
     const availableAreaX = 0;
     const availableAreaY = 600;
     const availableAreaWidth = 700;
-    const availableAreaHeight = 400;
-    const pieceSize = 80;
+    const pieceSize = 100;
     const marginX = 50;
     const absolutePieceY = 900;
     const spacing = 120;
-    const usableWidth = availableAreaWidth - (2 * marginX);
-    const piecesPerRow = Math.floor(usableWidth / (pieceSize + spacing));
 
     const initialPieces: Piece[] = [];
+
+    // Extraer los tipos de piezas requeridos del challenge
+    const requiredPieceTypes = challenge.objective.playerPieces.map(piece => ({
+      type: piece.type,
+      face: piece.face
+    }));
+
+    // Posiciones iniciales para diferentes cantidades de piezas
+    const getPositionsForPieceCount = (count: number) => {
+      switch (count) {
+        case 1:
+          return [{ x: availableAreaX + availableAreaWidth / 2 - pieceSize / 2, y: absolutePieceY }];
+        case 2:
+          return [
+            { x: availableAreaX + availableAreaWidth / 3 - pieceSize / 2, y: absolutePieceY },
+            { x: availableAreaX + 2 * availableAreaWidth / 3 - pieceSize / 2, y: absolutePieceY }
+          ];
+        case 3:
+          return [
+            { x: availableAreaX + availableAreaWidth / 4 - pieceSize / 2, y: absolutePieceY },
+            { x: availableAreaX + availableAreaWidth / 2 - pieceSize / 2, y: absolutePieceY },
+            { x: availableAreaX + 3 * availableAreaWidth / 4 - pieceSize / 2, y: absolutePieceY }
+          ];
+        case 4:
+          return [
+            { x: availableAreaX + availableAreaWidth / 5 - pieceSize / 2, y: absolutePieceY },
+            { x: availableAreaX + 2 * availableAreaWidth / 5 - pieceSize / 2, y: absolutePieceY },
+            { x: availableAreaX + 3 * availableAreaWidth / 5 - pieceSize / 2, y: absolutePieceY },
+            { x: availableAreaX + 4 * availableAreaWidth / 5 - pieceSize / 2, y: absolutePieceY }
+          ];
+        default:
+          // Para más de 4 piezas, distribuir uniformemente
+          const positions = [];
+          for (let i = 0; i < count; i++) {
+            const x = availableAreaX + marginX + (i * spacing);
+            const y = absolutePieceY;
+            positions.push({ x: Math.min(x, availableAreaWidth - pieceSize), y });
+          }
+          return positions;
+      }
+    };
+
+    const positions = getPositionsForPieceCount(challenge.piecesNeeded);
+
+    // Crear las piezas según los tipos requeridos por el challenge
+    for (let i = 0; i < challenge.piecesNeeded; i++) {
+      const requiredType = requiredPieceTypes[i] || requiredPieceTypes[0]; // Fallback al primer tipo
+      const template = createPieceTemplate(requiredType.type, requiredType.face);
+      const position = positions[i];
+
+      initialPieces.push({
+        ...template,
+        id: i + 1,
+        x: position.x,
+        y: position.y,
+        rotation: 0,
+        placed: false
+      });
+    }
+
+    return initialPieces;
+  };
+
+  // Función legacy para mantener compatibilidad
+  const createInitialPieces = (piecesCount: number): Piece[] => {
+    const currentChallengeData = challenges[currentChallenge];
+    if (currentChallengeData) {
+      return createChallengeSpecificPieces(currentChallengeData);
+    }
+
+    // Fallback al método original si no hay challenge
+    const availableAreaX = 0;
+    const availableAreaY = 600;
+    const availableAreaWidth = 700;
+    const pieceSize = 100;
+    const marginX = 50;
+    const absolutePieceY = 900;
+    const spacing = 120;
+
+    const pieceTemplates = [
+      createPieceTemplate('A', 'front'),
+      createPieceTemplate('B', 'front')
+    ];
+
+    const initialPieces: Piece[] = [];
+    const positions = [];
+
+    for (let i = 0; i < piecesCount; i++) {
+      const x = availableAreaX + marginX + (i * spacing);
+      const y = absolutePieceY;
+      positions.push({ x: Math.min(x, availableAreaWidth - pieceSize), y });
+    }
+
     for (let i = 0; i < piecesCount; i++) {
       const templateIndex = i % 2;
-      const row = Math.floor(i / piecesPerRow);
-      const col = i % piecesPerRow;
-
-      const pieceX = availableAreaX + marginX + col * (pieceSize + spacing);
-      const pieceY = absolutePieceY + row * (pieceSize + spacing);
-
-      const maxX = availableAreaX + availableAreaWidth - pieceSize - marginX;
-      const maxY = availableAreaY + availableAreaHeight - pieceSize;
-
-      const finalX = Math.min(pieceX, maxX);
-      const finalY = Math.min(pieceY, maxY);
+      const position = positions[i];
 
       initialPieces.push({
         ...pieceTemplates[templateIndex],
         id: i + 1,
-        x: finalX,
-        y: finalY,
+        x: position.x,
+        y: position.y,
         rotation: 0,
         placed: false
       });
@@ -212,7 +189,7 @@ export const useGameLogic = () => {
 
   // Verificar si un punto está dentro de una pieza
   const isPieceHit = (piece: Piece, x: number, y: number): boolean => {
-    const size = 80; // Tamaño base de la pieza
+    const size = 100; // Tamaño base de la pieza (25% más grande)
     const unit = size * 1.28; // Factor de escala
 
     // La pieza se dibuja con translate(x + size/2, y + size/2) y luego rotate
@@ -268,14 +245,24 @@ export const useGameLogic = () => {
   // Inicializar piezas según el desafío actual
   useEffect(() => {
     const challenge = challenges[currentChallenge];
-    setPieces(createInitialPieces(challenge.piecesNeeded));
+    if (challenge) {
+      setPieces(createChallengeSpecificPieces(challenge));
+    }
   }, [currentChallenge]);
 
   // Funciones de control - ROTACIÓN EN INCREMENTOS DE 45 GRADOS
   const rotatePiece = (pieceId: number) => {
     setPieces(pieces.map(piece =>
         piece.id === pieceId
-            ? { ...piece, rotation: (piece.rotation + 45) % 360 } // CAMBIO: 90° → 45°
+            ? { ...piece, rotation: (piece.rotation + 45) % 360 }
+            : piece
+    ));
+  };
+
+  const rotatePieceCounterClockwise = (pieceId: number) => {
+    setPieces(pieces.map(piece =>
+        piece.id === pieceId
+            ? { ...piece, rotation: (piece.rotation - 45 + 360) % 360 }
             : piece
     ));
   };
@@ -290,7 +277,9 @@ export const useGameLogic = () => {
 
   const resetLevel = () => {
     const challenge = challenges[currentChallenge];
-    setPieces(createInitialPieces(challenge.piecesNeeded));
+    if (challenge) {
+      setPieces(createChallengeSpecificPieces(challenge));
+    }
   };
 
   const nextChallenge = () => {
@@ -308,138 +297,101 @@ export const useGameLogic = () => {
 
   // Función helper para crear las piezas reflejadas actuales
   const getCurrentMirrorPieces = (): PiecePosition[] => {
-    const placedPieces = pieces.filter(piece => piece.placed && piece.y < 600); // Solo piezas en área de juego
+    const placedPieces = pieces.filter(piece => piece.placed && piece.y < 600);
     return placedPieces.map(piece => calculateMirrorPiece(pieceToPosition(piece)));
   };
 
-  // Función helper para verificar si una pieza coincide con el objetivo
-  const isPieceMatch = (piece1: PiecePosition, piece2: PiecePosition, positionTolerance: number = 40, rotationTolerance: number = 30): boolean => {
-    // Verificar tipo y cara
+  // Función helper simplificada - solo verifica tipo, cara y rotación (no posición específica)
+  const isPieceMatch = (piece1: PiecePosition, piece2: PiecePosition, rotationTolerance: number = 45): boolean => {
     const typeMatch = piece1.type === piece2.type;
     const faceMatch = piece1.face === piece2.face;
 
-    // Verificar posición con tolerancia (aumentada para ser más permisiva)
-    // Usamos una tolerancia mucho mayor para la coordenada Y (vertical) ya que la posición vertical
-    // no debería importar tanto mientras la silueta sea la misma
-    const xPositionMatch = Math.abs(piece1.x - piece2.x) <= positionTolerance;
-    const yPositionMatch = Math.abs(piece1.y - piece2.y) <= 200; // Tolerancia mucho mayor para la posición vertical
-    const positionMatch = xPositionMatch && yPositionMatch;
-
-    // Verificar rotación con tolerancia (considerando que 360° = 0°)
     const rotationDiff = Math.abs(piece1.rotation - piece2.rotation);
     const normalizedRotationDiff = Math.min(rotationDiff, 360 - rotationDiff);
     const rotationMatch = normalizedRotationDiff <= rotationTolerance;
 
-
-    return typeMatch && faceMatch && positionMatch && rotationMatch;
+    return typeMatch && faceMatch && rotationMatch;
   };
 
-  // Función para obtener el patrón simétrico actual (piezas colocadas + sus reflejos)
+  // Función para obtener el patrón simétrico actual
   const getCurrentSymmetricPattern = (): PiecePosition[] => {
-    const placedPieces = pieces.filter(piece => piece.placed && piece.y < 600); // Solo piezas en área de juego
-    const placedPiecePositions = placedPieces.map(pieceToPosition);
-    return [...placedPiecePositions, ...getCurrentMirrorPieces()];
+    const placedPieces = pieces.filter(piece => piece.placed && piece.y < 600).map(pieceToPosition);
+    const mirrorPieces = getCurrentMirrorPieces();
+    return [...placedPieces, ...mirrorPieces];
   };
 
-  // Función para comparar SOLO las piezas del jugador (el reflejo es automático)
-  const checkSolutionWithMirrors = (): boolean => {
+  // Función de verificación de solución con espejos
+  const checkSolutionWithMirrors = (): { isCorrect: boolean; message: string } => {
     const challenge = challenges[currentChallenge];
-    const placedPieces = pieces.filter(piece => piece.placed && piece.y < 600); // Solo piezas en área de juego
+    const placedPieces = pieces.filter(piece => piece.placed && piece.y < 600).map(pieceToPosition);
 
-    // Convertir piezas colocadas a formato PiecePosition
-    const placedPiecePositions = placedPieces.map(pieceToPosition);
-
-    // Verificar que el número de piezas colocadas coincida con las piezas objetivo del jugador
-    if (placedPiecePositions.length !== challenge.objective.playerPieces.length) {
-      return false;
-    }
-
-    // Verificar que cada pieza objetivo tenga una pieza colocada que coincida
-    // y que cada pieza colocada tenga una pieza objetivo que coincida
-    const targetMatched = challenge.objective.playerPieces.every(targetPiece => 
-      placedPiecePositions.some(placedPiece => isPieceMatch(placedPiece, targetPiece))
-    );
-
-    const placedMatched = placedPiecePositions.every(placedPiece => 
-      challenge.objective.playerPieces.some(targetPiece => isPieceMatch(placedPiece, targetPiece))
-    );
-
-    return targetMatched && placedMatched;
-  };
-
-  // Función legacy para compatibilidad con el sistema anterior
-  const checkSolution = (): boolean => {
-    const challenge = challenges[currentChallenge];
-    const placedPieces = pieces.filter(piece => piece.placed && piece.y < 600); // Solo piezas en área de juego
-
-    // Verificar que el número de piezas colocadas coincida
-    if (placedPieces.length !== challenge.targetPieces.length) {
-      return false;
-    }
-
-    // Convertir piezas colocadas a formato PiecePosition para usar isPieceMatch
-    const placedPiecePositions = placedPieces.map(pieceToPosition);
-
-    // Para cada pieza objetivo, buscar una pieza colocada que coincida
-    return challenge.targetPieces.every(targetPiece => 
-      placedPiecePositions.some(placedPiece => isPieceMatch(placedPiece, targetPiece))
-    );
-  };
-
-  // Crear piezas objetivo para visualización
-  const getTargetPiecesForDisplay = (): Piece[] => {
-    const challenge = challenges[currentChallenge];
-    return challenge.targetPieces.map((targetPiece, index) => {
-      const template = pieceTemplates.find(t => t.type === targetPiece.type) || pieceTemplates[0];
-
-      let centerColor = template.centerColor;
-      let triangleColor = template.triangleColor;
-
-      // Si la cara está volteada, intercambiar colores
-      if (targetPiece.face === 'back') {
-        centerColor = template.triangleColor;
-        triangleColor = template.centerColor;
-      }
-
+    // Verificar si se han colocado todas las piezas necesarias
+    if (placedPieces.length !== challenge.piecesNeeded) {
       return {
-        id: 1000 + index, // IDs únicos para evitar conflictos
-        type: targetPiece.type,
-        face: targetPiece.face,
-        centerColor,
-        triangleColor,
-        x: targetPiece.x + 700, // Mover al área de objetivo (lado derecho)
-        y: targetPiece.y + 700, // Mover al área de objetivo (parte inferior)
-        rotation: targetPiece.rotation,
-        placed: true
+        isCorrect: false,
+        message: `Necesitas colocar ${challenge.piecesNeeded} piezas. Has colocado ${placedPieces.length}.`
       };
-    });
+    }
+
+    // Verificar si las piezas colocadas coinciden con los tipos requeridos
+    const targetPieces = challenge.objective.playerPieces;
+    const requiredPieceTypes = targetPieces.map(p => ({ type: p.type, face: p.face }));
+    const placedPieceTypes = placedPieces.map(p => ({ type: p.type, face: p.face }));
+
+    // Verificar que tengamos todos los tipos requeridos
+    for (const requiredType of requiredPieceTypes) {
+      const hasMatchingPiece = placedPieceTypes.some(placedType => 
+        placedType.type === requiredType.type && placedType.face === requiredType.face
+      );
+      
+      if (!hasMatchingPiece) {
+        return {
+          isCorrect: false,
+          message: `Falta una pieza de tipo ${requiredType.type} cara ${requiredType.face}.`
+        };
+      }
+    }
+
+    // Verificar que las piezas estén conectadas
+    const validation = geometry.validateChallengeCard(placedPieces);
+    if (!validation.piecesConnected) {
+      return {
+        isCorrect: false,
+        message: "Las piezas deben estar conectadas entre sí."
+      };
+    }
+
+    if (!validation.touchesMirror) {
+      return {
+        isCorrect: false,
+        message: "Al menos una pieza debe tocar el espejo."
+      };
+    }
+
+    return {
+      isCorrect: true,
+      message: "¡Excelente! Has completado el desafío correctamente."
+    };
   };
 
   return {
-    // Estados
     currentChallenge,
     pieces,
     draggedPiece,
     dragOffset,
     showInstructions,
     challenges,
-    // Setters
     setPieces,
     setDraggedPiece,
     setDragOffset,
     setShowInstructions,
-    // Funciones
     rotatePiece,
+    rotatePieceCounterClockwise,
     flipPiece,
     resetLevel,
     nextChallenge,
     isPieceHit,
-    checkSolution,
     checkSolutionWithMirrors,
-    getTargetPiecesForDisplay,
-    // Funciones helper para objetivos
-    getCurrentMirrorPieces,
-    getCurrentSymmetricPattern,
-    calculateMirrorPiece,
+    geometry,
   };
 };

@@ -1,5 +1,5 @@
 import React from 'react';
-import { RotateCcw, SkipForward, HelpCircle, RotateCw, FlipHorizontal, CheckCircle } from 'lucide-react';
+import { RotateCcw, SkipForward, HelpCircle, RotateCw, FlipHorizontal, CheckCircle, RefreshCw } from 'lucide-react';
 import { Piece } from './GamePiece';
 
 interface GameControlsProps {
@@ -9,6 +9,7 @@ interface GameControlsProps {
   onResetLevel: () => void;
   onNextChallenge: () => void;
   onRotatePiece: (pieceId: number) => void;
+  onRotatePieceCounterClockwise: (pieceId: number) => void;
   onFlipPiece: (pieceId: number) => void;
   onCheckSolution?: () => boolean;
 }
@@ -20,6 +21,7 @@ const GameControls: React.FC<GameControlsProps> = ({
   onResetLevel,
   onNextChallenge,
   onRotatePiece,
+  onRotatePieceCounterClockwise,
   onFlipPiece,
   onCheckSolution,
 }) => {
@@ -44,29 +46,33 @@ const GameControls: React.FC<GameControlsProps> = ({
           <div className="flex gap-2">
             <button 
               onClick={onToggleInstructions}
-              className="bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-lg transition-colors"
+              className="bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-lg transition-colors shadow-md"
+              title="Ayuda e instrucciones"
             >
-              <HelpCircle size={20} />
+              <HelpCircle size={24} />
             </button>
             <button 
               onClick={onResetLevel}
-              className="bg-green-500 hover:bg-green-600 text-white p-3 rounded-lg transition-colors"
+              className="bg-red-500 hover:bg-red-600 text-white p-3 rounded-lg transition-colors shadow-md"
+              title="Reiniciar nivel"
             >
-              <RotateCcw size={20} />
+              <RefreshCw size={24} />
             </button>
             {onCheckSolution && (
               <button 
                 onClick={handleCheckSolution}
-                className="bg-amber-500 hover:bg-amber-600 text-white p-3 rounded-lg transition-colors"
+                className="bg-green-500 hover:bg-green-600 text-white p-3 rounded-lg transition-colors shadow-md"
+                title="Verificar solución"
               >
-                <CheckCircle size={20} />
+                <CheckCircle size={24} />
               </button>
             )}
             <button 
               onClick={onNextChallenge}
-              className="bg-purple-500 hover:bg-purple-600 text-white p-3 rounded-lg transition-colors"
+              className="bg-purple-500 hover:bg-purple-600 text-white p-3 rounded-lg transition-colors shadow-md"
+              title="Siguiente desafío"
             >
-              <SkipForward size={20} />
+              <SkipForward size={24} />
             </button>
           </div>
         </div>
@@ -90,20 +96,27 @@ const GameControls: React.FC<GameControlsProps> = ({
             <div className="text-sm font-bold mb-2 text-gray-800 text-center">
               🧩 Pieza {piece.id} ({piece.type})
             </div>
-            <div className="flex gap-2 mb-2">
+            <div className="grid grid-cols-3 gap-1 mb-2">
               <button
-                onClick={() => onRotatePiece(piece.id)}
-                className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white p-2 rounded-lg flex items-center justify-center flex-1 shadow-sm transition-all transform hover:scale-105"
-                title="Rotar 45° horario"
+                onClick={() => onRotatePieceCounterClockwise(piece.id)}
+                className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white p-2 rounded-lg flex items-center justify-center shadow-md transition-all transform hover:scale-110"
+                title="Rotar 45° antihorario"
               >
-                <RotateCw size={16} />
+                <RotateCcw size={20} />
               </button>
               <button
                 onClick={() => onFlipPiece(piece.id)}
-                className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white p-2 rounded-lg flex items-center justify-center flex-1 shadow-sm transition-all transform hover:scale-105"
+                className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white p-2 rounded-lg flex items-center justify-center shadow-md transition-all transform hover:scale-110"
                 title="Voltear pieza"
               >
-                <FlipHorizontal size={16} />
+                <FlipHorizontal size={20} />
+              </button>
+              <button
+                onClick={() => onRotatePiece(piece.id)}
+                className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white p-2 rounded-lg flex items-center justify-center shadow-md transition-all transform hover:scale-110"
+                title="Rotar 45° horario"
+              >
+                <RotateCw size={20} />
               </button>
             </div>
             <div className="text-xs text-center">
