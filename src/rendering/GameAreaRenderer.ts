@@ -251,7 +251,7 @@ export class GameAreaRenderer {
   /**
    * Draws interactive game pieces
    */
-  drawGamePieces(ctx: CanvasRenderingContext2D, pieces: Piece[], draggedPiece: Piece | null, debugMode: boolean = false, showLabels: boolean = false): void {
+  drawGamePieces(ctx: CanvasRenderingContext2D, pieces: Piece[], draggedPiece: Piece | null, debugMode: boolean = false, showLabels: boolean = false, interactingPieceId?: number | null, controlActionPieceId?: number | null): void {
     if (!pieces || pieces.length === 0) return;
 
     pieces.forEach(piece => {
@@ -270,8 +270,12 @@ export class GameAreaRenderer {
         this.drawDraggedPieceBorder(ctx, piece);
       }
 
-      // Draw piece label if requested or if piece is being dragged
-      if (showLabels || (draggedPiece && piece.id === draggedPiece.id)) {
+      // Draw piece label si: debug mode, arrastrando, o acción de control temporal
+      const shouldShowLabel = showLabels || 
+                             (draggedPiece && piece.id === draggedPiece.id) ||
+                             (controlActionPieceId !== null && piece.id === controlActionPieceId);
+      
+      if (shouldShowLabel) {
         drawPieceLabel(ctx, piece.id, piece.x, piece.y, this.config.pieceSize);
       }
     });

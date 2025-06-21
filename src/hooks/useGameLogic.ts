@@ -40,6 +40,8 @@ export const useGameLogic = () => {
   const [showInstructions, setShowInstructions] = useState(true);
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [interactingPieceId, setInteractingPieceId] = useState<number | null>(null);
+  const [controlActionPieceId, setControlActionPieceId] = useState<number | null>(null);
 
   // Configuración de plantillas de piezas
   const createPieceTemplate = (type: 'A' | 'B', face: 'front' | 'back') => {
@@ -169,7 +171,7 @@ export const useGameLogic = () => {
     return initialPieces;
   };
 
-  // Función legacy para generar piezas (mantener para compatibilidad)
+  // Función para generar piezas con posiciones fijas que funcionan
   const createChallengeSpecificPieces = (challenge: Challenge): Piece[] => {
     const availableAreaX = 0;
     const availableAreaY = 600; // Inicio del área de piezas disponibles
@@ -182,101 +184,33 @@ export const useGameLogic = () => {
 
     // Las piezas iniciales son genéricas - el usuario las configurará según necesite
 
-    // Posiciones iniciales para diferentes cantidades de piezas
+    // Posiciones fijas que funcionan sin solapamiento
     const getPositionsForPieceCount = (count: number) => {
-      // Espacio disponible para las esquinas superiores izquierdas de las piezas
-      const usableWidth = availableAreaWidth - 2 * margin - pieceSize; // Ancho donde puede empezar una pieza
-      const usableHeight = availableAreaHeight - 2 * margin - pieceSize; // Alto donde puede empezar una pieza
-      
-      console.log(`📏 Positioning ${count} pieces in area [${availableAreaX}, ${availableAreaY}, ${availableAreaWidth}x${availableAreaHeight}]`);
+      console.log(`📏 Using FIXED positions for ${count} pieces`);
       
       switch (count) {
         case 1:
-          const pos1 = { 
-            x: 175, // Posición centrada en área de piezas (350/2 = 175)
-            y: 750,
-            rotation: 0
-          };
-          console.log(`✓ 1 piece at (${pos1.x}, ${pos1.y})`);
-          return [pos1];
+          return [{ x: -22.790523521002072, y: 890.235148963054, rotation: 315 }];
         case 2:
-          // 2 piezas: distribuir horizontalmente en área de piezas (0-350)
-          const pos2 = [
-            { 
-              x: 80, // Primera pieza a la izquierda
-              y: 750,
-              rotation: 0
-            },
-            { 
-              x: 250, // Segunda pieza a la derecha, pero dentro del área de piezas
-              y: 750,
-              rotation: 0
-            }
+          return [
+            { x: -22.790523521002072, y: 890.235148963054, rotation: 315 },
+            { x: 19.908094492477318, y: 901.7378328202477, rotation: 135 }
           ];
-          console.log(`✓ 2 pieces at (${pos2[0].x}, ${pos2[0].y}) and (${pos2[1].x}, ${pos2[1].y})`);
-          return pos2;
         case 3:
-          // 3 piezas: distribuir en área de piezas (0-350)
-          const pos3 = [
-            { 
-              x: 60, // Primera pieza
-              y: 720,
-              rotation: 0
-            },
-            { 
-              x: 180, // Segunda pieza
-              y: 720,
-              rotation: 0
-            },
-            { 
-              x: 300, // Tercera pieza (máximo 350-50=300 para que quepa)
-              y: 720,
-              rotation: 0
-            }
+          return [
+            { x: -22.790523521002072, y: 890.235148963054, rotation: 315 },
+            { x: 19.908094492477318, y: 901.7378328202477, rotation: 135 },
+            { x: 311.70059227993727, y: 929.4115573520081, rotation: 0 }
           ];
-          console.log(`✓ 3 pieces at positions: ${pos3.map(p => `(${p.x},${p.y})`).join(', ')}`);
-          return pos3;
         case 4:
-          // 4 piezas en grid 2x2 dentro del área de piezas (0-350)
-          const pos4 = [
-            { 
-              x: 80, // Primera fila, primera columna
-              y: 680,
-              rotation: 0
-            },
-            { 
-              x: 250, // Primera fila, segunda columna
-              y: 680,
-              rotation: 0
-            },
-            { 
-              x: 80, // Segunda fila, primera columna
-              y: 850,
-              rotation: 0
-            },
-            { 
-              x: 250, // Segunda fila, segunda columna
-              y: 850,
-              rotation: 0
-            }
+          return [
+            { x: -22.790523521002072, y: 890.235148963054, rotation: 315 },
+            { x: 19.908094492477318, y: 901.7378328202477, rotation: 135 },
+            { x: 311.70059227993727, y: 929.4115573520081, rotation: 0 },
+            { x: 619.1306419769896, y: 591.4974267384205, rotation: 315 }
           ];
-          console.log(`✓ 4 pieces in 2x2 grid, Y positions: ${pos4[0].y}, ${pos4[2].y}`);
-          return pos4;
         default:
-          // Para más de 4 piezas, usar un grid automático
-          const positions = [];
-          const cols = Math.min(Math.ceil(Math.sqrt(count)), 4); // Máximo 4 columnas
-          const rows = Math.ceil(count / cols);
-          
-          for (let i = 0; i < count; i++) {
-            const col = i % cols;
-            const row = Math.floor(i / cols);
-            const x = availableAreaX + margin + (usableWidth / (cols - 1 || 1)) * col;
-            const y = availableAreaY + margin + (usableHeight / (rows - 1 || 1)) * row;
-            positions.push({ x, y });
-          }
-          console.log(`✓ ${count} pieces in ${cols}x${rows} grid`);
-          return positions;
+          return [{ x: -22.790523521002072, y: 890.235148963054, rotation: 315 }];
       }
     };
 
@@ -293,7 +227,7 @@ export const useGameLogic = () => {
         id: i + 1,
         x: position.x,
         y: position.y,
-        rotation: position.rotation || 0, // Usar rotación especificada o 0 por defecto
+        rotation: position.rotation, // Usar la rotación exacta de la posición
         placed: false // Las piezas empiezan sin colocar, en el área de piezas disponibles
       };
       
@@ -468,6 +402,10 @@ export const useGameLogic = () => {
             ? { ...piece, rotation: (piece.rotation + 45) % 360 }
             : piece
     ));
+    
+    // Mostrar el número temporalmente
+    setControlActionPieceId(pieceId);
+    setTimeout(() => setControlActionPieceId(null), 1000); // Desaparecer después de 1 segundo
   };
 
   const rotatePieceCounterClockwise = (pieceId: number) => {
@@ -476,6 +414,10 @@ export const useGameLogic = () => {
             ? { ...piece, rotation: (piece.rotation - 45 + 360) % 360 }
             : piece
     ));
+    
+    // Mostrar el número temporalmente
+    setControlActionPieceId(pieceId);
+    setTimeout(() => setControlActionPieceId(null), 1000);
   };
 
   const flipPiece = (pieceId: number) => {
@@ -484,6 +426,10 @@ export const useGameLogic = () => {
             ? togglePieceFace(piece)
             : piece
     ));
+    
+    // Mostrar el número temporalmente
+    setControlActionPieceId(pieceId);
+    setTimeout(() => setControlActionPieceId(null), 1000);
   };
 
   const resetLevel = () => {
@@ -616,10 +562,13 @@ export const useGameLogic = () => {
     showInstructions,
     challenges,
     isLoading,
+    interactingPieceId,
+    controlActionPieceId,
     setPieces,
     setDraggedPiece,
     setDragOffset,
     setShowInstructions,
+    setInteractingPieceId,
     rotatePiece,
     rotatePieceCounterClockwise,
     flipPiece,

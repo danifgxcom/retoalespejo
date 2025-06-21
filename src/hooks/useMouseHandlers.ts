@@ -13,6 +13,7 @@ interface UseMouseHandlersProps {
   canvasRef: React.RefObject<{ getCanvas: () => HTMLCanvasElement | null }>;
   rotatePiece: (pieceId: number) => void;
   geometry: GameGeometry;
+  setInteractingPieceId: (pieceId: number | null) => void;
 }
 
 /**
@@ -36,7 +37,8 @@ export const useMouseHandlers = ({
                                    isPieceHit,
                                    canvasRef,
                                    rotatePiece,
-                                   geometry
+                                   geometry,
+                                   setInteractingPieceId
                                  }: UseMouseHandlersProps) => {
 
   // Helper para obtener coordenadas del mouse en el canvas
@@ -62,39 +64,45 @@ export const useMouseHandlers = ({
     if (clickedPiece) {
       setDraggedPiece(clickedPiece);
       setDragOffset({ x: coords.x - clickedPiece.x, y: coords.y - clickedPiece.y });
+      // No cambiar interactingPieceId aquí - el hover ya lo maneja
     }
   }, [canvasRef, pieces, isPieceHit, setDraggedPiece, setDragOffset]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!draggedPiece) return;
-
     const coords = getCanvasCoordinates(e);
     if (!coords) return;
 
-    const x = coords.x - dragOffset.x;
-    const y = coords.y - dragOffset.y;
+    if (draggedPiece) {
+      // Modo arrastre: mover la pieza
+      const x = coords.x - dragOffset.x;
+      const y = coords.y - dragOffset.y;
 
-    // Crea una pieza temporal para calcular posición usando geometría
-    const tempPiecePosition = pieceToPosition({ ...draggedPiece, x, y });
-    const constrainedPosition = geometry.constrainPiecePosition(
-      tempPiecePosition, 
-      coords.canvas.width, 
-      coords.canvas.height, 
-      true // Respetar el espejo
-    );
+      // Crea una pieza temporal para calcular posición usando geometría
+      const tempPiecePosition = pieceToPosition({ ...draggedPiece, x, y });
+      const constrainedPosition = geometry.constrainPiecePosition(
+        tempPiecePosition, 
+        coords.canvas.width, 
+        coords.canvas.height, 
+        true // Respetar el espejo
+      );
 
-    // Actualiza la posición de la pieza y determina si está en el área de juego
-    setPieces((prevPieces) =>
-        prevPieces.map((p) => {
-          if (p.id === draggedPiece.id) {
-            const updatedPiece = { ...p, x: constrainedPosition.x, y: constrainedPosition.y };
-            updatedPiece.placed = geometry.isPieceInGameArea(updatedPiece);
-            return updatedPiece;
-          }
-          return p;
-        })
-    );
-  }, [draggedPiece, dragOffset, setPieces, canvasRef]);
+      // Actualiza la posición de la pieza y determina si está en el área de juego
+      setPieces((prevPieces) =>
+          prevPieces.map((p) => {
+            if (p.id === draggedPiece.id) {
+              const updatedPiece = { ...p, x: constrainedPosition.x, y: constrainedPosition.y };
+              updatedPiece.placed = geometry.isPieceInGameArea(updatedPiece);
+              return updatedPiece;
+            }
+            return p;
+          })
+      );
+    } else {
+      // Modo hover: mostrar número de pieza cuando se pasa el mouse por encima
+      const hoveredPiece = pieces.slice().reverse().find((piece) => isPieceHit(piece, coords.x, coords.y));
+      setInteractingPieceId(hoveredPiece?.id || null);
+    }
+  }, [draggedPiece, dragOffset, setPieces, canvasRef, pieces, isPieceHit, setInteractingPieceId]);
 
   const handleMouseUp = useCallback(() => {
     if (draggedPiece) {
@@ -136,6 +144,15 @@ export const useMouseHandlers = ({
     setDraggedPiece(null);
   }, [draggedPiece, setDraggedPiece, setPieces, geometry]);
 
+  const handleMouseLeave = useCallback(() => {
+    // Limpiar interacción cuando el mouse sale del canvas
+    setInteractingPieceId(null);
+    // También soltar cualquier pieza que se esté arrastrando
+    if (draggedPiece) {
+      handleMouseUp();
+    }
+  }, [setInteractingPieceId, draggedPiece, handleMouseUp]);
+
   const handleContextMenu = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     e.preventDefault();
     const coords = getCanvasCoordinates(e);
@@ -151,6 +168,7 @@ export const useMouseHandlers = ({
     handleMouseDown,
     handleMouseMove,
     handleMouseUp,
+    handleMouseLeave,
     handleContextMenu,
   };
 };

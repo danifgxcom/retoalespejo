@@ -20,10 +20,13 @@ const MirrorChallengeGame: React.FC = () => {
     showInstructions,
     challenges,
     isLoading,
+    interactingPieceId,
+    controlActionPieceId,
     setPieces,
     setDraggedPiece,
     setDragOffset,
     setShowInstructions,
+    setInteractingPieceId,
     rotatePiece,
     rotatePieceCounterClockwise,
     flipPiece,
@@ -41,6 +44,7 @@ const MirrorChallengeGame: React.FC = () => {
     handleMouseDown,
     handleMouseMove,
     handleMouseUp,
+    handleMouseLeave,
     handleContextMenu,
   } = useMouseHandlers({
     pieces,
@@ -53,6 +57,7 @@ const MirrorChallengeGame: React.FC = () => {
     canvasRef,
     rotatePiece,
     geometry,
+    setInteractingPieceId,
   });
 
   // Inicializar sistema responsive cuando el canvas esté disponible
@@ -130,10 +135,13 @@ const MirrorChallengeGame: React.FC = () => {
                   onMouseDown={handleMouseDown}
                   onMouseMove={handleMouseMove}
                   onMouseUp={handleMouseUp}
+                  onMouseLeave={handleMouseLeave}
                   onContextMenu={handleContextMenu}
                   geometry={geometry}
                   debugMode={debugMode}
                   draggedPiece={draggedPiece}
+                  interactingPieceId={interactingPieceId}
+                  controlActionPieceId={controlActionPieceId}
               />
             </div>
 

@@ -11,10 +11,13 @@ interface GameCanvasProps {
   onMouseDown: (e: React.MouseEvent<HTMLCanvasElement>) => void;
   onMouseMove: (e: React.MouseEvent<HTMLCanvasElement>) => void;
   onMouseUp: (e: React.MouseEvent<HTMLCanvasElement>) => void;
+  onMouseLeave: (e: React.MouseEvent<HTMLCanvasElement>) => void;
   onContextMenu: (e: React.MouseEvent<HTMLCanvasElement>) => void;
   geometry: GameGeometry;
   debugMode?: boolean;
   draggedPiece?: Piece | null;
+  interactingPieceId?: number | null;
+  controlActionPieceId?: number | null;
 }
 
 export interface GameCanvasRef {
@@ -22,7 +25,7 @@ export interface GameCanvasRef {
 }
 
 const GameCanvas = forwardRef<GameCanvasRef, GameCanvasProps>(
-    ({ pieces, currentChallenge, challenges, onMouseDown, onMouseMove, onMouseUp, onContextMenu, geometry, debugMode = false, draggedPiece }, ref) => {
+    ({ pieces, currentChallenge, challenges, onMouseDown, onMouseMove, onMouseUp, onMouseLeave, onContextMenu, geometry, debugMode = false, draggedPiece, interactingPieceId, controlActionPieceId }, ref) => {
       const canvasRef = useRef<HTMLCanvasElement>(null);
       const PIECE_SIZE = 100; // Tamaño lógico de la pieza (25% más grande: 80 * 1.25 = 100)
 
@@ -705,9 +708,9 @@ const GameCanvas = forwardRef<GameCanvasRef, GameCanvasProps>(
           ctx.fillText('CUADRANTE OBJETIVO: (350,600) a (700,1000)', 10, GAME_AREA_HEIGHT + 110);
         }
 
-        // USAR GAMEAREARENDERER para dibujar piezas con etiquetas
+        // USAR GAMEAREARENDERER para dibujar piezas con etiquetas interactivas
         if (gameAreaRenderer) {
-          gameAreaRenderer.drawGamePieces(ctx, pieces, draggedPiece, debugMode, true);
+          gameAreaRenderer.drawGamePieces(ctx, pieces, draggedPiece, debugMode, debugMode, interactingPieceId, controlActionPieceId);
         } else {
           // Fallback legacy
           if (pieces && pieces.length > 0) {
@@ -807,7 +810,7 @@ const GameCanvas = forwardRef<GameCanvasRef, GameCanvasProps>(
                 onMouseDown={onMouseDown}
                 onMouseMove={onMouseMove}
                 onMouseUp={onMouseUp}
-                onMouseLeave={onMouseUp} // Importante para que no se quede una pieza "pegada" al cursor
+                onMouseLeave={onMouseLeave}
                 onContextMenu={onContextMenu}
             />
           </div>
