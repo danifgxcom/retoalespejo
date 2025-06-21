@@ -137,18 +137,12 @@ export const useGameLogic = () => {
     
     // Obtener posiciones relativas y convertirlas a absolutas
     const relativePositions = relativePiecePositions.getPositionsForPieceCount(challenge.piecesNeeded);
-    
-    // Extraer los tipos de piezas requeridos del challenge
-    const requiredPieceTypes = challenge.objective.playerPieces.map(piece => ({
-      type: piece.type,
-      face: piece.face
-    }));
 
     console.log(`📏 Creating ${challenge.piecesNeeded} responsive pieces`);
 
     relativePositions.forEach((relPos, index) => {
-      const requiredType = requiredPieceTypes[index] || requiredPieceTypes[0];
-      const template = createPieceTemplate(requiredType.type, requiredType.face);
+      const pieceType = index % 2 === 0 ? 'A' : 'B'; // Alternar A, B, A, B...
+      const template = createPieceTemplate(pieceType, 'front'); // SIEMPRE empezar con cara front
       
       // Convertir coordenadas relativas a absolutas actuales
       const absolutePos = responsiveCanvas.relativeToAbsolute({
@@ -186,11 +180,7 @@ export const useGameLogic = () => {
 
     const initialPieces: Piece[] = [];
 
-    // Extraer los tipos de piezas requeridos del challenge
-    const requiredPieceTypes = challenge.objective.playerPieces.map(piece => ({
-      type: piece.type,
-      face: piece.face
-    }));
+    // Las piezas iniciales son genéricas - el usuario las configurará según necesite
 
     // Posiciones iniciales para diferentes cantidades de piezas
     const getPositionsForPieceCount = (count: number) => {
@@ -203,71 +193,71 @@ export const useGameLogic = () => {
       switch (count) {
         case 1:
           const pos1 = { 
-            x: 80, // Posición centrada en área de piezas
-            y: 650,
-            rotation: 45
+            x: 175, // Posición centrada en área de piezas (350/2 = 175)
+            y: 750,
+            rotation: 0
           };
           console.log(`✓ 1 piece at (${pos1.x}, ${pos1.y})`);
           return [pos1];
         case 2:
-          // 2 piezas: distribuir horizontalmente en área de piezas
+          // 2 piezas: distribuir horizontalmente en área de piezas (0-350)
           const pos2 = [
             { 
-              x: 100, // Primera pieza a la izquierda
+              x: 80, // Primera pieza a la izquierda
               y: 750,
-              rotation: 45
+              rotation: 0
             },
             { 
-              x: 350, // Segunda pieza a la derecha
+              x: 250, // Segunda pieza a la derecha, pero dentro del área de piezas
               y: 750,
-              rotation: 225
+              rotation: 0
             }
           ];
           console.log(`✓ 2 pieces at (${pos2[0].x}, ${pos2[0].y}) and (${pos2[1].x}, ${pos2[1].y})`);
           return pos2;
         case 3:
-          // 3 piezas: distribuir en fila en área de piezas
+          // 3 piezas: distribuir en área de piezas (0-350)
           const pos3 = [
             { 
-              x: 80, // Primera pieza
-              y: 750,
-              rotation: 45
+              x: 60, // Primera pieza
+              y: 720,
+              rotation: 0
             },
             { 
-              x: 250, // Segunda pieza
-              y: 750,
-              rotation: 225
+              x: 180, // Segunda pieza
+              y: 720,
+              rotation: 0
             },
             { 
-              x: 420, // Tercera pieza
-              y: 750,
-              rotation: 45
+              x: 300, // Tercera pieza (máximo 350-50=300 para que quepa)
+              y: 720,
+              rotation: 0
             }
           ];
           console.log(`✓ 3 pieces at positions: ${pos3.map(p => `(${p.x},${p.y})`).join(', ')}`);
           return pos3;
         case 4:
-          // 4 piezas en grid 2x2 dentro del área de piezas
+          // 4 piezas en grid 2x2 dentro del área de piezas (0-350)
           const pos4 = [
             { 
-              x: 120, // Primera fila, primera columna
+              x: 80, // Primera fila, primera columna
               y: 680,
-              rotation: 45
+              rotation: 0
             },
             { 
-              x: 350, // Primera fila, segunda columna
+              x: 250, // Primera fila, segunda columna
               y: 680,
-              rotation: 225
+              rotation: 0
             },
             { 
-              x: 120, // Segunda fila, primera columna
+              x: 80, // Segunda fila, primera columna
               y: 850,
-              rotation: 225
+              rotation: 0
             },
             { 
-              x: 350, // Segunda fila, segunda columna
+              x: 250, // Segunda fila, segunda columna
               y: 850,
-              rotation: 45
+              rotation: 0
             }
           ];
           console.log(`✓ 4 pieces in 2x2 grid, Y positions: ${pos4[0].y}, ${pos4[2].y}`);
@@ -292,10 +282,10 @@ export const useGameLogic = () => {
 
     const positions = getPositionsForPieceCount(challenge.piecesNeeded);
 
-    // Crear las piezas según los tipos requeridos por el challenge
+    // Crear piezas genéricas con cara front - el usuario las configurará como necesite
     for (let i = 0; i < challenge.piecesNeeded; i++) {
-      const requiredType = requiredPieceTypes[i] || requiredPieceTypes[0]; // Fallback al primer tipo
-      const template = createPieceTemplate(requiredType.type, requiredType.face);
+      const pieceType = i % 2 === 0 ? 'A' : 'B'; // Alternar A, B, A, B...
+      const template = createPieceTemplate(pieceType, 'front'); // SIEMPRE empezar con cara front
       const position = positions[i];
 
       const piece = {
