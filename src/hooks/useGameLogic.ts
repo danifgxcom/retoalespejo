@@ -168,7 +168,7 @@ export const useGameLogic = () => {
         placed: false
       };
       
-      console.log(`🧩 Responsive piece ${piece.id} (${piece.type}) at (${Math.round(piece.x)}, ${Math.round(piece.y)}) R:${piece.rotation}°`);
+      console.log(`🧩 Responsive piece ${piece.id} (${piece.type}, ${piece.face}) at (${Math.round(piece.x)}, ${Math.round(piece.y)}) R:${piece.rotation}°`);
       initialPieces.push(piece);
     });
 
@@ -307,7 +307,7 @@ export const useGameLogic = () => {
         placed: false // Las piezas empiezan sin colocar, en el área de piezas disponibles
       };
       
-      console.log(`🧩 Creating piece ${piece.id} (${piece.type}) at (${piece.x}, ${piece.y})`);
+      console.log(`🧩 Creating piece ${piece.id} (${piece.type}, ${piece.face}) at (${piece.x}, ${piece.y})`);
       initialPieces.push(piece);
     }
 
@@ -464,9 +464,8 @@ export const useGameLogic = () => {
 
     const challenge = challenges[currentChallenge];
     if (challenge) {
-      // Usar sistema responsive si está disponible, sino fallback al legacy
-      // SIEMPRE usar el sistema responsive para posicionamiento consistente
-      const newPieces = responsiveCanvas ? createResponsivePieces(challenge) : createChallengeSpecificPieces(challenge);
+      // Usar siempre el sistema con posiciones fijas corregidas para mejor consistencia
+      const newPieces = createChallengeSpecificPieces(challenge);
       console.log('🔄 Setting pieces for challenge:', challenge.id, 'pieces count:', newPieces.length);
       setPieces(newPieces);
     }
@@ -500,8 +499,8 @@ export const useGameLogic = () => {
   const resetLevel = () => {
     const challenge = challenges[currentChallenge];
     if (challenge) {
-      // SIEMPRE usar el sistema responsive para posicionamiento consistente
-      const newPieces = responsiveCanvas ? createResponsivePieces(challenge) : createChallengeSpecificPieces(challenge);
+      // Usar siempre el sistema con posiciones fijas corregidas para mejor consistencia
+      const newPieces = createChallengeSpecificPieces(challenge);
       console.log('🔄 Setting pieces for challenge:', challenge.id, 'pieces count:', newPieces.length);
       setPieces(newPieces);
     }
@@ -558,23 +557,12 @@ export const useGameLogic = () => {
       };
     }
 
-    // Verificar si las piezas colocadas coinciden con los tipos requeridos
-    const targetPieces = challenge.objective.playerPieces;
-    const requiredPieceTypes = targetPieces.map(p => ({ type: p.type, face: p.face }));
-    const placedPieceTypes = placedPieces.map(p => ({ type: p.type, face: p.face }));
-
-    // Verificar que tengamos todos los tipos requeridos
-    for (const requiredType of requiredPieceTypes) {
-      const hasMatchingPiece = placedPieceTypes.some(placedType => 
-        placedType.type === requiredType.type && placedType.face === requiredType.face
-      );
-
-      if (!hasMatchingPiece) {
-        return {
-          isCorrect: false,
-          message: `Falta una pieza de tipo ${requiredType.type} cara ${requiredType.face}.`
-        };
-      }
+    // Si no hay piezas colocadas, definitivamente no está resuelto
+    if (placedPieces.length === 0) {
+      return {
+        isCorrect: false,
+        message: "Debes colocar piezas en el área de juego para resolver el desafío."
+      };
     }
 
     // Verificar que las piezas estén conectadas
@@ -591,6 +579,37 @@ export const useGameLogic = () => {
         isCorrect: false,
         message: "Al menos una pieza debe tocar el espejo."
       };
+    }
+
+    // Verificar si las piezas colocadas coinciden con los tipos, caras Y posiciones requeridas
+    const targetPieces = challenge.objective.playerPieces;
+    
+    // Para cada pieza objetivo, verificar que haya una pieza colocada que coincida
+    const tolerance = 50; // Tolerancia de posición en píxeles
+    const rotationTolerance = 45; // Tolerancia de rotación en grados
+    
+    for (const targetPiece of targetPieces) {
+      const matchingPiece = placedPieces.find(placedPiece => {
+        const typeMatch = placedPiece.type === targetPiece.type;
+        const faceMatch = placedPiece.face === targetPiece.face;
+        
+        const xDiff = Math.abs(placedPiece.x - targetPiece.x);
+        const yDiff = Math.abs(placedPiece.y - targetPiece.y);
+        const positionMatch = xDiff <= tolerance && yDiff <= tolerance;
+        
+        const rotationDiff = Math.abs(placedPiece.rotation - targetPiece.rotation);
+        const normalizedRotationDiff = Math.min(rotationDiff, 360 - rotationDiff);
+        const rotationMatch = normalizedRotationDiff <= rotationTolerance;
+        
+        return typeMatch && faceMatch && positionMatch && rotationMatch;
+      });
+      
+      if (!matchingPiece) {
+        return {
+          isCorrect: false,
+          message: `Falta una pieza de tipo ${targetPiece.type} cara ${targetPiece.face} en la posición correcta.`
+        };
+      }
     }
 
     return {

@@ -17,23 +17,23 @@ export class RelativePiecePositions {
   private readonly basePieceSize = 0.071; // 100/1400 ≈ 0.071
 
   /**
-   * Convierte las coordenadas absolutas del snapshot a relativas
-   * Snapshot original: x=-24, y=616, etc. con canvas 1400x1000
+   * Convierte coordenadas absolutas válidas a relativas
+   * Posiciones actualizadas que quedan dentro del área de piezas válida
    */
   private convertSnapshotToRelative() {
     const baseWidth = 1400;
     const baseHeight = 1000;
     
-    // Coordenadas del snapshot que funcionan - las del usuario
-    const snapshotPositions = [
-      { x: -24, y: 616, rotation: 45 },   // Pieza 1
-      { x: 243, y: 921, rotation: 225 },  // Pieza 2  
-      { x: 556, y: 926, rotation: 225 },  // Pieza 3
-      { x: 285, y: 614, rotation: 45 }    // Pieza 4
+    // Coordenadas válidas dentro del área de piezas (0-700, 600-1000)
+    const validPositions = [
+      { x: 120, y: 680, rotation: 45 },   // Pieza 1 - esquina superior izquierda
+      { x: 350, y: 680, rotation: 225 },  // Pieza 2 - esquina superior derecha  
+      { x: 120, y: 850, rotation: 225 },  // Pieza 3 - esquina inferior izquierda
+      { x: 350, y: 850, rotation: 45 }    // Pieza 4 - esquina inferior derecha
     ];
 
-    // Convertir a coordenadas relativas basadas en las dimensiones originales
-    return snapshotPositions.map(pos => ({
+    // Convertir a coordenadas relativas basadas en las dimensiones del canvas
+    return validPositions.map(pos => ({
       x: pos.x / baseWidth,          // Relativo al ancho total
       y: pos.y / baseHeight,         // Relativo al alto total  
       rotation: pos.rotation,
