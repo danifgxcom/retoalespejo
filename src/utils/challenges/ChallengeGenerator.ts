@@ -1,4 +1,4 @@
-import { GameGeometry, PiecePosition } from './GameGeometry.ts';
+import { GameGeometry, PiecePosition } from './geometry/GameGeometry';
 import { Challenge, ObjectivePattern } from '../components/ChallengeCard';
 
 export class ChallengeGenerator {

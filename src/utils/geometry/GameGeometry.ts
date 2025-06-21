@@ -140,6 +140,162 @@ export class GameGeometry {
   }
 
   /**
+   * Obtiene los bordes de una pieza como segmentos de línea
+   */
+  getPieceEdges(piece: PiecePosition): Array<{
+    start: [number, number];
+    end: [number, number];
+    direction: [number, number];
+    length: number;
+    type: 'straight' | 'diagonal';
+  }> {
+    const vertices = this.getPieceVertices(piece);
+    const edges = [];
+
+    for (let i = 0; i < vertices.length - 1; i++) {
+      const start = vertices[i];
+      const end = vertices[i + 1];
+      
+      const dx = end[0] - start[0];
+      const dy = end[1] - start[1];
+      const length = Math.sqrt(dx * dx + dy * dy);
+      
+      // Vector dirección normalizado
+      const direction: [number, number] = length > 0 ? [dx / length, dy / length] : [0, 0];
+      
+      // Determinar tipo de borde
+      const angle = Math.abs(Math.atan2(dy, dx));
+      const isHorizontal = angle < Math.PI / 8 || angle > 7 * Math.PI / 8;
+      const isVertical = angle > 3 * Math.PI / 8 && angle < 5 * Math.PI / 8;
+      const type = (isHorizontal || isVertical) ? 'straight' : 'diagonal';
+
+      edges.push({
+        start,
+        end,
+        direction,
+        length,
+        type
+      });
+    }
+
+    return edges;
+  }
+
+  /**
+   * Encuentra bordes compatibles entre dos piezas que pueden formar continuidad
+   */
+  findCompatibleEdges(piece1: PiecePosition, piece2: PiecePosition): Array<{
+    edge1: { start: [number, number]; end: [number, number]; direction: [number, number] };
+    edge2: { start: [number, number]; end: [number, number]; direction: [number, number] };
+    alignmentScore: number;
+    continuityScore: number;
+  }> {
+    const edges1 = this.getPieceEdges(piece1);
+    const edges2 = this.getPieceEdges(piece2);
+    const compatiblePairs = [];
+
+    for (const edge1 of edges1) {
+      for (const edge2 of edges2) {
+        // Solo considerar bordes del mismo tipo
+        if (edge1.type !== edge2.type) continue;
+
+        // Calcular similitud de dirección (deben ser opuestas para conectar)
+        const dotProduct = edge1.direction[0] * edge2.direction[0] + edge1.direction[1] * edge2.direction[1];
+        const isOpposite = dotProduct < -0.8; // Direcciones opuestas
+        
+        if (!isOpposite) continue;
+
+        // Calcular score de alineación (qué tan cerca están de estar en la misma línea)
+        const alignmentScore = this.calculateEdgeAlignment(edge1, edge2);
+        
+        // Calcular score de continuidad (qué tan bien se conectarían)
+        const continuityScore = this.calculateEdgeContinuity(edge1, edge2);
+
+        // Ser más permisivo para detectar gaps pequeños que necesitan corrección
+        if (alignmentScore > 0.5 && continuityScore > 0.4) {
+          compatiblePairs.push({
+            edge1,
+            edge2,
+            alignmentScore,
+            continuityScore
+          });
+        }
+      }
+    }
+
+    // Ordenar por mejor score combinado
+    return compatiblePairs.sort((a, b) => 
+      (b.alignmentScore * b.continuityScore) - (a.alignmentScore * a.continuityScore)
+    );
+  }
+
+  /**
+   * Calcula qué tan alineados están dos bordes (0-1, siendo 1 perfectamente alineados)
+   */
+  private calculateEdgeAlignment(edge1: any, edge2: any): number {
+    // Calcular la distancia entre las líneas extendidas
+    const midpoint1 = [(edge1.start[0] + edge1.end[0]) / 2, (edge1.start[1] + edge1.end[1]) / 2];
+    const midpoint2 = [(edge2.start[0] + edge2.end[0]) / 2, (edge2.start[1] + edge2.end[1]) / 2];
+    
+    // Vector entre puntos medios
+    const connectionVector = [midpoint2[0] - midpoint1[0], midpoint2[1] - midpoint1[1]];
+    const connectionLength = Math.sqrt(connectionVector[0] * connectionVector[0] + connectionVector[1] * connectionVector[1]);
+    
+    if (connectionLength === 0) return 1; // Están en el mismo punto
+    
+    // Normalizar vector de conexión
+    const normalizedConnection = [connectionVector[0] / connectionLength, connectionVector[1] / connectionLength];
+    
+    // Calcular qué tan perpendicular es la conexión a la dirección del borde
+    const perpendicularity = Math.abs(normalizedConnection[0] * edge1.direction[0] + normalizedConnection[1] * edge1.direction[1]);
+    
+    // Mejor alineación = conexión más perpendicular al borde
+    return 1 - perpendicularity;
+  }
+
+  /**
+   * Calcula qué tan bien se conectarían dos bordes en términos de continuidad
+   */
+  private calculateEdgeContinuity(edge1: any, edge2: any): number {
+    // Distancia entre los bordes más cercanos
+    const distances = [
+      this.distanceBetweenPoints(edge1.start, edge2.start),
+      this.distanceBetweenPoints(edge1.start, edge2.end),
+      this.distanceBetweenPoints(edge1.end, edge2.start),
+      this.distanceBetweenPoints(edge1.end, edge2.end)
+    ];
+    
+    const minDistance = Math.min(...distances);
+    
+    // Ser más agresivo con el snap para gaps pequeños pero visibles
+    const maxAcceptableDistance = 15; // Reducido de 50 a 15 pixels para ser más preciso
+    
+    // Score basado en distancia con curva más agresiva para gaps pequeños
+    let distanceScore;
+    if (minDistance <= 5) {
+      distanceScore = 1; // Perfecta conexión
+    } else if (minDistance <= 10) {
+      distanceScore = 0.9; // Muy buena conexión
+    } else {
+      distanceScore = Math.max(0, 1 - minDistance / maxAcceptableDistance);
+    }
+    
+    // Score basado en similitud de longitud
+    const lengthRatio = Math.min(edge1.length, edge2.length) / Math.max(edge1.length, edge2.length);
+    
+    return (distanceScore * 0.8) + (lengthRatio * 0.2); // Priorizamos más la distancia
+  }
+
+  /**
+   * Calcula la distancia entre dos puntos
+   */
+  private distanceBetweenPoints(point1: [number, number], point2: [number, number]): number {
+    const dx = point2[0] - point1[0];
+    const dy = point2[1] - point1[1];
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+
+  /**
    * Calcula si dos piezas se solapan usando detección de colisión precisa entre polígonos
    */
   doPiecesOverlap(piece1: PiecePosition, piece2: PiecePosition): boolean {
@@ -150,9 +306,14 @@ export class GameGeometry {
   }
 
   /**
-   * Algoritmo SAT (Separating Axes Theorem) para detectar colisión entre polígonos
+   * Calcula la profundidad de penetración entre dos piezas
+   * Retorna 0 si no se solapan, >0 si hay penetración real
    */
-  private doPolygonsOverlap(vertices1: Array<[number, number]>, vertices2: Array<[number, number]>): boolean {
+  getPenetrationDepth(piece1: PiecePosition, piece2: PiecePosition): number {
+    const vertices1 = this.getPieceVertices(piece1);
+    const vertices2 = this.getPieceVertices(piece2);
+
+    let minOverlap = Infinity;
     const polygons = [vertices1, vertices2];
 
     for (const polygon of polygons) {
@@ -174,8 +335,71 @@ export class GameGeometry {
         const projection1 = this.projectPolygon(vertices1, normal);
         const projection2 = this.projectPolygon(vertices2, normal);
 
-        // Si hay separación en este eje, no hay colisión
-        if (projection1.max < projection2.min || projection2.max < projection1.min) {
+        // Calcular el solapamiento en este eje
+        const overlap = Math.min(projection1.max, projection2.max) - Math.max(projection1.min, projection2.min);
+
+        // Si hay separación en este eje, no hay penetración
+        if (overlap <= 0) {
+          return 0;
+        }
+
+        // Rastrear el solapamiento mínimo (profundidad de penetración)
+        minOverlap = Math.min(minOverlap, overlap);
+      }
+    }
+
+    return minOverlap === Infinity ? 0 : minOverlap;
+  }
+
+  /**
+   * Verifica si dos piezas tienen penetración real (problemática)
+   * vs. solo contacto de bordes (acceptable)
+   */
+  doPiecesOverlapSignificantly(piece1: PiecePosition, piece2: PiecePosition): boolean {
+    const penetrationDepth = this.getPenetrationDepth(piece1, piece2);
+    const penetrationThreshold = 3; // Más de 3 pixels = penetración real problemática
+    
+    const isSignificant = penetrationDepth > penetrationThreshold;
+    
+    if (isSignificant) {
+      console.log(`⚠️ SIGNIFICANT OVERLAP: ${penetrationDepth.toFixed(2)}px penetration (threshold: ${penetrationThreshold}px)`);
+    }
+    
+    return isSignificant;
+  }
+
+  /**
+   * Algoritmo SAT (Separating Axes Theorem) para detectar colisión entre polígonos
+   * Incluye tolerancia para permitir piezas que se tocan por los bordes sin considerarse solapadas
+   */
+  private doPolygonsOverlap(vertices1: Array<[number, number]>, vertices2: Array<[number, number]>): boolean {
+    const polygons = [vertices1, vertices2];
+    const overlapTolerance = 2; // Tolerancia de 2 pixels para solapamientos mínimos
+
+    for (const polygon of polygons) {
+      for (let i = 0; i < polygon.length - 1; i++) {
+        const current = polygon[i];
+        const next = polygon[i + 1];
+
+        // Calcular el vector normal (perpendicular al borde)
+        const edge = [next[0] - current[0], next[1] - current[1]];
+        const normal = [-edge[1], edge[0]]; // Perpendicular 90 grados
+
+        // Normalizar el vector normal
+        const length = Math.sqrt(normal[0] * normal[0] + normal[1] * normal[1]);
+        if (length === 0) continue;
+        normal[0] /= length;
+        normal[1] /= length;
+
+        // Proyectar ambos polígonos sobre este eje
+        const projection1 = this.projectPolygon(vertices1, normal);
+        const projection2 = this.projectPolygon(vertices2, normal);
+
+        // Calcular el solapamiento en este eje
+        const overlap = Math.min(projection1.max, projection2.max) - Math.max(projection1.min, projection2.min);
+
+        // Si hay separación significativa en este eje, no hay colisión
+        if (overlap < -overlapTolerance) {
           return false;
         }
       }
@@ -210,20 +434,42 @@ export class GameGeometry {
   }
 
   /**
-   * Verifica si dos piezas se tocan sin solaparse usando detección precisa
+   * Verifica si dos piezas se tocan correctamente (contacto perfecto sin gaps visibles)
+   * La conexión debe ser exacta para que no aparezca línea blanca entre las piezas
    */
   doPiecesTouch(piece1: PiecePosition, piece2: PiecePosition): boolean {
-    // Verificar si se solapan (si se solapan, no solo se tocan)
-    if (this.doPiecesOverlap(piece1, piece2)) {
-      return false; // Si se solapan, no se consideran "tocándose"
+    const penetrationDepth = this.getPenetrationDepth(piece1, piece2);
+    
+    // Si hay penetración real (> 3px), no es conexión válida
+    if (penetrationDepth > 3) {
+      console.log(`❌ TOUCH CHECK: Pieces have real penetration: ${penetrationDepth.toFixed(3)}px`);
+      return false;
     }
 
-    // Calcular la distancia mínima entre las dos piezas
+    // Si hay contacto/solapamiento mínimo (0.05-3px), es conexión perfecta
+    if (penetrationDepth >= 0.05) {
+      console.log(`✅ TOUCH CHECK: Perfect contact with minimal overlap: ${penetrationDepth.toFixed(3)}px`);
+      return true;
+    }
+
+    // Si no hay solapamiento, verificar si están muy cerca (pero esto indica gap visible)
     const minDistance = this.getMinDistanceBetweenPieces(piece1, piece2);
     
-    // Las piezas se tocan si están muy cerca (tolerancia pequeña)
-    const tolerance = 5; // Tolerancia para considerar que se tocan
-    return minDistance <= tolerance;
+    // Gap visible = línea blanca = conexión inválida (más estricto)
+    if (minDistance > 0.5) {
+      console.log(`❌ TOUCH CHECK: Visible gap between pieces: ${minDistance.toFixed(3)}px`);
+      return false;
+    }
+
+    // Contacto ultra-cercano (gap micro-invisible)
+    if (minDistance <= 0.5) {
+      console.log(`✅ TOUCH CHECK: Ultra-close contact (gap: ${minDistance.toFixed(3)}px)`);
+      return true;
+    }
+
+    // Contacto exacto sin gap ni penetración
+    console.log(`✅ TOUCH CHECK: Exact contact without gap or penetration`);
+    return true;
   }
 
   /**
@@ -390,63 +636,373 @@ export class GameGeometry {
   }
 
   /**
-   * Ajusta automáticamente la posición de una pieza para que se conecte perfectamente
-   * con otras piezas cercanas o con el espejo
+   * Ajusta automáticamente la posición de una pieza usando snap inteligente geométrico
+   * Detecta bordes compatibles y los alinea para formar continuidad perfecta
    */
-  snapPieceToNearbyTargets(piece: PiecePosition, otherPieces: PiecePosition[], snapDistance: number = 15): PiecePosition {
+  snapPieceToNearbyTargets(piece: PiecePosition, otherPieces: PiecePosition[], snapDistance: number = 30): PiecePosition {
     let snappedPiece = { ...piece };
-    const pieceBbox = this.getPieceBoundingBox(piece);
     
-    // 1. Snap al espejo si está cerca
-    const distanceToMirror = Math.abs(pieceBbox.right - this.config.mirrorLineX);
-    if (distanceToMirror <= snapDistance) {
-      // Calcular nueva posición X para que el bounding box toque exactamente el espejo
-      const adjustment = this.config.mirrorLineX - pieceBbox.right;
-      snappedPiece.x = piece.x + adjustment;
-      console.log(`🧲 SNAP TO MIRROR: Adjusted piece by ${adjustment.toFixed(2)} pixels`);
+    console.log(`🧲 INTELLIGENT SNAP: Starting for piece at (${piece.x.toFixed(1)}, ${piece.y.toFixed(1)})`);
+    
+    // 1. Primero verificar si hay gaps pequeños que necesitan cierre inmediato
+    for (const otherPiece of otherPieces) {
+      const gapDistance = this.getMinDistanceBetweenPieces(snappedPiece, otherPiece);
+      
+      if (gapDistance > 0.1 && gapDistance <= 10) { // Gap visible (incluso micro-gaps)
+        console.log(`🚨 DETECTED GAP: ${gapDistance.toFixed(3)}px - applying ultra-precise snap`);
+        const closeGapPosition = this.closeSmallGap(snappedPiece, otherPiece, gapDistance);
+        if (closeGapPosition) {
+          snappedPiece = closeGapPosition;
+          console.log(`✨ GAP CLOSED: Moved piece to eliminate ${gapDistance.toFixed(3)}px gap`);
+          
+          // Verificar el resultado y ajustar si es necesario
+          const finalGap = this.getMinDistanceBetweenPieces(snappedPiece, otherPiece);
+          if (finalGap > 0.5) {
+            console.log(`🔧 FINE-TUNING: Final gap ${finalGap.toFixed(3)}px still visible, applying precision adjustment`);
+            snappedPiece = this.applyPrecisionAdjustment(snappedPiece, otherPiece, finalGap);
+          }
+          break; // Solo aplicar el primer cierre exitoso
+        }
+      }
     }
     
-    // 2. Snap a otras piezas cercanas
+    // 2. Snap inteligente basado en continuidad geométrica
+    let bestAlignment: any = null;
+    let bestScore = 0;
+    
     for (const otherPiece of otherPieces) {
-      if (otherPiece === piece) continue;
+      const compatibleEdges = this.findCompatibleEdges(snappedPiece, otherPiece);
       
-      const otherBbox = this.getPieceBoundingBox(otherPiece);
-      const currentPieceBbox = this.getPieceBoundingBox(snappedPiece);
-      
-      // Snap horizontal (side-by-side)
-      const horizontalGapLeft = Math.abs(currentPieceBbox.right - otherBbox.left);
-      const horizontalGapRight = Math.abs(otherBbox.right - currentPieceBbox.left);
-      
-      if (horizontalGapLeft <= snapDistance && this.piecesOverlapVertically(currentPieceBbox, otherBbox)) {
-        // Snap pieza actual a la izquierda de la otra pieza
-        const adjustment = otherBbox.left - currentPieceBbox.right;
-        snappedPiece.x = snappedPiece.x + adjustment;
-        console.log(`🧲 SNAP HORIZONTAL LEFT: Adjusted piece by ${adjustment.toFixed(2)} pixels`);
-      } else if (horizontalGapRight <= snapDistance && this.piecesOverlapVertically(currentPieceBbox, otherBbox)) {
-        // Snap pieza actual a la derecha de la otra pieza
-        const adjustment = otherBbox.right - currentPieceBbox.left;
-        snappedPiece.x = snappedPiece.x + adjustment;
-        console.log(`🧲 SNAP HORIZONTAL RIGHT: Adjusted piece by ${adjustment.toFixed(2)} pixels`);
+      for (const edgePair of compatibleEdges) {
+        const combinedScore = edgePair.alignmentScore * edgePair.continuityScore;
+        
+        if (combinedScore > bestScore) {
+          // Calcular la posición necesaria para alinear perfectamente estos bordes
+          const alignedPosition = this.calculateEdgeAlignmentPosition(snappedPiece, otherPiece, edgePair);
+          
+          if (alignedPosition) {
+            bestAlignment = {
+              position: alignedPosition,
+              score: combinedScore,
+              edgePair,
+              targetPiece: otherPiece
+            };
+            bestScore = combinedScore;
+          }
+        }
       }
+    }
+    
+    // Aplicar la mejor alineación encontrada (umbral más bajo)
+    if (bestAlignment && bestScore > 0.3) {
+      snappedPiece = bestAlignment.position;
+      console.log(`🎯 GEOMETRIC ALIGNMENT: Applied edge-based snap with score ${bestScore.toFixed(3)}`);
       
-      // Snap vertical (top-bottom)
-      const verticalGapTop = Math.abs(currentPieceBbox.bottom - otherBbox.top);
-      const verticalGapBottom = Math.abs(otherBbox.bottom - currentPieceBbox.top);
-      
-      if (verticalGapTop <= snapDistance && this.piecesOverlapHorizontally(currentPieceBbox, otherBbox)) {
-        // Snap pieza actual arriba de la otra pieza
-        const adjustment = otherBbox.top - currentPieceBbox.bottom;
-        snappedPiece.y = snappedPiece.y + adjustment;
-        console.log(`🧲 SNAP VERTICAL TOP: Adjusted piece by ${adjustment.toFixed(2)} pixels`);
-      } else if (verticalGapBottom <= snapDistance && this.piecesOverlapHorizontally(currentPieceBbox, otherBbox)) {
-        // Snap pieza actual debajo de la otra pieza
-        const adjustment = otherBbox.bottom - currentPieceBbox.top;
-        snappedPiece.y = snappedPiece.y + adjustment;
-        console.log(`🧲 SNAP VERTICAL BOTTOM: Adjusted piece by ${adjustment.toFixed(2)} pixels`);
+      // Verificar y ajustar la penetración final
+      const finalPenetration = this.getPenetrationDepth(snappedPiece, bestAlignment.targetPiece);
+      if (finalPenetration > 3) {
+        console.log(`🔧 FINE-TUNING: Adjusting penetration from ${finalPenetration.toFixed(2)}px`);
+        snappedPiece = this.adjustToPerfectContact(snappedPiece, bestAlignment.targetPiece);
+      }
+    } else {
+      // Fallback al snap tradicional por bounding box si no hay alineación geométrica
+      console.log(`📦 FALLBACK: Using traditional bounding box snap`);
+      snappedPiece = this.traditionalSnapToNearbyTargets(snappedPiece, otherPieces, snapDistance);
+    }
+    
+    // 3. Snap al espejo si está cerca
+    const pieceBbox = this.getPieceBoundingBox(snappedPiece);
+    const distanceToMirror = Math.abs(pieceBbox.right - this.config.mirrorLineX);
+    if (distanceToMirror <= snapDistance) {
+      const adjustment = this.config.mirrorLineX - pieceBbox.right;
+      snappedPiece.x = snappedPiece.x + adjustment;
+      console.log(`🪞 MIRROR SNAP: Perfect contact, adjusted by ${adjustment.toFixed(2)} pixels`);
+    }
+    
+    console.log(`🧲 FINAL POSITION: (${snappedPiece.x.toFixed(1)}, ${snappedPiece.y.toFixed(1)})`);
+    return snappedPiece;
+  }
+
+  /**
+   * Cierra gaps pequeños entre piezas moviendo una hacia la otra con precisión sub-pixel
+   */
+  private closeSmallGap(movingPiece: PiecePosition, targetPiece: PiecePosition, gapDistance: number): PiecePosition | null {
+    // Encontrar los puntos más cercanos entre las piezas para movimiento más preciso
+    const movingVertices = this.getPieceVertices(movingPiece);
+    const targetVertices = this.getPieceVertices(targetPiece);
+    
+    let minDistance = Infinity;
+    let closestMovingPoint: [number, number] | null = null;
+    let closestTargetPoint: [number, number] | null = null;
+    
+    // Encontrar los puntos más cercanos entre ambas piezas
+    for (const movingVertex of movingVertices) {
+      for (const targetVertex of targetVertices) {
+        const distance = this.distanceBetweenPoints(movingVertex, targetVertex);
+        if (distance < minDistance) {
+          minDistance = distance;
+          closestMovingPoint = movingVertex;
+          closestTargetPoint = targetVertex;
+        }
+      }
+    }
+    
+    if (!closestMovingPoint || !closestTargetPoint) return null;
+    
+    // Calcular el vector de movimiento necesario para contacto perfecto
+    const moveVector = [
+      closestTargetPoint[0] - closestMovingPoint[0],
+      closestTargetPoint[1] - closestMovingPoint[1]
+    ];
+    
+    // Aplicar solo el 95% del movimiento para evitar penetración excesiva pero eliminar gap
+    const adjustmentFactor = 0.95;
+    
+    return {
+      ...movingPiece,
+      x: movingPiece.x + moveVector[0] * adjustmentFactor,
+      y: movingPiece.y + moveVector[1] * adjustmentFactor
+    };
+  }
+
+  /**
+   * Aplica ajuste de precisión final para eliminar gaps residuales
+   */
+  private applyPrecisionAdjustment(movingPiece: PiecePosition, targetPiece: PiecePosition, finalGap: number): PiecePosition {
+    // Para gaps residuales muy pequeños, aplicar movimiento mínimo adicional
+    const movingBbox = this.getPieceBoundingBox(movingPiece);
+    const targetBbox = this.getPieceBoundingBox(targetPiece);
+    
+    const centerMoving = {
+      x: (movingBbox.left + movingBbox.right) / 2,
+      y: (movingBbox.top + movingBbox.bottom) / 2
+    };
+    const centerTarget = {
+      x: (targetBbox.left + targetBbox.right) / 2,
+      y: (targetBbox.top + targetBbox.bottom) / 2
+    };
+    
+    const dx = centerTarget.x - centerMoving.x;
+    const dy = centerTarget.y - centerMoving.y;
+    
+    // Movimiento mínimo para cerrar el gap residual
+    const microAdjustment = finalGap * 0.7; // 70% del gap residual
+    
+    if (Math.abs(dx) > Math.abs(dy)) {
+      // Ajuste horizontal
+      const adjustment = dx > 0 ? microAdjustment : -microAdjustment;
+      return {
+        ...movingPiece,
+        x: movingPiece.x + adjustment
+      };
+    } else {
+      // Ajuste vertical
+      const adjustment = dy > 0 ? microAdjustment : -microAdjustment;
+      return {
+        ...movingPiece,
+        y: movingPiece.y + adjustment
+      };
+    }
+  }
+
+  /**
+   * Calcula la posición exacta necesaria para alinear dos bordes perfectamente
+   */
+  private calculateEdgeAlignmentPosition(movingPiece: PiecePosition, targetPiece: PiecePosition, edgePair: any): PiecePosition | null {
+    const { edge1: movingEdge, edge2: targetEdge } = edgePair;
+    
+    // Encontrar los puntos más cercanos entre los bordes
+    const closestPoints = this.findClosestPointsBetweenEdges(movingEdge, targetEdge);
+    
+    if (!closestPoints) return null;
+    
+    // Calcular el vector de traslación necesario
+    const translationVector = [
+      closestPoints.target[0] - closestPoints.moving[0],
+      closestPoints.target[1] - closestPoints.moving[1]
+    ];
+    
+    // Aplicar una separación mínima para contacto perfecto (eliminar gaps visibles)
+    const separationDistance = 1; // Reducido a 1 pixel para contacto más cercano
+    const edgeNormal = [-movingEdge.direction[1], movingEdge.direction[0]]; // Perpendicular al borde
+    
+    // Determinar la dirección de separación (hacia adentro para cerrar gaps)
+    const centerToEdge = [
+      (movingEdge.start[0] + movingEdge.end[0]) / 2 - (movingPiece.x + this.config.pieceSize / 2),
+      (movingEdge.start[1] + movingEdge.end[1]) / 2 - (movingPiece.y + this.config.pieceSize / 2)
+    ];
+    
+    const normalDirection = (centerToEdge[0] * edgeNormal[0] + centerToEdge[1] * edgeNormal[1]) > 0 ? -1 : 1; // Invertido para ir hacia adentro
+    
+    const finalTranslation = [
+      translationVector[0] + edgeNormal[0] * separationDistance * normalDirection,
+      translationVector[1] + edgeNormal[1] * separationDistance * normalDirection
+    ];
+    
+    return {
+      ...movingPiece,
+      x: movingPiece.x + finalTranslation[0],
+      y: movingPiece.y + finalTranslation[1]
+    };
+  }
+
+  /**
+   * Encuentra los puntos más cercanos entre dos bordes
+   */
+  private findClosestPointsBetweenEdges(edge1: any, edge2: any): { moving: [number, number]; target: [number, number] } | null {
+    // Para simplificar, usamos los puntos medios de los bordes
+    const midpoint1: [number, number] = [(edge1.start[0] + edge1.end[0]) / 2, (edge1.start[1] + edge1.end[1]) / 2];
+    const midpoint2: [number, number] = [(edge2.start[0] + edge2.end[0]) / 2, (edge2.start[1] + edge2.end[1]) / 2];
+    
+    return {
+      moving: midpoint1,
+      target: midpoint2
+    };
+  }
+
+  /**
+   * Snap tradicional por bounding box (fallback)
+   */
+  private traditionalSnapToNearbyTargets(piece: PiecePosition, otherPieces: PiecePosition[], snapDistance: number): PiecePosition {
+    let snappedPiece = { ...piece };
+    
+    for (const otherPiece of otherPieces) {
+      const snapResult = this.snapPieceToTarget(snappedPiece, otherPiece, snapDistance);
+      if (snapResult.snapped) {
+        snappedPiece = snapResult.piece;
+        console.log(`📦 TRADITIONAL SNAP: ${snapResult.direction} by ${snapResult.adjustment?.toFixed(2)} pixels`);
+        break; // Solo aplicar el primer snap exitoso
       }
     }
     
     return snappedPiece;
+  }
+
+  /**
+   * Ajusta dos piezas para que tengan contacto perfecto (sin gap ni penetración excesiva)
+   */
+  private adjustToPerfectContact(piece: PiecePosition, targetPiece: PiecePosition): PiecePosition {
+    const penetrationDepth = this.getPenetrationDepth(piece, targetPiece);
+    
+    if (penetrationDepth <= 0.1) {
+      return piece; // Ya está en contacto perfecto
+    }
+    
+    if (penetrationDepth > 3) {
+      // Reducir penetración excesiva
+      return this.resolvePenetration(piece, targetPiece, penetrationDepth);
+    }
+    
+    // Penetración entre 0.1-3px es contacto perfecto
+    return piece;
+  }
+
+  /**
+   * Resuelve la penetración entre dos piezas para lograr contacto perfecto
+   * No separa las piezas, sino que las ajusta al contacto ideal (1-2px de penetración)
+   */
+  private resolvePenetration(piece: PiecePosition, otherPiece: PiecePosition, penetrationDepth: number): PiecePosition {
+    if (penetrationDepth <= 3) {
+      return piece; // Ya está en rango de contacto perfecto
+    }
+    
+    // Calcular el vector de ajuste para reducir penetración
+    const pieceBbox = this.getPieceBoundingBox(piece);
+    const otherBbox = this.getPieceBoundingBox(otherPiece);
+    
+    // Determinar la dirección de ajuste con menor movimiento
+    const overlapLeft = pieceBbox.right - otherBbox.left;
+    const overlapRight = otherBbox.right - pieceBbox.left;
+    const overlapTop = pieceBbox.bottom - otherBbox.top;
+    const overlapBottom = otherBbox.bottom - pieceBbox.top;
+    
+    const minOverlap = Math.min(overlapLeft, overlapRight, overlapTop, overlapBottom);
+    
+    // Calcular ajuste para llegar a contacto perfecto (2px de penetración)
+    const targetPenetration = 2;
+    const adjustmentNeeded = minOverlap - targetPenetration;
+    
+    if (minOverlap === overlapLeft) {
+      // Ajustar hacia la izquierda
+      return { ...piece, x: piece.x - adjustmentNeeded };
+    } else if (minOverlap === overlapRight) {
+      // Ajustar hacia la derecha
+      return { ...piece, x: piece.x + adjustmentNeeded };
+    } else if (minOverlap === overlapTop) {
+      // Ajustar hacia arriba
+      return { ...piece, y: piece.y - adjustmentNeeded };
+    } else {
+      // Ajustar hacia abajo
+      return { ...piece, y: piece.y + adjustmentNeeded };
+    }
+  }
+
+  /**
+   * Intenta hacer snap de una pieza hacia otra específica
+   */
+  private snapPieceToTarget(piece: PiecePosition, targetPiece: PiecePosition, snapDistance: number): {
+    snapped: boolean;
+    piece: PiecePosition;
+    direction?: string;
+    adjustment?: number;
+  } {
+    const pieceBbox = this.getPieceBoundingBox(piece);
+    const targetBbox = this.getPieceBoundingBox(targetPiece);
+    
+    // Buscar las conexiones más cercanas en cada dirección
+    const connections = [
+      {
+        direction: 'RIGHT',
+        gap: Math.abs(pieceBbox.left - targetBbox.right),
+        overlap: this.piecesOverlapVertically(pieceBbox, targetBbox),
+        adjustment: targetBbox.right - pieceBbox.left,
+        axis: 'x'
+      },
+      {
+        direction: 'LEFT',
+        gap: Math.abs(pieceBbox.right - targetBbox.left),
+        overlap: this.piecesOverlapVertically(pieceBbox, targetBbox),
+        adjustment: targetBbox.left - pieceBbox.right,
+        axis: 'x'
+      },
+      {
+        direction: 'BOTTOM',
+        gap: Math.abs(pieceBbox.top - targetBbox.bottom),
+        overlap: this.piecesOverlapHorizontally(pieceBbox, targetBbox),
+        adjustment: targetBbox.bottom - pieceBbox.top,
+        axis: 'y'
+      },
+      {
+        direction: 'TOP',
+        gap: Math.abs(pieceBbox.bottom - targetBbox.top),
+        overlap: this.piecesOverlapHorizontally(pieceBbox, targetBbox),
+        adjustment: targetBbox.top - pieceBbox.bottom,
+        axis: 'y'
+      }
+    ];
+    
+    // Encontrar la conexión más cercana que sea válida
+    const validConnections = connections.filter(conn => conn.gap <= snapDistance && conn.overlap);
+    if (validConnections.length === 0) {
+      return { snapped: false, piece };
+    }
+    
+    // Ordenar por distancia y tomar la más cercana
+    const closestConnection = validConnections.sort((a, b) => a.gap - b.gap)[0];
+    
+    const snappedPiece = { ...piece };
+    if (closestConnection.axis === 'x') {
+      snappedPiece.x = piece.x + closestConnection.adjustment;
+    } else {
+      snappedPiece.y = piece.y + closestConnection.adjustment;
+    }
+    
+    return {
+      snapped: true,
+      piece: snappedPiece,
+      direction: closestConnection.direction,
+      adjustment: Math.abs(closestConnection.adjustment)
+    };
   }
 
   /**
@@ -877,7 +1433,7 @@ export class GameGeometry {
   /**
    * Valida si una challenge card es válida según las reglas:
    * 1. Al menos una pieza debe tocar el espejo
-   * 2. Ninguna pieza se puede solapar
+   * 2. Ninguna pieza se puede solapar significativamente (solapamientos mínimos de bordes son permitidos)
    * 3. Las piezas no pueden entrar dentro del espejo
    * 4. Todas las piezas deben estar conectadas (formar una figura continua)
    * 5. Todas las piezas deben caber dentro del área de reto
@@ -891,9 +1447,10 @@ export class GameGeometry {
     piecesConnected: boolean;
     piecesInArea: boolean;
   } {
-    // Verificar solapamientos entre piezas normales
+    // Verificar solapamientos SIGNIFICATIVOS entre piezas normales
+    // Permitimos solapamientos mínimos que indican piezas bien conectadas
     const hasPieceOverlaps = pieces.some((piece1, i) =>
-      pieces.slice(i + 1).some(piece2 => this.doPiecesOverlap(piece1, piece2))
+      pieces.slice(i + 1).some(piece2 => this.doPiecesOverlapSignificantly(piece1, piece2))
     );
 
     // Verificar solapamientos entre piezas y sus reflejos
@@ -912,6 +1469,28 @@ export class GameGeometry {
 
     // Verificar que todas las piezas quepan en el área de reto
     const piecesInArea = this.doPiecesFitInChallengeArea(pieces);
+
+    console.log(`🔍 VALIDATION RESULTS:`);
+    
+    // Debug individual piece overlaps
+    pieces.forEach((piece1, i) => {
+      pieces.slice(i + 1).forEach((piece2, j) => {
+        const penetration = this.getPenetrationDepth(piece1, piece2);
+        const overlap = this.doPiecesOverlap(piece1, piece2);
+        const significantOverlap = this.doPiecesOverlapSignificantly(piece1, piece2);
+        
+        if (overlap || penetration > 0) {
+          console.log(`  Piece ${i+1} vs Piece ${i+j+2}: penetration=${penetration.toFixed(2)}px, overlap=${overlap}, significant=${significantOverlap}`);
+        }
+      });
+    });
+    
+    console.log(`  Piece overlaps (significant): ${hasPieceOverlaps}`);
+    console.log(`  Reflection overlaps: ${hasReflectionOverlaps}`);
+    console.log(`  Touches mirror: ${touchesMirror}`);
+    console.log(`  Enters mirror: ${entersMirror}`);
+    console.log(`  Pieces connected: ${piecesConnected}`);
+    console.log(`  Pieces in area: ${piecesInArea}`);
 
     return {
       isValid: !hasPieceOverlaps && !hasReflectionOverlaps && touchesMirror && !entersMirror && piecesConnected && piecesInArea,

@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { Piece, drawPiece } from './GamePiece';
-import { GameGeometry } from '../utils/GameGeometry.ts';
+import { GameGeometry } from '../utils/geometry/GameGeometry';
 
 interface EditorCanvasProps {
   pieces: Piece[];
@@ -9,6 +9,8 @@ interface EditorCanvasProps {
   onMouseUp: (e: React.MouseEvent<HTMLCanvasElement>) => void;
   onContextMenu: (e: React.MouseEvent<HTMLCanvasElement>) => void;
   geometry: GameGeometry;
+  debugMode?: boolean;
+  draggedPiece?: Piece | null;
 }
 
 export interface EditorCanvasRef {
@@ -16,7 +18,7 @@ export interface EditorCanvasRef {
 }
 
 const EditorCanvas = forwardRef<EditorCanvasRef, EditorCanvasProps>(
-  ({ pieces, onMouseDown, onMouseMove, onMouseUp, onContextMenu, geometry }, ref) => {
+  ({ pieces, onMouseDown, onMouseMove, onMouseUp, onContextMenu, geometry, debugMode = false, draggedPiece }, ref) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const PIECE_SIZE = 100;
 
@@ -92,8 +94,10 @@ const EditorCanvas = forwardRef<EditorCanvasRef, EditorCanvasProps>(
       ctx.strokeRect(0, GAME_AREA_HEIGHT, CANVAS_WIDTH, BOTTOM_AREA_HEIGHT);
     };
 
-    // Dibujar etiquetas de áreas
+    // Dibujar etiquetas de áreas (solo en modo debug)
     const drawAreaLabels = (ctx: CanvasRenderingContext2D) => {
+      if (!debugMode) return;
+      
       ctx.fillStyle = '#475569';
       ctx.font = 'bold 18px Arial';
       ctx.textAlign = 'left';
@@ -108,8 +112,10 @@ const EditorCanvas = forwardRef<EditorCanvasRef, EditorCanvasProps>(
       ctx.fillText('🧩 PIEZAS DISPONIBLES', 20, GAME_AREA_HEIGHT + 35);
     };
 
-    // Dibujar grid de referencia
+    // Dibujar grid de referencia (solo en modo debug)
     const drawReferenceGrid = (ctx: CanvasRenderingContext2D) => {
+      if (!debugMode) return;
+      
       ctx.strokeStyle = '#e2e8f0';
       ctx.lineWidth = 1;
       ctx.setLineDash([2, 8]);
@@ -151,6 +157,23 @@ const EditorCanvas = forwardRef<EditorCanvasRef, EditorCanvasProps>(
     // Dibujar piezas y sus reflejos
     const drawPiecesAndReflections = (ctx: CanvasRenderingContext2D) => {
       pieces.forEach((piece) => {
+        // BORDE VISUAL para pieza que se está arrastrando
+        if (draggedPiece && piece.id === draggedPiece.id) {
+          ctx.save();
+          ctx.strokeStyle = '#00ff00'; // Verde brillante
+          ctx.lineWidth = 4;
+          ctx.shadowColor = '#00ff00';
+          ctx.shadowBlur = 8;
+          
+          // Dibujar borde alrededor de la pieza
+          const borderSize = PIECE_SIZE * 1.7;
+          const borderX = piece.x - (borderSize - PIECE_SIZE) / 2;
+          const borderY = piece.y - (borderSize - PIECE_SIZE) / 2;
+          ctx.strokeRect(borderX, borderY, borderSize, borderSize);
+          
+          ctx.restore();
+        }
+        
         // Dibujar pieza original
         drawPiece(ctx, piece, piece.x, piece.y, PIECE_SIZE);
 
@@ -186,10 +209,10 @@ const EditorCanvas = forwardRef<EditorCanvasRef, EditorCanvasProps>(
       drawPiecesAndReflections(ctx);
     };
 
-    // Efecto para redibujar cuando cambien las piezas
+    // Efecto para redibujar cuando cambien las piezas o el modo debug
     useEffect(() => {
       draw();
-    }, [pieces]);
+    }, [pieces, debugMode, draggedPiece]);
 
     return (
       <canvas

@@ -1,6 +1,6 @@
-import { MirrorCoordinateSystem, MirrorRelativeChallenge } from './MirrorCoordinateSystem';
+import { MirrorCoordinateSystem, MirrorRelativeChallenge } from './geometry/MirrorCoordinateSystem';
 import { Challenge } from '../components/ChallengeCard';
-import { GameGeometry } from './GameGeometry';
+import { GameGeometry } from './geometry/GameGeometry';
 
 /**
  * Formato de archivo JSON con challenges en coordenadas relativas

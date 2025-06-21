@@ -1,5 +1,5 @@
-import { GameGeometry, GameAreaConfig } from '../utils/GameGeometry.ts';
-import { ChallengeGenerator } from '../utils/ChallengeGenerator.ts';
+import { GameGeometry, GameAreaConfig } from '../utils/geometry/GameGeometry';
+import { ChallengeGenerator } from '../utils/challenges/ChallengeGenerator';
 import { testInvalidChallenge } from './InvalidChallengeTest.ts';
 
 // Create a test function to validate both valid and invalid challenges

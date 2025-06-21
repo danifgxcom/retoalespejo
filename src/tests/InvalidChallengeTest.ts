@@ -1,4 +1,4 @@
-import { GameGeometry, GameAreaConfig, PiecePosition } from '../utils/GameGeometry.ts';
+import { GameGeometry, GameAreaConfig, PiecePosition } from '../utils/geometry/GameGeometry';
 import { Challenge, ObjectivePattern } from '../components/ChallengeCard.ts';
 
 // Create a test function to create and validate an invalid challenge

@@ -1,4 +1,4 @@
- import { GameGeometry, PiecePosition, GameAreaConfig } from './GameGeometry';
+ import { GameGeometry, PiecePosition, GameAreaConfig } from './geometry/GameGeometry';
 
 describe('GameGeometry', () => {
   let geometry: GameGeometry;

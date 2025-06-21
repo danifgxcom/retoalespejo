@@ -1,4 +1,4 @@
-import { GameGeometry, PiecePosition, GameAreaConfig } from './GameGeometry';
+import { GameGeometry, PiecePosition, GameAreaConfig } from './geometry/GameGeometry';
 
 describe('Find Valid Type B Position', () => {
   test('Find a valid position for type B piece', () => {

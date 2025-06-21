@@ -1,5 +1,5 @@
 import { ChallengeService } from './ChallengeService';
-import { GameGeometry } from '../utils/GameGeometry';
+import { GameGeometry } from '../utils/geometry/GameGeometry';
 
 // Mock para fetch global
 global.fetch = jest.fn();

@@ -1,4 +1,4 @@
-import { GameGeometry, PiecePosition, GameAreaConfig } from './GameGeometry';
+import { GameGeometry, PiecePosition, GameAreaConfig } from './geometry/GameGeometry';
 
 /**
  * Test para validar que las reglas del juego documentadas en GAME_RULES.md

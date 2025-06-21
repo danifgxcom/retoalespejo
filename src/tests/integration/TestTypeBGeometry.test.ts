@@ -1,4 +1,4 @@
-import { GameGeometry, PiecePosition, GameAreaConfig } from './GameGeometry';
+import { GameGeometry, PiecePosition, GameAreaConfig } from './geometry/GameGeometry';
 
 describe('Test Type B Geometry', () => {
   test('Debug type B geometry issue', () => {

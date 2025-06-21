@@ -1,4 +1,4 @@
-import { GameGeometry, PiecePosition, GameAreaConfig } from './GameGeometry';
+import { GameGeometry, PiecePosition, GameAreaConfig } from './geometry/GameGeometry';
 
 describe('Debug Correct Position for Mirror Touching', () => {
   test('Find the actual correct position for touching mirror', () => {

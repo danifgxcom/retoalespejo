@@ -35,91 +35,22 @@
     "description": "Forma un bloque horizontal con dos piezas A tocándose",
     "piecesNeeded": 2,
     "difficulty": "Fácil",
-    "targetPattern": "horizontal_block",
-    "objective": {
-      "playerPieces": [
-        {
-          "type": "A",
-          "face": "front",
-          "x": 500,
-          "y": 300,
-          "rotation": 0,
-          "comment": "Converted from relative coordinates: x=-100 (one piece left), y=0 (centered)"
-        },
-        {
-          "type": "A",
-          "face": "front",
-          "x": 330,
-          "y": 300,
-          "rotation": 0,
-          "comment": "Converted from relative coordinates: x=0 (touching mirror), y=0 (centered)"
-        }
-      ],
-      "symmetricPattern": []
-    },
-    "targetPieces": [
-      {
-        "type": "A",
-        "face": "front",
-        "x": 500,
-        "y": 300,
-        "rotation": 0
-      },
-      {
-        "type": "A",
-        "face": "front",
-        "x": 330,
-        "y": 300,
-        "rotation": 0
-      }
-    ]
-  },
-  {
-    "id": 3,
-    "name": "Tarjeta 3: Pieza Rotada",
-    "description": "Forma un patrón con una pieza A rotada 270° tocando el espejo",
-    "piecesNeeded": 1,
-    "difficulty": "Fácil",
-    "targetPattern": "rotated_piece",
-    "objective": {
-      "playerPieces": [
-        {
-          "type": "A",
-          "face": "front",
-          "x": 572,
-          "y": 300,
-          "rotation": 270,
-          "comment": "Adjusted position for 270° rotation to touch mirror properly"
-        }
-      ],
-      "symmetricPattern": []
-    },
-    "targetPieces": [
-      {
-        "type": "A",
-        "face": "front",
-        "x": 572,
-        "y": 300,
-        "rotation": 270
-      }
-    ]
-  },
-  {
-    "id": 4,
-    "name": "Tarjeta 4: Cara Posterior",
-    "description": "Forma un patrón con una pieza A cara posterior tocando el espejo",
-    "piecesNeeded": 1,
-    "difficulty": "Intermedio",
-    "targetPattern": "back_face",
+    "targetPattern": "custom",
     "objective": {
       "playerPieces": [
         {
           "type": "A",
           "face": "back",
+          "x": 650,
+          "y": 407.84,
+          "rotation": 270
+        },
+        {
+          "type": "A",
+          "face": "back",
           "x": 330,
-          "y": 300,
-          "rotation": 0,
-          "comment": "Converted from relative coordinates: x=0 (touching mirror), y=0 (centered), back face"
+          "y": 472.3,
+          "rotation": 0
         }
       ],
       "symmetricPattern": []
@@ -128,9 +59,187 @@
       {
         "type": "A",
         "face": "back",
+        "x": 650,
+        "y": 407.84,
+        "rotation": 270
+      },
+      {
+        "type": "A",
+        "face": "back",
         "x": 330,
-        "y": 300,
+        "y": 472.3,
         "rotation": 0
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "name": "Tarjeta 3: Pieza Rotada",
+    "description": "Forma un patrón con una pieza A rotada 270° tocando el espejo",
+    "piecesNeeded": 2,
+    "difficulty": "Fácil",
+    "targetPattern": "custom",
+    "objective": {
+      "playerPieces": [
+        {
+          "type": "A",
+          "face": "front",
+          "x": 650,
+          "y": 364.27,
+          "rotation": 270
+        },
+        {
+          "type": "B",
+          "face": "front",
+          "x": 650,
+          "y": 364.4,
+          "rotation": 0
+        }
+      ],
+      "symmetricPattern": []
+    },
+    "targetPieces": [
+      {
+        "type": "A",
+        "face": "front",
+        "x": 650,
+        "y": 364.27,
+        "rotation": 270
+      },
+      {
+        "type": "B",
+        "face": "front",
+        "x": 650,
+        "y": 364.4,
+        "rotation": 0
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "name": "Tarjeta 4: Cara Posterior",
+    "description": "Forma un patrón con una pieza A cara posterior tocando el espejo",
+    "piecesNeeded": 3,
+    "difficulty": "Intermedio",
+    "targetPattern": "custom",
+    "objective": {
+      "playerPieces": [
+        {
+          "type": "A",
+          "face": "back",
+          "x": 468.98,
+          "y": 265.18,
+          "rotation": 315
+        },
+        {
+          "type": "A",
+          "face": "back",
+          "x": 468.98,
+          "y": -7.17,
+          "rotation": 135
+        },
+        {
+          "type": "A",
+          "face": "front",
+          "x": 650,
+          "y": 84.82,
+          "rotation": 135
+        }
+      ],
+      "symmetricPattern": []
+    },
+    "targetPieces": [
+      {
+        "type": "A",
+        "face": "back",
+        "x": 468.98,
+        "y": 265.18,
+        "rotation": 315
+      },
+      {
+        "type": "A",
+        "face": "back",
+        "x": 468.98,
+        "y": -7.17,
+        "rotation": 135
+      },
+      {
+        "type": "A",
+        "face": "front",
+        "x": 650,
+        "y": 84.82,
+        "rotation": 135
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "name": "Scary Pumpkin",
+    "description": "This is Halloween",
+    "piecesNeeded": 4,
+    "difficulty": "Intermedio",
+    "targetPattern": "custom",
+    "objective": {
+      "playerPieces": [
+        {
+          "type": "B",
+          "face": "back",
+          "x": 649.98,
+          "y": 221.53,
+          "rotation": 45
+        },
+        {
+          "type": "B",
+          "face": "front",
+          "x": 378.47,
+          "y": 402.55,
+          "rotation": 135
+        },
+        {
+          "type": "A",
+          "face": "front",
+          "x": 650,
+          "y": 221.53,
+          "rotation": 225
+        },
+        {
+          "type": "B",
+          "face": "front",
+          "x": 559.42,
+          "y": 221.53,
+          "rotation": 315
+        }
+      ],
+      "symmetricPattern": []
+    },
+    "targetPieces": [
+      {
+        "type": "B",
+        "face": "back",
+        "x": 649.98,
+        "y": 221.53,
+        "rotation": 45
+      },
+      {
+        "type": "B",
+        "face": "front",
+        "x": 378.47,
+        "y": 402.55,
+        "rotation": 135
+      },
+      {
+        "type": "A",
+        "face": "front",
+        "x": 650,
+        "y": 221.53,
+        "rotation": 225
+      },
+      {
+        "type": "B",
+        "face": "front",
+        "x": 559.42,
+        "y": 221.53,
+        "rotation": 315
       }
     ]
   }

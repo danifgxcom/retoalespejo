@@ -1,7 +1,8 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import GameCanvas, { GameCanvasRef } from './components/GameCanvas';
 import GameControls from './components/GameControls';
 import { ChallengeEditorApp } from './ChallengeEditorApp';
+import { ResponsiveTest } from './components/ResponsiveTest';
 import { useGameLogic } from './hooks/useGameLogic';
 import { useMouseHandlers } from './hooks/useMouseHandlers';
 
@@ -9,6 +10,7 @@ const MirrorChallengeGame: React.FC = () => {
   const canvasRef = useRef<GameCanvasRef>(null);
   const [showChallengeEditor, setShowChallengeEditor] = useState(false);
   const [debugMode, setDebugMode] = useState(false);
+  const [showResponsiveTest, setShowResponsiveTest] = useState(false);
 
   const {
     currentChallenge,
@@ -31,6 +33,8 @@ const MirrorChallengeGame: React.FC = () => {
     checkSolutionWithMirrors,
     loadCustomChallenges,
     geometry,
+    initializeResponsiveSystem,
+    responsiveCanvas
   } = useGameLogic();
 
   const {
@@ -51,8 +55,48 @@ const MirrorChallengeGame: React.FC = () => {
     geometry,
   });
 
+  // Inicializar sistema responsive cuando el canvas esté disponible
+  useEffect(() => {
+    const canvas = canvasRef.current?.getCanvas();
+    if (canvas) {
+      const rect = canvas.getBoundingClientRect();
+      console.log(`🎯 Canvas dimensions: actual=${canvas.width}x${canvas.height}, displayed=${Math.round(rect.width)}x${Math.round(rect.height)}`);
+      initializeResponsiveSystem(rect.width, rect.height);
+      console.log(`🎯 Responsive system initialized: ${Math.round(rect.width)}x${Math.round(rect.height)}`);
+    }
+  }, [canvasRef, initializeResponsiveSystem]);
+
+  // Actualizar sistema responsive cuando cambie el tamaño de ventana
+  useEffect(() => {
+    const handleResize = () => {
+      const canvas = canvasRef.current?.getCanvas();
+      if (canvas) {
+        const rect = canvas.getBoundingClientRect();
+        initializeResponsiveSystem(rect.width, rect.height);
+        console.log(`🔄 Responsive system updated: ${Math.round(rect.width)}x${Math.round(rect.height)}`);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [canvasRef, initializeResponsiveSystem]);
+
   if (showChallengeEditor) {
     return <ChallengeEditorApp onClose={() => setShowChallengeEditor(false)} />;
+  }
+
+  if (showResponsiveTest) {
+    return (
+      <div className="p-4">
+        <button 
+          onClick={() => setShowResponsiveTest(false)}
+          className="mb-4 bg-blue-500 text-white px-4 py-2 rounded"
+        >
+          Volver al juego
+        </button>
+        <ResponsiveTest />
+      </div>
+    );
   }
 
   return (
@@ -89,6 +133,7 @@ const MirrorChallengeGame: React.FC = () => {
                   onContextMenu={handleContextMenu}
                   geometry={geometry}
                   debugMode={debugMode}
+                  draggedPiece={draggedPiece}
               />
             </div>
 
@@ -99,6 +144,21 @@ const MirrorChallengeGame: React.FC = () => {
               </p>
             </div>
           </div>
+          
+          {/* Test responsive flotante - solo en modo debug */}
+          {debugMode && (
+            <div className="absolute top-4 left-4 z-10">
+              <div className="bg-yellow-100 border border-yellow-400 rounded-lg p-2 shadow-lg">
+                <button 
+                  onClick={() => setShowResponsiveTest(true)}
+                  className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded text-sm transition-colors"
+                >
+                  🧪 Test Responsive
+                </button>
+                <p className="text-xs text-yellow-700 mt-1">Debug mode</p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
   );

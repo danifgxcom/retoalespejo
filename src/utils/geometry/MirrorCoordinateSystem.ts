@@ -1,4 +1,4 @@
-import { PiecePosition, GameGeometry } from './GameGeometry';
+import { PiecePosition, GameGeometry } from './geometry/GameGeometry';
 
 /**
  * Posición de pieza usando coordenadas relativas al espejo

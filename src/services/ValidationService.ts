@@ -1,4 +1,4 @@
-import { GameGeometry, PiecePosition } from '../utils/GameGeometry';
+import { GameGeometry, PiecePosition } from '../utils/geometry/GameGeometry';
 import { Challenge } from '../components/ChallengeCard';
 
 /**

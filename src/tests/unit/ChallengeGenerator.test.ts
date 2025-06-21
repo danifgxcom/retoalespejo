@@ -1,5 +1,5 @@
-import { GameGeometry, GameAreaConfig } from './GameGeometry.ts';
-import { ChallengeGenerator } from './ChallengeGenerator.ts';
+import { GameGeometry, GameAreaConfig } from './geometry/GameGeometry';
+import { ChallengeGenerator } from './challenges/ChallengeGenerator';
 
 describe('ChallengeGenerator', () => {
   let geometry: GameGeometry;

@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { Piece } from '../components/GamePiece';
-import { GameGeometry } from '../utils/GameGeometry.ts';
+import { GameGeometry } from '../utils/geometry/GameGeometry';
 
 interface UseMouseHandlersProps {
   pieces: Piece[];

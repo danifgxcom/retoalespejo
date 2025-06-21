@@ -1,6 +1,6 @@
 import { Piece, drawPiece } from '../components/GamePiece';
 import { Challenge } from '../components/ChallengeCard';
-import { GameGeometry } from '../utils/GameGeometry';
+import { GameGeometry } from '../utils/geometry/GameGeometry';
 
 /**
  * Configuración de área de canvas

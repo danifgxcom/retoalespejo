@@ -1,5 +1,5 @@
-import { GameGeometry, GameAreaConfig } from '../utils/GameGeometry.ts';
-import { ChallengeGenerator } from '../utils/ChallengeGenerator.ts';
+import { GameGeometry, GameAreaConfig } from '../utils/geometry/GameGeometry';
+import { ChallengeGenerator } from '../utils/challenges/ChallengeGenerator';
 
 // Create a test function to specifically check for piece overlaps in all challenges
 function testPieceOverlaps() {

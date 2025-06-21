@@ -1,4 +1,4 @@
-import { PiecePosition } from './GameGeometry';
+import { PiecePosition } from './geometry/GameGeometry';
 
 /**
  * Configuración de un viewport (área de visualización)

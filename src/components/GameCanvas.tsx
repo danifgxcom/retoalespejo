@@ -1,7 +1,8 @@
-import React, { useRef, useEffect, forwardRef, useImperativeHandle, useState } from 'react';
+import React, { useRef, useEffect, forwardRef, useImperativeHandle, useState, useMemo } from 'react';
 import { Piece, drawPiece } from './GamePiece';
 import { Challenge } from './ChallengeCard';
-import { GameGeometry } from '../utils/GameGeometry.ts';
+import { GameGeometry } from '../utils/geometry/GameGeometry';
+import { GameAreaRenderer } from '../rendering/GameAreaRenderer';
 
 interface GameCanvasProps {
   pieces: Piece[];
@@ -13,6 +14,7 @@ interface GameCanvasProps {
   onContextMenu: (e: React.MouseEvent<HTMLCanvasElement>) => void;
   geometry: GameGeometry;
   debugMode?: boolean;
+  draggedPiece?: Piece | null;
 }
 
 export interface GameCanvasRef {
@@ -20,7 +22,7 @@ export interface GameCanvasRef {
 }
 
 const GameCanvas = forwardRef<GameCanvasRef, GameCanvasProps>(
-    ({ pieces, currentChallenge, challenges, onMouseDown, onMouseMove, onMouseUp, onContextMenu, geometry, debugMode = false }, ref) => {
+    ({ pieces, currentChallenge, challenges, onMouseDown, onMouseMove, onMouseUp, onContextMenu, geometry, debugMode = false, draggedPiece }, ref) => {
       const canvasRef = useRef<HTMLCanvasElement>(null);
       const PIECE_SIZE = 100; // Tamaño lógico de la pieza (25% más grande: 80 * 1.25 = 100)
 
@@ -36,6 +38,17 @@ const GameCanvas = forwardRef<GameCanvasRef, GameCanvasProps>(
       const GAME_AREA_HEIGHT = 600;
       const BOTTOM_AREA_HEIGHT = 400;
       const MIRROR_LINE = 700;
+
+      // Crear instancia de GameAreaRenderer
+      const gameAreaRenderer = useMemo(() => new GameAreaRenderer({
+        gameAreaWidth: GAME_AREA_WIDTH,
+        gameAreaHeight: GAME_AREA_HEIGHT,
+        bottomAreaHeight: BOTTOM_AREA_HEIGHT,
+        mirrorLine: MIRROR_LINE,
+        canvasWidth: 1400,
+        canvasHeight: 1000,
+        pieceSize: PIECE_SIZE
+      }), []);
 
       // Dibujar áreas de fondo con diseño elegante
       const drawBackgroundAreas = (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => {
@@ -87,21 +100,19 @@ const GameCanvas = forwardRef<GameCanvasRef, GameCanvasProps>(
       const drawMirrorFrameAndDivisions = (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => {
         // Líneas divisorias PRIMERO (sin marco interferiendo)
         
-        // Línea divisoria central elegante (área de juego / espejo)
-        ctx.strokeStyle = '#8b7355';
+        // Línea del espejo con efecto brillante (igual que en EditorCanvas)
+        ctx.strokeStyle = '#ef4444';
         ctx.lineWidth = 3;
+        ctx.setLineDash([15, 10]);
+        ctx.lineDashOffset = 0;
+        ctx.shadowColor = '#ef4444';
+        ctx.shadowBlur = 8;
         ctx.beginPath();
         ctx.moveTo(MIRROR_LINE, 0);
         ctx.lineTo(MIRROR_LINE, GAME_AREA_HEIGHT);
         ctx.stroke();
-
-        // Línea dorada en el centro del espejo
-        ctx.strokeStyle = '#d4af37';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(MIRROR_LINE - 1, 0);
-        ctx.lineTo(MIRROR_LINE - 1, GAME_AREA_HEIGHT);
-        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.shadowBlur = 0;
 
         // Divisoria horizontal elegante
         ctx.strokeStyle = '#8b7355';
@@ -545,20 +556,47 @@ const GameCanvas = forwardRef<GameCanvasRef, GameCanvasProps>(
           y: piecePos.y * scale
         }));
 
-        // El área de juego escalada ocupa la mitad izquierda de la carta
-        const gameAreaOffsetX = cardOffsetX;
+        // Centrar el contenido completo (juego + espejo) dentro de la tarjeta
+        const totalContentWidth = (gameAreaWidth * 2) * scale; // Área de juego + área de espejo
+        const contentStartX = cardOffsetX + (cardAreaWidth - totalContentWidth) / 2; // Centrar horizontalmente
+        
+        const gameAreaOffsetX = contentStartX;
         const gameAreaOffsetY = cardOffsetY + (cardAreaHeight - gameAreaHeight * scale) / 2; // Centrar verticalmente
 
-        // Dibujar línea divisoria para simular el espejo
-        ctx.save();
-        ctx.strokeStyle = '#cbd5e1';
-        ctx.lineWidth = 2;
+        // Calcular línea del espejo (siempre, para usar después)
         const mirrorLineX = gameAreaOffsetX + gameAreaWidth * scale; // Espejo en x=700 escalado
-        ctx.beginPath();
-        ctx.moveTo(mirrorLineX, gameAreaOffsetY);
-        ctx.lineTo(mirrorLineX, gameAreaOffsetY + gameAreaHeight * scale);
-        ctx.stroke();
-        ctx.restore();
+        
+        // DEBUG INFO para tarjeta de reto (solo en modo debug)
+        if (debugMode) {
+          console.log('🎯 TARJETA DE RETO DEBUG:');
+          console.log(`Card area: ${cardAreaWidth}x${cardAreaHeight}`);
+          console.log(`Game scale: ${scale.toFixed(3)}`);
+          console.log(`Mirror line X: ${mirrorLineX.toFixed(1)}`);
+          console.log(`Game offset: (${gameAreaOffsetX}, ${gameAreaOffsetY})`);
+          console.log(`Pieces count: ${scaledPlayerPieces.length}`);
+          console.log(`Card offset: (${cardOffsetX}, ${cardOffsetY})`);
+          console.log(`Scaled pieces:`, scaledPlayerPieces);
+          
+          ctx.fillStyle = '#ff0000';
+          ctx.font = 'bold 12px Arial';
+          ctx.textAlign = 'left';
+          ctx.fillText(`TARJETA DEBUG:`, cardOffsetX, cardOffsetY - 10);
+          ctx.fillText(`Card area: ${cardAreaWidth}x${cardAreaHeight}`, cardOffsetX, cardOffsetY + 10);
+          ctx.fillText(`Game scale: ${scale.toFixed(3)}`, cardOffsetX, cardOffsetY + 25);
+          ctx.fillText(`Mirror line X: ${mirrorLineX.toFixed(1)}`, cardOffsetX, cardOffsetY + 40);
+          ctx.fillText(`Game offset: (${gameAreaOffsetX}, ${gameAreaOffsetY})`, cardOffsetX, cardOffsetY + 55);
+          ctx.fillText(`Pieces count: ${scaledPlayerPieces.length}`, cardOffsetX, cardOffsetY + 70);
+          
+          // Marcar límites de la tarjeta
+          ctx.strokeStyle = '#00ff00';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(cardOffsetX, cardOffsetY, cardAreaWidth, cardAreaHeight);
+          
+          // Marcar área de juego escalada
+          ctx.strokeStyle = '#0000ff';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(gameAreaOffsetX, gameAreaOffsetY, gameAreaWidth * scale, gameAreaHeight * scale);
+        }
 
         // Dibujar cada pieza del jugador
         ctx.save();
@@ -582,11 +620,8 @@ const GameCanvas = forwardRef<GameCanvasRef, GameCanvasProps>(
             placed: true
           };
 
-          // Dibujar la pieza del jugador
-          drawPieceClean(ctx, displayPiece, displayPiece.x, displayPiece.y, PIECE_SIZE * scale);
-
-          // Calcular la posición reflejada (lado derecho de la carta)
-          const reflectedX = mirrorLineX + (mirrorLineX - displayPiece.x - PIECE_SIZE * scale);
+          // Calcular la posición reflejada usando la misma lógica que el juego principal
+          const reflectedX = 2 * mirrorLineX - displayPiece.x - PIECE_SIZE * scale;
 
           // Crear la pieza reflejada
           const reflectedPiece = {
@@ -594,6 +629,16 @@ const GameCanvas = forwardRef<GameCanvasRef, GameCanvasProps>(
             x: reflectedX,
             y: displayPiece.y
           };
+
+          if (debugMode) {
+            console.log(`🧩 Piece ${index + 1}:`);
+            console.log(`  Original: x=${displayPiece.x.toFixed(1)}, y=${displayPiece.y.toFixed(1)}`);
+            console.log(`  Reflected: x=${reflectedPiece.x.toFixed(1)}, y=${reflectedPiece.y.toFixed(1)}`);
+            console.log(`  Gap between pieces: ${Math.abs(reflectedX - (displayPiece.x + PIECE_SIZE * scale)).toFixed(1)}px`);
+          }
+
+          // Dibujar la pieza del jugador
+          drawPieceClean(ctx, displayPiece, displayPiece.x, displayPiece.y, PIECE_SIZE * scale);
 
           // Dibujar la pieza reflejada con transformación horizontal
           ctx.save();
@@ -619,7 +664,11 @@ const GameCanvas = forwardRef<GameCanvasRef, GameCanvasProps>(
 
         drawBackgroundAreas(ctx, canvas);
         drawMirrorFrameAndDivisions(ctx, canvas);
-        drawAreaLabels(ctx);
+        
+        // DEBUG MODE: Etiquetas de áreas solo en modo debug
+        if (debugMode) {
+          drawAreaLabels(ctx);
+        }
         
         // DEBUG MODE: Dibujar límites y información de debug
         if (debugMode) {
@@ -656,30 +705,34 @@ const GameCanvas = forwardRef<GameCanvasRef, GameCanvasProps>(
           ctx.fillText('CUADRANTE OBJETIVO: (350,600) a (700,1000)', 10, GAME_AREA_HEIGHT + 110);
         }
 
-        // DIBUJAR PIEZAS INTERACTIVAS
-        if (pieces && pieces.length > 0) {
-          pieces.forEach(piece => {
-            if (piece) {
-              // DEBUG MODE: Dibujar marcadores de debug para piezas
-              if (debugMode && !piece.placed) { // Solo para piezas en área de piezas disponibles
-                // Dibujar el área real que ocupa la pieza (incluyendo extensiones)
-                ctx.strokeStyle = 'red';
-                ctx.lineWidth = 2;
-                const realSize = PIECE_SIZE * 1.6; // Tamaño real aproximado con extensiones
-                const realX = piece.x - (realSize - PIECE_SIZE) / 2;
-                const realY = piece.y - (realSize - PIECE_SIZE) / 2;
-                ctx.strokeRect(realX, realY, realSize, realSize);
+        // USAR GAMEAREARENDERER para dibujar piezas con etiquetas
+        if (gameAreaRenderer) {
+          gameAreaRenderer.drawGamePieces(ctx, pieces, draggedPiece, debugMode, debugMode);
+        } else {
+          // Fallback legacy
+          if (pieces && pieces.length > 0) {
+            pieces.forEach(piece => {
+              if (piece) {
+                drawPiece(ctx, piece, piece.x, piece.y, PIECE_SIZE);
                 
-                // Escribir coordenadas y rotación
-                ctx.fillStyle = 'red';
-                ctx.font = '12px Arial';
-                ctx.fillText(`(${Math.round(piece.x)}, ${Math.round(piece.y)})`, piece.x, piece.y - 5);
-                ctx.fillText(`R:${piece.rotation}°`, piece.x, piece.y + realSize + 15);
+                // BORDE VISUAL para pieza que se está arrastrando
+                if (draggedPiece && piece.id === draggedPiece.id) {
+                  ctx.save();
+                  ctx.strokeStyle = '#00ff00';
+                  ctx.lineWidth = 4;
+                  ctx.shadowColor = '#00ff00';
+                  ctx.shadowBlur = 8;
+                  
+                  const borderSize = PIECE_SIZE * 1.7;
+                  const borderX = piece.x - (borderSize - PIECE_SIZE) / 2;
+                  const borderY = piece.y - (borderSize - PIECE_SIZE) / 2;
+                  ctx.strokeRect(borderX, borderY, borderSize, borderSize);
+                  
+                  ctx.restore();
+                }
               }
-              
-              drawPiece(ctx, piece, piece.x, piece.y, PIECE_SIZE);
-            }
-          });
+            });
+          }
         }
 
         drawMirrorReflections(ctx);
@@ -732,7 +785,7 @@ const GameCanvas = forwardRef<GameCanvasRef, GameCanvasProps>(
 
       useEffect(() => {
         drawCanvas();
-      }, [pieces, currentChallenge, challenges, challengeValidations]); // Incluir challengeValidations
+      }, [pieces, currentChallenge, challenges, challengeValidations, debugMode]); // Incluir debugMode para redibujar
 
       return (
           <div className="relative">

@@ -66,17 +66,36 @@ const GameControls: React.FC<GameControlsProps> = ({
   const handleSnapshotPieces = () => {
     console.log('📸 SNAPSHOT DE POSICIONES ACTUALES:');
     console.log('=====================================');
+    
+    // Información del canvas y áreas
+    console.log('🖼️ INFORMACIÓN DEL CANVAS:');
+    console.log('Canvas interno: 1400x1000');
+    console.log('Línea del espejo: X=700 (centro horizontal)');
+    console.log('Área de juego: (0,0) a (700,600)');
+    console.log('Área de espejo: (700,0) a (1400,600)');
+    console.log('Área de piezas: (0,600) a (350,1000)');
+    console.log('Área de objetivo: (350,600) a (700,1000)');
+    console.log('');
+    
+    // Información de las piezas
+    console.log('🧩 PIEZAS EN EL JUEGO:');
     pieces.forEach((piece, index) => {
-      console.log(`Pieza ${piece.id} (${piece.type}, ${piece.face}): x=${piece.x}, y=${piece.y}, rotation=${piece.rotation}, placed=${piece.placed}`);
+      const area = piece.y < 600 ? 'JUEGO' : 
+                   piece.y >= 600 && piece.x < 350 ? 'PIEZAS' :
+                   piece.y >= 600 && piece.x >= 350 ? 'OBJETIVO' : 'DESCONOCIDA';
+      
+      console.log(`Pieza ${piece.id} (${piece.type}, ${piece.face}): x=${piece.x}, y=${piece.y}, rotation=${piece.rotation}, placed=${piece.placed}, área=${area}`);
     });
+    
     console.log('=====================================');
-    console.log('Copia estas coordenadas para usar en el código:');
+    console.log('📋 COORDENADAS PARA CÓDIGO:');
     console.log(JSON.stringify(pieces.map(p => ({
       x: p.x,
       y: p.y,
       rotation: p.rotation,
       type: p.type,
-      face: p.face
+      face: p.face,
+      placed: p.placed
     })), null, 2));
   };
   return (

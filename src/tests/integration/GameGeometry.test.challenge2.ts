@@ -1,5 +1,5 @@
-import { GameGeometry, PiecePosition, GameAreaConfig } from './GameGeometry.ts';
-import { ChallengeGenerator } from './ChallengeGenerator.ts';
+import { GameGeometry, PiecePosition, GameAreaConfig } from './geometry/GameGeometry';
+import { ChallengeGenerator } from './challenges/ChallengeGenerator';
 
 describe('Challenge 2 Validation', () => {
   let geometry: GameGeometry;

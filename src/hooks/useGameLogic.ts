@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Piece } from '../components/GamePiece';
 import { Challenge, PiecePosition } from '../components/ChallengeCard';
-import { GameGeometry, GameAreaConfig } from '../utils/GameGeometry.ts';
-import { ChallengeGenerator } from '../utils/ChallengeGenerator.ts';
+import { GameGeometry, GameAreaConfig } from '../utils/geometry/GameGeometry';
+import { ChallengeGenerator } from '../utils/challenges/ChallengeGenerator';
+import { RelativePiecePositions } from '../utils/geometry/RelativePiecePositions';
+import { ResponsiveCanvas } from '../utils/rendering/ResponsiveCanvas';
 
 export const useGameLogic = () => {
   // Configuración de geometría del juego
@@ -16,6 +18,16 @@ export const useGameLogic = () => {
   // Inicializar clases de geometría y generador de challenges
   const geometry = useMemo(() => new GameGeometry(gameAreaConfig), []);
   const challengeGenerator = useMemo(() => new ChallengeGenerator(geometry), [geometry]);
+  
+  // Sistema de coordenadas responsive
+  const [responsiveCanvas, setResponsiveCanvas] = useState<ResponsiveCanvas | null>(null);
+  const relativePiecePositions = useMemo(() => new RelativePiecePositions(), []);
+  
+  // Función para inicializar el sistema responsive
+  const initializeResponsiveSystem = useCallback((canvasWidth: number, canvasHeight: number) => {
+    const newResponsiveCanvas = new ResponsiveCanvas(canvasWidth, canvasHeight);
+    setResponsiveCanvas(newResponsiveCanvas);
+  }, []);
 
   // Ref para controlar si ya se están cargando los desafíos
   const isLoadingChallengesRef = useRef(false);
@@ -31,21 +43,14 @@ export const useGameLogic = () => {
 
   // Configuración de plantillas de piezas
   const createPieceTemplate = (type: 'A' | 'B', face: 'front' | 'back') => {
-    if (type === 'A') {
-      return {
-        type,
-        face,
-        centerColor: face === 'front' ? '#FFD700' : '#FF4444',
-        triangleColor: face === 'front' ? '#FF4444' : '#FFD700'
-      };
-    } else {
-      return {
-        type,
-        face,
-        centerColor: face === 'front' ? '#FF4444' : '#FFD700',
-        triangleColor: face === 'front' ? '#FFD700' : '#FF4444'
-      };
-    }
+    // Tanto pieza A como B tienen los mismos colores
+    // La diferencia está en la geometría (B es reflejo horizontal de A)
+    return {
+      type,
+      face,
+      centerColor: face === 'front' ? '#FFD700' : '#FF4444',
+      triangleColor: face === 'front' ? '#FF4444' : '#FFD700'
+    };
   };
 
   // Función helper para calcular el reflejo de una pieza usando la clase de geometría
@@ -121,7 +126,56 @@ export const useGameLogic = () => {
     };
   };
 
-  // Función para generar piezas basándose en lo que necesita el challenge específico
+  // Nueva función responsive para crear piezas
+  const createResponsivePieces = (challenge: Challenge): Piece[] => {
+    if (!responsiveCanvas) {
+      // Fallback al método legacy si no hay sistema responsive
+      return createChallengeSpecificPieces(challenge);
+    }
+
+    const initialPieces: Piece[] = [];
+    
+    // Obtener posiciones relativas y convertirlas a absolutas
+    const relativePositions = relativePiecePositions.getPositionsForPieceCount(challenge.piecesNeeded);
+    
+    // Extraer los tipos de piezas requeridos del challenge
+    const requiredPieceTypes = challenge.objective.playerPieces.map(piece => ({
+      type: piece.type,
+      face: piece.face
+    }));
+
+    console.log(`📏 Creating ${challenge.piecesNeeded} responsive pieces`);
+
+    relativePositions.forEach((relPos, index) => {
+      const requiredType = requiredPieceTypes[index] || requiredPieceTypes[0];
+      const template = createPieceTemplate(requiredType.type, requiredType.face);
+      
+      // Convertir coordenadas relativas a absolutas actuales
+      const absolutePos = responsiveCanvas.relativeToAbsolute({
+        x: relPos.x,
+        y: relPos.y
+      });
+      
+      // Debug de conversión
+      console.log(`🔍 Converting relative (${relPos.x.toFixed(3)}, ${relPos.y.toFixed(3)}) to absolute (${Math.round(absolutePos.x)}, ${Math.round(absolutePos.y)})`);
+      
+      const piece = {
+        ...template,
+        id: index + 1,
+        x: absolutePos.x,
+        y: absolutePos.y,
+        rotation: relPos.rotation,
+        placed: false
+      };
+      
+      console.log(`🧩 Responsive piece ${piece.id} (${piece.type}) at (${Math.round(piece.x)}, ${Math.round(piece.y)}) R:${piece.rotation}°`);
+      initialPieces.push(piece);
+    });
+
+    return initialPieces;
+  };
+
+  // Función legacy para generar piezas (mantener para compatibilidad)
   const createChallengeSpecificPieces = (challenge: Challenge): Piece[] => {
     const availableAreaX = 0;
     const availableAreaY = 600; // Inicio del área de piezas disponibles
@@ -404,15 +458,19 @@ export const useGameLogic = () => {
     loadInitialChallenges();
   }, []); // Sin dependencias para que solo se ejecute una vez al montar el componente
 
-  // Inicializar piezas según el desafío actual
+  // Inicializar piezas según el desafío actual (responsive)
   useEffect(() => {
     if (isLoading) return;
 
     const challenge = challenges[currentChallenge];
     if (challenge) {
-      setPieces(createChallengeSpecificPieces(challenge));
+      // Usar sistema responsive si está disponible, sino fallback al legacy
+      // SIEMPRE usar el sistema responsive para posicionamiento consistente
+      const newPieces = responsiveCanvas ? createResponsivePieces(challenge) : createChallengeSpecificPieces(challenge);
+      console.log('🔄 Setting pieces for challenge:', challenge.id, 'pieces count:', newPieces.length);
+      setPieces(newPieces);
     }
-  }, [currentChallenge, challenges, isLoading]);
+  }, [currentChallenge, challenges, isLoading, responsiveCanvas]);
 
   // Funciones de control - ROTACIÓN EN INCREMENTOS DE 45 GRADOS
   const rotatePiece = (pieceId: number) => {
@@ -442,7 +500,10 @@ export const useGameLogic = () => {
   const resetLevel = () => {
     const challenge = challenges[currentChallenge];
     if (challenge) {
-      setPieces(createChallengeSpecificPieces(challenge));
+      // SIEMPRE usar el sistema responsive para posicionamiento consistente
+      const newPieces = responsiveCanvas ? createResponsivePieces(challenge) : createChallengeSpecificPieces(challenge);
+      console.log('🔄 Setting pieces for challenge:', challenge.id, 'pieces count:', newPieces.length);
+      setPieces(newPieces);
     }
   };
 
@@ -559,5 +620,8 @@ export const useGameLogic = () => {
     checkSolutionWithMirrors,
     loadCustomChallenges,
     geometry,
+    // Nuevas funciones responsive
+    initializeResponsiveSystem,
+    responsiveCanvas
   };
 };

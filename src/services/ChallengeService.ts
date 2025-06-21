@@ -1,8 +1,8 @@
 import { Challenge } from '../components/ChallengeCard';
-import { ChallengeGenerator } from '../utils/ChallengeGenerator';
-import { GameGeometry } from '../utils/GameGeometry';
+import { ChallengeGenerator } from '../utils/challenges/ChallengeGenerator';
+import { GameGeometry } from '../utils/geometry/GameGeometry';
 import { ValidationService } from './ValidationService';
-import { ChallengeMigration, RelativeChallengeFile } from '../utils/ChallengeMigration';
+import { ChallengeMigration, RelativeChallengeFile } from '../utils/challenges/ChallengeMigration';
 
 /**
  * Configuración del servicio de challenges
