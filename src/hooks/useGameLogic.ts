@@ -124,12 +124,11 @@ export const useGameLogic = () => {
   // Función para generar piezas basándose en lo que necesita el challenge específico
   const createChallengeSpecificPieces = (challenge: Challenge): Piece[] => {
     const availableAreaX = 0;
-    const availableAreaY = 600;
+    const availableAreaY = 600; // Inicio del área de piezas disponibles
     const availableAreaWidth = 700;
+    const availableAreaHeight = 400; // Altura del área de piezas disponibles
     const pieceSize = 100;
-    const marginX = 50;
-    const absolutePieceY = 900;
-    const spacing = 120;
+    const margin = 80; // Margen más grande para piezas rotadas
 
     const initialPieces: Piece[] = [];
 
@@ -141,35 +140,98 @@ export const useGameLogic = () => {
 
     // Posiciones iniciales para diferentes cantidades de piezas
     const getPositionsForPieceCount = (count: number) => {
+      // Espacio disponible para las esquinas superiores izquierdas de las piezas
+      const usableWidth = availableAreaWidth - 2 * margin - pieceSize; // Ancho donde puede empezar una pieza
+      const usableHeight = availableAreaHeight - 2 * margin - pieceSize; // Alto donde puede empezar una pieza
+      
+      console.log(`📏 Positioning ${count} pieces in area [${availableAreaX}, ${availableAreaY}, ${availableAreaWidth}x${availableAreaHeight}]`);
+      
       switch (count) {
         case 1:
-          return [{ x: availableAreaX + availableAreaWidth / 2 - pieceSize / 2, y: absolutePieceY }];
+          const pos1 = { 
+            x: -24, // Coordenadas que funcionan
+            y: 616,
+            rotation: 45
+          };
+          console.log(`✓ 1 piece at (${pos1.x}, ${pos1.y})`);
+          return [pos1];
         case 2:
-          return [
-            { x: availableAreaX + availableAreaWidth / 3 - pieceSize / 2, y: absolutePieceY },
-            { x: availableAreaX + 2 * availableAreaWidth / 3 - pieceSize / 2, y: absolutePieceY }
+          // 2 piezas: usar las primeras 2 posiciones que funcionan para 4 piezas
+          const pos2 = [
+            { 
+              x: -24, // Coordenadas que funcionan
+              y: 616,
+              rotation: 45
+            },
+            { 
+              x: 243,
+              y: 921,
+              rotation: 225
+            }
           ];
+          console.log(`✓ 2 pieces at (${pos2[0].x}, ${pos2[0].y}) and (${pos2[1].x}, ${pos2[1].y})`);
+          return pos2;
         case 3:
-          return [
-            { x: availableAreaX + availableAreaWidth / 4 - pieceSize / 2, y: absolutePieceY },
-            { x: availableAreaX + availableAreaWidth / 2 - pieceSize / 2, y: absolutePieceY },
-            { x: availableAreaX + 3 * availableAreaWidth / 4 - pieceSize / 2, y: absolutePieceY }
+          // 3 piezas: usar las primeras 3 posiciones que funcionan para 4 piezas
+          const pos3 = [
+            { 
+              x: -24, // Coordenadas que funcionan
+              y: 616,
+              rotation: 45
+            },
+            { 
+              x: 243,
+              y: 921,
+              rotation: 225
+            },
+            { 
+              x: 285,
+              y: 614,
+              rotation: 45
+            }
           ];
+          console.log(`✓ 3 pieces at positions: ${pos3.map(p => `(${p.x},${p.y})`).join(', ')}`);
+          return pos3;
         case 4:
-          return [
-            { x: availableAreaX + availableAreaWidth / 5 - pieceSize / 2, y: absolutePieceY },
-            { x: availableAreaX + 2 * availableAreaWidth / 5 - pieceSize / 2, y: absolutePieceY },
-            { x: availableAreaX + 3 * availableAreaWidth / 5 - pieceSize / 2, y: absolutePieceY },
-            { x: availableAreaX + 4 * availableAreaWidth / 5 - pieceSize / 2, y: absolutePieceY }
+          // 4 piezas usando las coordenadas exactas del snapshot
+          const pos4 = [
+            { 
+              x: -24, // Coordenadas exactas del snapshot
+              y: 616,
+              rotation: 45
+            },
+            { 
+              x: 243,
+              y: 921,
+              rotation: 225
+            },
+            { 
+              x: 556, // Coordenadas exactas del snapshot
+              y: 926,
+              rotation: 225
+            },
+            { 
+              x: 285,
+              y: 614,
+              rotation: 45
+            }
           ];
+          console.log(`✓ 4 pieces in 2x2 grid, Y positions: ${pos4[0].y}, ${pos4[2].y}`);
+          return pos4;
         default:
-          // Para más de 4 piezas, distribuir uniformemente
+          // Para más de 4 piezas, usar un grid automático
           const positions = [];
+          const cols = Math.min(Math.ceil(Math.sqrt(count)), 4); // Máximo 4 columnas
+          const rows = Math.ceil(count / cols);
+          
           for (let i = 0; i < count; i++) {
-            const x = availableAreaX + marginX + (i * spacing);
-            const y = absolutePieceY;
-            positions.push({ x: Math.min(x, availableAreaWidth - pieceSize), y });
+            const col = i % cols;
+            const row = Math.floor(i / cols);
+            const x = availableAreaX + margin + (usableWidth / (cols - 1 || 1)) * col;
+            const y = availableAreaY + margin + (usableHeight / (rows - 1 || 1)) * row;
+            positions.push({ x, y });
           }
+          console.log(`✓ ${count} pieces in ${cols}x${rows} grid`);
           return positions;
       }
     };
@@ -182,14 +244,17 @@ export const useGameLogic = () => {
       const template = createPieceTemplate(requiredType.type, requiredType.face);
       const position = positions[i];
 
-      initialPieces.push({
+      const piece = {
         ...template,
         id: i + 1,
         x: position.x,
         y: position.y,
-        rotation: 0,
-        placed: false
-      });
+        rotation: position.rotation || 0, // Usar rotación especificada o 0 por defecto
+        placed: false // Las piezas empiezan sin colocar, en el área de piezas disponibles
+      };
+      
+      console.log(`🧩 Creating piece ${piece.id} (${piece.type}) at (${piece.x}, ${piece.y})`);
+      initialPieces.push(piece);
     }
 
     return initialPieces;

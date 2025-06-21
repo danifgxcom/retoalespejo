@@ -98,18 +98,40 @@ export const useMouseHandlers = ({
 
   const handleMouseUp = useCallback(() => {
     if (draggedPiece) {
-      // Al soltar la pieza, asegurarse de que el estado 'placed' esté actualizado
-      setPieces((prevPieces) =>
-          prevPieces.map((p) => {
-            if (p.id === draggedPiece.id) {
-              const updatedPiece = { ...p };
-              // Marcar como 'placed' si está en el área de juego
-              updatedPiece.placed = geometry.isPieceInGameArea(updatedPiece);
-              return updatedPiece;
+      // Al soltar la pieza, aplicar snap automático y actualizar estado
+      setPieces((prevPieces) => {
+        const updatedPieces = prevPieces.map((p) => {
+          if (p.id === draggedPiece.id) {
+            const updatedPiece = { ...p };
+            
+            // Solo aplicar snap si la pieza está en el área de juego
+            if (geometry.isPieceInGameArea(updatedPiece)) {
+              // Aplicar snap automático
+              const otherPiecesInGameArea = prevPieces
+                .filter(piece => piece.id !== draggedPiece.id && geometry.isPieceInGameArea(piece))
+                .map(pieceToPosition);
+              
+              const snappedPosition = geometry.snapPieceToNearbyTargets(
+                pieceToPosition(updatedPiece),
+                otherPiecesInGameArea,
+                20 // Distancia de snap en píxeles
+              );
+              
+              updatedPiece.x = snappedPosition.x;
+              updatedPiece.y = snappedPosition.y;
+              updatedPiece.placed = true;
+            } else {
+              // Si no está en área de juego, solo marcar placed como false
+              updatedPiece.placed = false;
             }
-            return p;
-          })
-      );
+            
+            return updatedPiece;
+          }
+          return p;
+        });
+        
+        return updatedPieces;
+      });
     }
     setDraggedPiece(null);
   }, [draggedPiece, setDraggedPiece, setPieces, geometry]);

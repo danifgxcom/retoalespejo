@@ -12,6 +12,7 @@ interface GameCanvasProps {
   onMouseUp: (e: React.MouseEvent<HTMLCanvasElement>) => void;
   onContextMenu: (e: React.MouseEvent<HTMLCanvasElement>) => void;
   geometry: GameGeometry;
+  debugMode?: boolean;
 }
 
 export interface GameCanvasRef {
@@ -19,7 +20,7 @@ export interface GameCanvasRef {
 }
 
 const GameCanvas = forwardRef<GameCanvasRef, GameCanvasProps>(
-    ({ pieces, currentChallenge, challenges, onMouseDown, onMouseMove, onMouseUp, onContextMenu, geometry }, ref) => {
+    ({ pieces, currentChallenge, challenges, onMouseDown, onMouseMove, onMouseUp, onContextMenu, geometry, debugMode = false }, ref) => {
       const canvasRef = useRef<HTMLCanvasElement>(null);
       const PIECE_SIZE = 100; // Tamaño lógico de la pieza (25% más grande: 80 * 1.25 = 100)
 
@@ -38,121 +39,128 @@ const GameCanvas = forwardRef<GameCanvasRef, GameCanvasProps>(
 
       // Dibujar áreas de fondo con diseño elegante
       const drawBackgroundAreas = (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => {
-        // Área de juego con gradiente sutil
-        const gameGradient = ctx.createLinearGradient(0, 0, GAME_AREA_WIDTH, 0);
-        gameGradient.addColorStop(0, '#f8fafc');
+        // Área de juego con gradiente elegante
+        const gameGradient = ctx.createRadialGradient(
+          GAME_AREA_WIDTH / 2, GAME_AREA_HEIGHT / 2, 0, 
+          GAME_AREA_WIDTH / 2, GAME_AREA_HEIGHT / 2, GAME_AREA_WIDTH
+        );
+        gameGradient.addColorStop(0, '#ffffff');
+        gameGradient.addColorStop(0.6, '#f8fafc');
         gameGradient.addColorStop(1, '#e2e8f0');
         ctx.fillStyle = gameGradient;
         ctx.fillRect(0, 0, GAME_AREA_WIDTH, GAME_AREA_HEIGHT);
 
-        // Área de espejo con efecto espejo
+        // Área de espejo con efecto metálico y reflectante
         const mirrorGradient = ctx.createLinearGradient(MIRROR_LINE, 0, MIRROR_LINE + GAME_AREA_WIDTH, 0);
-        mirrorGradient.addColorStop(0, '#e2e8f0');
-        mirrorGradient.addColorStop(0.1, '#f1f5f9');
-        mirrorGradient.addColorStop(0.9, '#f1f5f9');
-        mirrorGradient.addColorStop(1, '#cbd5e1');
+        mirrorGradient.addColorStop(0, '#e8f4f8');
+        mirrorGradient.addColorStop(0.2, '#f1f8fc');
+        mirrorGradient.addColorStop(0.5, '#ffffff');
+        mirrorGradient.addColorStop(0.8, '#f1f8fc');
+        mirrorGradient.addColorStop(1, '#d6eaf8');
         ctx.fillStyle = mirrorGradient;
         ctx.fillRect(MIRROR_LINE, 0, GAME_AREA_WIDTH, GAME_AREA_HEIGHT);
 
-        // Área de piezas disponibles
-        ctx.fillStyle = '#f1f5f9';
+        // Efecto de brillo en el espejo
+        const gloss = ctx.createLinearGradient(MIRROR_LINE, 0, MIRROR_LINE + GAME_AREA_WIDTH, 0);
+        gloss.addColorStop(0, 'rgba(255, 255, 255, 0.1)');
+        gloss.addColorStop(0.5, 'rgba(255, 255, 255, 0.3)');
+        gloss.addColorStop(1, 'rgba(255, 255, 255, 0.1)');
+        ctx.fillStyle = gloss;
+        ctx.fillRect(MIRROR_LINE, 0, GAME_AREA_WIDTH, GAME_AREA_HEIGHT);
+
+        // Área de piezas disponibles con gradiente cálido
+        const pieceAreaGradient = ctx.createLinearGradient(0, GAME_AREA_HEIGHT, 0, GAME_AREA_HEIGHT + BOTTOM_AREA_HEIGHT);
+        pieceAreaGradient.addColorStop(0, '#fef7ed');
+        pieceAreaGradient.addColorStop(1, '#f3e8ff');
+        ctx.fillStyle = pieceAreaGradient;
         ctx.fillRect(0, GAME_AREA_HEIGHT, GAME_AREA_WIDTH, BOTTOM_AREA_HEIGHT);
 
-        // Área de objetivo
-        ctx.fillStyle = '#fefefe';
+        // Área de objetivo con fondo limpio
+        const objectiveGradient = ctx.createLinearGradient(MIRROR_LINE, GAME_AREA_HEIGHT, MIRROR_LINE, GAME_AREA_HEIGHT + BOTTOM_AREA_HEIGHT);
+        objectiveGradient.addColorStop(0, '#ffffff');
+        objectiveGradient.addColorStop(1, '#f8fafc');
+        ctx.fillStyle = objectiveGradient;
         ctx.fillRect(MIRROR_LINE, GAME_AREA_HEIGHT, GAME_AREA_WIDTH, BOTTOM_AREA_HEIGHT);
       };
 
       // Dibujar marco de espejo clásico en bordes exteriores y líneas divisorias elegantes
       const drawMirrorFrameAndDivisions = (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => {
-        // Marco de espejo clásico en los bordes exteriores del canvas
-        const frameWidth = 15;
-        const frameColor = '#8b5a3c'; // Color madera
-        const frameInnerColor = '#d4af37'; // Dorado
-
-        // Marco exterior completo alrededor de todo el canvas
-        ctx.fillStyle = frameColor;
-        // Top
-        ctx.fillRect(0, 0, canvas.width, frameWidth);
-        // Bottom
-        ctx.fillRect(0, canvas.height - frameWidth, canvas.width, frameWidth);
-        // Left
-        ctx.fillRect(0, 0, frameWidth, canvas.height);
-        // Right
-        ctx.fillRect(canvas.width - frameWidth, 0, frameWidth, canvas.height);
-
-        // Marco interior dorado
-        ctx.fillStyle = frameInnerColor;
-        const innerFrame = 5;
-        // Top
-        ctx.fillRect(innerFrame, innerFrame, canvas.width - innerFrame * 2, frameWidth - innerFrame);
-        // Bottom
-        ctx.fillRect(innerFrame, canvas.height - frameWidth, canvas.width - innerFrame * 2, frameWidth - innerFrame);
-        // Left
-        ctx.fillRect(innerFrame, innerFrame, frameWidth - innerFrame, canvas.height - innerFrame * 2);
-        // Right
-        ctx.fillRect(canvas.width - frameWidth, innerFrame, frameWidth - innerFrame, canvas.height - innerFrame * 2);
-
-        // Línea divisoria central simple (área de juego / espejo)
-        ctx.strokeStyle = '#cbd5e1';
-        ctx.lineWidth = 1;
+        // Líneas divisorias PRIMERO (sin marco interferiendo)
+        
+        // Línea divisoria central elegante (área de juego / espejo)
+        ctx.strokeStyle = '#8b7355';
+        ctx.lineWidth = 3;
         ctx.beginPath();
-        ctx.moveTo(MIRROR_LINE, frameWidth);
+        ctx.moveTo(MIRROR_LINE, 0);
         ctx.lineTo(MIRROR_LINE, GAME_AREA_HEIGHT);
         ctx.stroke();
 
-        // Divisoria horizontal elegante
-        ctx.strokeStyle = '#cbd5e1';
-        ctx.lineWidth = 2;
+        // Línea dorada en el centro del espejo
+        ctx.strokeStyle = '#d4af37';
+        ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.moveTo(frameWidth, GAME_AREA_HEIGHT);
-        ctx.lineTo(canvas.width - frameWidth, GAME_AREA_HEIGHT);
+        ctx.moveTo(MIRROR_LINE - 1, 0);
+        ctx.lineTo(MIRROR_LINE - 1, GAME_AREA_HEIGHT);
         ctx.stroke();
 
-        // Sombra sutil bajo la divisoria
-        const shadowGradient = ctx.createLinearGradient(0, GAME_AREA_HEIGHT, 0, GAME_AREA_HEIGHT + 10);
-        shadowGradient.addColorStop(0, 'rgba(0, 0, 0, 0.1)');
+        // Divisoria horizontal elegante
+        ctx.strokeStyle = '#8b7355';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(0, GAME_AREA_HEIGHT);
+        ctx.lineTo(canvas.width, GAME_AREA_HEIGHT);
+        ctx.stroke();
+
+        // Sombra sutil bajo la divisoria horizontal
+        const shadowGradient = ctx.createLinearGradient(0, GAME_AREA_HEIGHT, 0, GAME_AREA_HEIGHT + 15);
+        shadowGradient.addColorStop(0, 'rgba(0, 0, 0, 0.2)');
         shadowGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
         ctx.fillStyle = shadowGradient;
-        ctx.fillRect(frameWidth, GAME_AREA_HEIGHT, canvas.width - frameWidth * 2, 10);
+        ctx.fillRect(0, GAME_AREA_HEIGHT, canvas.width, 15);
 
         // Divisoria vertical inferior
         ctx.strokeStyle = '#cbd5e1';
-        ctx.lineWidth = 1;
+        ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(MIRROR_LINE, GAME_AREA_HEIGHT);
-        ctx.lineTo(MIRROR_LINE, canvas.height - frameWidth);
+        ctx.lineTo(MIRROR_LINE, canvas.height);
         ctx.stroke();
       };
 
       // Dibujar etiquetas de áreas con estilo elegante
       const drawAreaLabels = (ctx: CanvasRenderingContext2D) => {
-        const frameWidth = 15;
-
-        // Estilo de texto mejorado
-        ctx.font = 'bold 16px "Segoe UI", sans-serif';
+        // Estilo de texto mejorado con sombra
+        ctx.font = 'bold 18px "Segoe UI", sans-serif';
         ctx.textAlign = 'left';
 
+        // Función helper para texto con sombra
+        const drawTextWithShadow = (text: string, x: number, y: number, color: string) => {
+          // Sombra
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+          ctx.fillText(text, x + 1, y + 1);
+          // Texto principal
+          ctx.fillStyle = color;
+          ctx.fillText(text, x, y);
+        };
+
         // Área de juego
-        ctx.fillStyle = '#1e293b';
-        ctx.fillText('🎮 ÁREA DE JUEGO', frameWidth + 15, frameWidth + 25);
+        drawTextWithShadow('🎮 ÁREA DE JUEGO', 15, 30, '#1e293b');
 
         // Espejo con icono
-        ctx.fillText('🪞 ESPEJO', MIRROR_LINE + 15, frameWidth + 25);
+        drawTextWithShadow('🪞 ESPEJO', MIRROR_LINE + 15, 30, '#1e293b');
 
         // Piezas disponibles
-        ctx.fillText('🧩 PIEZAS DISPONIBLES', frameWidth + 15, GAME_AREA_HEIGHT + 25);
+        drawTextWithShadow('🧩 PIEZAS DISPONIBLES', 15, GAME_AREA_HEIGHT + 30, '#1e293b');
 
         // Objetivo
-        ctx.fillText('🎯 OBJETIVO', MIRROR_LINE + 15, GAME_AREA_HEIGHT + 25);
+        drawTextWithShadow('🎯 OBJETIVO', MIRROR_LINE + 15, GAME_AREA_HEIGHT + 30, '#1e293b');
 
         // Agregar subtítulos descriptivos
-        ctx.font = '12px "Segoe UI", sans-serif';
-        ctx.fillStyle = '#64748b';
-        ctx.fillText('Arrastra aquí tus piezas', frameWidth + 15, frameWidth + 45);
-        ctx.fillText('Reflejo automático', MIRROR_LINE + 15, frameWidth + 45);
-        ctx.fillText('Haz clic para rotar/voltear', frameWidth + 15, GAME_AREA_HEIGHT + 45);
-        ctx.fillText('Patrón a conseguir', MIRROR_LINE + 15, GAME_AREA_HEIGHT + 45);
+        ctx.font = '13px "Segoe UI", sans-serif';
+        drawTextWithShadow('Arrastra aquí tus piezas', 15, 50, '#64748b');
+        drawTextWithShadow('Reflejo automático', MIRROR_LINE + 15, 50, '#64748b');
+        drawTextWithShadow('Haz clic para rotar/voltear', 15, GAME_AREA_HEIGHT + 50, '#64748b');
+        drawTextWithShadow('Patrón a conseguir', MIRROR_LINE + 15, GAME_AREA_HEIGHT + 50, '#64748b');
       };
 
       // Dibujar reflejos de las piezas con efecto realista
@@ -612,11 +620,63 @@ const GameCanvas = forwardRef<GameCanvasRef, GameCanvasProps>(
         drawBackgroundAreas(ctx, canvas);
         drawMirrorFrameAndDivisions(ctx, canvas);
         drawAreaLabels(ctx);
+        
+        // DEBUG MODE: Dibujar límites y información de debug
+        if (debugMode) {
+          // Dibujar límites del área de piezas disponibles
+          ctx.strokeStyle = 'blue';
+          ctx.lineWidth = 3;
+          ctx.setLineDash([10, 5]);
+          ctx.strokeRect(0, GAME_AREA_HEIGHT, GAME_AREA_WIDTH, BOTTOM_AREA_HEIGHT);
+          ctx.setLineDash([]);
+          
+          // Dibujar límites del cuadrante izquierdo (área de piezas)
+          ctx.strokeStyle = 'green';
+          ctx.lineWidth = 2;
+          ctx.setLineDash([5, 5]);
+          ctx.strokeRect(0, GAME_AREA_HEIGHT, GAME_AREA_WIDTH/2, BOTTOM_AREA_HEIGHT);
+          ctx.setLineDash([]);
+          
+          // Dibujar límites del cuadrante derecho (área de objetivo)
+          ctx.strokeStyle = 'orange';
+          ctx.lineWidth = 2;
+          ctx.setLineDash([5, 5]);
+          ctx.strokeRect(GAME_AREA_WIDTH/2, GAME_AREA_HEIGHT, GAME_AREA_WIDTH/2, BOTTOM_AREA_HEIGHT);
+          ctx.setLineDash([]);
+          
+          // Etiquetas de coordenadas y áreas
+          ctx.fillStyle = 'blue';
+          ctx.font = 'bold 14px Arial';
+          ctx.fillText('ÁREA PIEZAS: (0,600) a (700,1000)', 10, GAME_AREA_HEIGHT + 70);
+          
+          ctx.fillStyle = 'green';
+          ctx.fillText('CUADRANTE PIEZAS: (0,600) a (350,1000)', 10, GAME_AREA_HEIGHT + 90);
+          
+          ctx.fillStyle = 'orange';
+          ctx.fillText('CUADRANTE OBJETIVO: (350,600) a (700,1000)', 10, GAME_AREA_HEIGHT + 110);
+        }
 
         // DIBUJAR PIEZAS INTERACTIVAS
         if (pieces && pieces.length > 0) {
           pieces.forEach(piece => {
             if (piece) {
+              // DEBUG MODE: Dibujar marcadores de debug para piezas
+              if (debugMode && !piece.placed) { // Solo para piezas en área de piezas disponibles
+                // Dibujar el área real que ocupa la pieza (incluyendo extensiones)
+                ctx.strokeStyle = 'red';
+                ctx.lineWidth = 2;
+                const realSize = PIECE_SIZE * 1.6; // Tamaño real aproximado con extensiones
+                const realX = piece.x - (realSize - PIECE_SIZE) / 2;
+                const realY = piece.y - (realSize - PIECE_SIZE) / 2;
+                ctx.strokeRect(realX, realY, realSize, realSize);
+                
+                // Escribir coordenadas y rotación
+                ctx.fillStyle = 'red';
+                ctx.font = '12px Arial';
+                ctx.fillText(`(${Math.round(piece.x)}, ${Math.round(piece.y)})`, piece.x, piece.y - 5);
+                ctx.fillText(`R:${piece.rotation}°`, piece.x, piece.y + realSize + 15);
+              }
+              
               drawPiece(ctx, piece, piece.x, piece.y, PIECE_SIZE);
             }
           });
@@ -675,17 +735,29 @@ const GameCanvas = forwardRef<GameCanvasRef, GameCanvasProps>(
       }, [pieces, currentChallenge, challenges, challengeValidations]); // Incluir challengeValidations
 
       return (
-          <canvas
-              ref={canvasRef}
-              width={1400}
-              height={1000}
-              className="border-2 border-gray-300 rounded cursor-pointer bg-white max-w-full max-h-full object-contain"
-              onMouseDown={onMouseDown}
-              onMouseMove={onMouseMove}
-              onMouseUp={onMouseUp}
-              onMouseLeave={onMouseUp} // Importante para que no se quede una pieza "pegada" al cursor
-              onContextMenu={onContextMenu}
-          />
+          <div className="relative">
+            <canvas
+                ref={canvasRef}
+                width={1400}
+                height={1000}
+                className="cursor-pointer bg-white max-w-full max-h-full object-contain shadow-2xl"
+                style={{
+                  border: '20px solid #8b5a3c',
+                  borderRadius: '12px',
+                  boxShadow: `
+                    inset 0 0 0 8px #d4af37,
+                    inset 0 0 0 12px #8b5a3c,
+                    0 10px 30px rgba(0, 0, 0, 0.3),
+                    0 0 20px rgba(212, 175, 55, 0.2)
+                  `
+                }}
+                onMouseDown={onMouseDown}
+                onMouseMove={onMouseMove}
+                onMouseUp={onMouseUp}
+                onMouseLeave={onMouseUp} // Importante para que no se quede una pieza "pegada" al cursor
+                onContextMenu={onContextMenu}
+            />
+          </div>
       );
     }
 );

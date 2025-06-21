@@ -43,19 +43,40 @@ export class ChallengeGenerator {
     },
     {
       "id": 2,
-      "name": "Tarjeta 2: Pieza Rotada",
-      "description": "Forma un patrón con una pieza A rotada 90° tocando el espejo",
-      "piecesNeeded": 1,
-      "difficulty": "Fácil",
-      "targetPattern": "rotated_piece",
+      "name": "Tarjeta 2: Cuatro Piezas",
+      "description": "Forma un patrón con 4 piezas para probar posicionamiento",
+      "piecesNeeded": 4,
+      "difficulty": "Intermedio",
+      "targetPattern": "four_pieces",
       "objective": {
         "playerPieces": [
           {
             "type": "A",
             "face": "front",
-            "x": 330, // Posición validada para tocar exactamente el espejo
-            "y": 300,
+            "x": 200,
+            "y": 200,
+            "rotation": 0
+          },
+          {
+            "type": "A",
+            "face": "back",
+            "x": 400,
+            "y": 200,
+            "rotation": 45
+          },
+          {
+            "type": "B",
+            "face": "front",
+            "x": 200,
+            "y": 400,
             "rotation": 90
+          },
+          {
+            "type": "B",
+            "face": "back",
+            "x": 400,
+            "y": 400,
+            "rotation": 135
           }
         ],
         "symmetricPattern": []
@@ -64,9 +85,30 @@ export class ChallengeGenerator {
         {
           "type": "A",
           "face": "front",
-          "x": 330,
-          "y": 300,
+          "x": 200,
+          "y": 200,
+          "rotation": 0
+        },
+        {
+          "type": "A",
+          "face": "back",
+          "x": 400,
+          "y": 200,
+          "rotation": 45
+        },
+        {
+          "type": "B",
+          "face": "front",
+          "x": 200,
+          "y": 400,
           "rotation": 90
+        },
+        {
+          "type": "B",
+          "face": "back",
+          "x": 400,
+          "y": 400,
+          "rotation": 135
         }
       ]
     },

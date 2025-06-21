@@ -8,6 +8,7 @@ import { useMouseHandlers } from './hooks/useMouseHandlers';
 const MirrorChallengeGame: React.FC = () => {
   const canvasRef = useRef<GameCanvasRef>(null);
   const [showChallengeEditor, setShowChallengeEditor] = useState(false);
+  const [debugMode, setDebugMode] = useState(false);
 
   const {
     currentChallenge,
@@ -70,6 +71,8 @@ const MirrorChallengeGame: React.FC = () => {
               onLoadCustomChallenges={loadCustomChallenges}
               onOpenChallengeEditor={() => setShowChallengeEditor(true)}
               isLoading={isLoading}
+              debugMode={debugMode}
+              onToggleDebugMode={() => setDebugMode(!debugMode)}
           />
 
           {/* Área de juego */}
@@ -85,6 +88,7 @@ const MirrorChallengeGame: React.FC = () => {
                   onMouseUp={handleMouseUp}
                   onContextMenu={handleContextMenu}
                   geometry={geometry}
+                  debugMode={debugMode}
               />
             </div>
 

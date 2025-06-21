@@ -34,24 +34,40 @@ const EditorCanvas = forwardRef<EditorCanvasRef, EditorCanvasProps>(
 
     // Dibujar áreas de fondo
     const drawBackgroundAreas = (ctx: CanvasRenderingContext2D) => {
-      // Área de juego con gradiente sutil
-      const gameGradient = ctx.createLinearGradient(0, 0, GAME_AREA_WIDTH, 0);
-      gameGradient.addColorStop(0, '#f8fafc');
+      // Área de juego con gradiente radial elegante
+      const gameGradient = ctx.createRadialGradient(
+        GAME_AREA_WIDTH / 2, GAME_AREA_HEIGHT / 2, 0, 
+        GAME_AREA_WIDTH / 2, GAME_AREA_HEIGHT / 2, GAME_AREA_WIDTH
+      );
+      gameGradient.addColorStop(0, '#ffffff');
+      gameGradient.addColorStop(0.6, '#f8fafc');
       gameGradient.addColorStop(1, '#e2e8f0');
       ctx.fillStyle = gameGradient;
       ctx.fillRect(0, 0, GAME_AREA_WIDTH, GAME_AREA_HEIGHT);
 
-      // Área de espejo con efecto espejo
+      // Área de espejo con efecto metálico
       const mirrorGradient = ctx.createLinearGradient(MIRROR_LINE, 0, MIRROR_LINE + GAME_AREA_WIDTH, 0);
-      mirrorGradient.addColorStop(0, '#e2e8f0');
-      mirrorGradient.addColorStop(0.1, '#f1f5f9');
-      mirrorGradient.addColorStop(0.9, '#f1f5f9');
-      mirrorGradient.addColorStop(1, '#e2e8f0');
+      mirrorGradient.addColorStop(0, '#e8f4f8');
+      mirrorGradient.addColorStop(0.2, '#f1f8fc');
+      mirrorGradient.addColorStop(0.5, '#ffffff');
+      mirrorGradient.addColorStop(0.8, '#f1f8fc');
+      mirrorGradient.addColorStop(1, '#d6eaf8');
       ctx.fillStyle = mirrorGradient;
       ctx.fillRect(MIRROR_LINE, 0, GAME_AREA_WIDTH, GAME_AREA_HEIGHT);
 
-      // Área de piezas disponibles
-      ctx.fillStyle = '#f9fafb';
+      // Efecto de brillo en el espejo
+      const gloss = ctx.createLinearGradient(MIRROR_LINE, 0, MIRROR_LINE + GAME_AREA_WIDTH, 0);
+      gloss.addColorStop(0, 'rgba(255, 255, 255, 0.1)');
+      gloss.addColorStop(0.5, 'rgba(255, 255, 255, 0.3)');
+      gloss.addColorStop(1, 'rgba(255, 255, 255, 0.1)');
+      ctx.fillStyle = gloss;
+      ctx.fillRect(MIRROR_LINE, 0, GAME_AREA_WIDTH, GAME_AREA_HEIGHT);
+
+      // Área de piezas disponibles con gradiente cálido
+      const pieceAreaGradient = ctx.createLinearGradient(0, GAME_AREA_HEIGHT, 0, GAME_AREA_HEIGHT + BOTTOM_AREA_HEIGHT);
+      pieceAreaGradient.addColorStop(0, '#fef7ed');
+      pieceAreaGradient.addColorStop(1, '#f3e8ff');
+      ctx.fillStyle = pieceAreaGradient;
       ctx.fillRect(0, GAME_AREA_HEIGHT, CANVAS_WIDTH, BOTTOM_AREA_HEIGHT);
 
       // Línea del espejo con efecto brillante
@@ -180,8 +196,19 @@ const EditorCanvas = forwardRef<EditorCanvasRef, EditorCanvasProps>(
         ref={canvasRef}
         width={CANVAS_WIDTH}
         height={CANVAS_HEIGHT}
-        className="border border-gray-300 cursor-move"
-        style={{ maxWidth: '100%', height: 'auto' }}
+        className="cursor-move shadow-xl"
+        style={{ 
+          maxWidth: '100%', 
+          height: 'auto',
+          border: '15px solid #8b5a3c',
+          borderRadius: '8px',
+          boxShadow: `
+            inset 0 0 0 6px #d4af37,
+            inset 0 0 0 10px #8b5a3c,
+            0 8px 25px rgba(0, 0, 0, 0.3),
+            0 0 15px rgba(212, 175, 55, 0.2)
+          `
+        }}
         onMouseDown={onMouseDown}
         onMouseMove={onMouseMove}
         onMouseUp={onMouseUp}

@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { RotateCcw, SkipForward, HelpCircle, RotateCw, FlipHorizontal, CheckCircle, RefreshCw, Upload, Edit } from 'lucide-react';
+import { RotateCcw, SkipForward, HelpCircle, RotateCw, FlipHorizontal, CheckCircle, RefreshCw, Upload, Edit, Camera, Bug } from 'lucide-react';
 import { Piece } from './GamePiece';
 
 interface GameControlsProps {
@@ -15,6 +15,8 @@ interface GameControlsProps {
   onLoadCustomChallenges?: (file: File) => void;
   onOpenChallengeEditor?: () => void;
   isLoading?: boolean;
+  debugMode?: boolean;
+  onToggleDebugMode?: () => void;
 }
 
 const GameControls: React.FC<GameControlsProps> = ({
@@ -30,6 +32,8 @@ const GameControls: React.FC<GameControlsProps> = ({
   onLoadCustomChallenges,
   onOpenChallengeEditor,
   isLoading,
+  debugMode,
+  onToggleDebugMode,
 }) => {
   const [solutionMessage, setSolutionMessage] = React.useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -57,6 +61,23 @@ const GameControls: React.FC<GameControlsProps> = ({
     if (fileInputRef.current) {
       fileInputRef.current.click();
     }
+  };
+
+  const handleSnapshotPieces = () => {
+    console.log('📸 SNAPSHOT DE POSICIONES ACTUALES:');
+    console.log('=====================================');
+    pieces.forEach((piece, index) => {
+      console.log(`Pieza ${piece.id} (${piece.type}, ${piece.face}): x=${piece.x}, y=${piece.y}, rotation=${piece.rotation}, placed=${piece.placed}`);
+    });
+    console.log('=====================================');
+    console.log('Copia estas coordenadas para usar en el código:');
+    console.log(JSON.stringify(pieces.map(p => ({
+      x: p.x,
+      y: p.y,
+      rotation: p.rotation,
+      type: p.type,
+      face: p.face
+    })), null, 2));
   };
   return (
     <>
@@ -115,6 +136,26 @@ const GameControls: React.FC<GameControlsProps> = ({
                 title="Editor de retos"
               >
                 <Edit size={24} />
+              </button>
+            )}
+            <button 
+              onClick={handleSnapshotPieces}
+              className="bg-orange-500 hover:bg-orange-600 text-white p-3 rounded-lg transition-colors shadow-md"
+              title="Snapshot de posiciones actuales"
+            >
+              <Camera size={24} />
+            </button>
+            {onToggleDebugMode && (
+              <button 
+                onClick={onToggleDebugMode}
+                className={`${
+                  debugMode 
+                    ? 'bg-red-500 hover:bg-red-600' 
+                    : 'bg-gray-500 hover:bg-gray-600'
+                } text-white p-3 rounded-lg transition-colors shadow-md`}
+                title={debugMode ? "Desactivar modo debug" : "Activar modo debug"}
+              >
+                <Bug size={24} />
               </button>
             )}
             {/* Hidden file input */}

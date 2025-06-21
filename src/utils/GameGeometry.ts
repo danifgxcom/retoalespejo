@@ -34,21 +34,38 @@ export class GameGeometry {
     return this.config;
   }
 
-  /**
+
+
+   /**
    * Calcula la posición del reflejo de una pieza en el espejo
-   * Esta versión es para usar con scale(-1, 1) en el canvas principal
    */
   reflectPieceAcrossMirror(piece: PiecePosition): PiecePosition {
-    // El canvas ya maneja el volteo con scale(-1, 1)
-    // Solo necesitamos calcular la posición reflejada
-    const reflectedX = 2 * this.config.mirrorLineX - piece.x - this.config.pieceSize;
+    // Para reflejar correctamente, reflejamos tanto el lado izquierdo como derecho del bbox
+    const originalBbox = this.getPieceBoundingBox(piece);
+    
+    // Reflejar ambos lados del bounding box a través de la línea del espejo
+    // Si bbox va de [left, right], el reflejo va de [2*mirror - right, 2*mirror - left]
+    const reflectedLeft = 2 * this.config.mirrorLineX - originalBbox.right;
+    const reflectedRight = 2 * this.config.mirrorLineX - originalBbox.left;
+    
+    // Calcular la nueva posición x de la pieza para que su bounding box quede en reflectedLeft
+    const offsetFromLeft = piece.x - originalBbox.left;
+    const reflectedX = reflectedLeft + offsetFromLeft;
 
-    return {
+    const reflectedPiece = {
       ...piece,
       x: reflectedX
-      // Todo lo demás permanece igual: rotación, tipo, cara, colores
     };
+
+    // Verificar el bbox del reflejo para debugging
+    const reflectedBbox = this.getPieceBoundingBox(reflectedPiece);
+    console.log(`🪞 MIRROR REFLECTION: original(${piece.x}, ${piece.y}) bbox[${originalBbox.left.toFixed(1)}, ${originalBbox.right.toFixed(1)}] -> reflected(${reflectedX.toFixed(2)}, ${piece.y}) bbox[${reflectedBbox.left.toFixed(1)}, ${reflectedBbox.right.toFixed(1)}]`);
+
+    return reflectedPiece;
   }
+
+
+
 
   /**
    * Calcula el reflejo para challenge cards
@@ -67,7 +84,7 @@ export class GameGeometry {
   /**
    * Verifica si una pieza está en el área de juego (no en el área de piezas disponibles)
    */
-  isPieceInGameArea(piece: Piece): boolean {
+  isPieceInGameArea(piece: PiecePosition): boolean {
     return piece.y < this.config.height;
   }
 
@@ -340,8 +357,8 @@ export class GameGeometry {
    * Calcula posición para que dos piezas se toquen verticalmente (sin solaparse)
    */
   getVerticalTouchingPositions(baseX: number, topY: number): [Position, Position] {
-    // Para que se toquen pero no se solapen, la segunda pieza debe estar
-    // exactamente debajo de la primera
+    // Para que se toquen, pero no se solapen, la segunda pieza debe estar
+    // exactamente debajo de la primera.
     // Usamos el tamaño de pieza como separación para garantizar que se toquen
     const bottomY = topY + this.config.pieceSize;
 
@@ -366,10 +383,84 @@ export class GameGeometry {
    */
   isPiecePositionInGameArea(piece: PiecePosition): boolean {
     const bbox = this.getPieceBoundingBox(piece);
-    return bbox.left >= 0 && 
+    return bbox.left >= 0 &&
            bbox.right <= this.config.mirrorLineX &&
-           bbox.top >= 0 && 
+           bbox.top >= 0 &&
            bbox.bottom <= this.config.height;
+  }
+
+  /**
+   * Ajusta automáticamente la posición de una pieza para que se conecte perfectamente
+   * con otras piezas cercanas o con el espejo
+   */
+  snapPieceToNearbyTargets(piece: PiecePosition, otherPieces: PiecePosition[], snapDistance: number = 15): PiecePosition {
+    let snappedPiece = { ...piece };
+    const pieceBbox = this.getPieceBoundingBox(piece);
+    
+    // 1. Snap al espejo si está cerca
+    const distanceToMirror = Math.abs(pieceBbox.right - this.config.mirrorLineX);
+    if (distanceToMirror <= snapDistance) {
+      // Calcular nueva posición X para que el bounding box toque exactamente el espejo
+      const adjustment = this.config.mirrorLineX - pieceBbox.right;
+      snappedPiece.x = piece.x + adjustment;
+      console.log(`🧲 SNAP TO MIRROR: Adjusted piece by ${adjustment.toFixed(2)} pixels`);
+    }
+    
+    // 2. Snap a otras piezas cercanas
+    for (const otherPiece of otherPieces) {
+      if (otherPiece === piece) continue;
+      
+      const otherBbox = this.getPieceBoundingBox(otherPiece);
+      const currentPieceBbox = this.getPieceBoundingBox(snappedPiece);
+      
+      // Snap horizontal (side-by-side)
+      const horizontalGapLeft = Math.abs(currentPieceBbox.right - otherBbox.left);
+      const horizontalGapRight = Math.abs(otherBbox.right - currentPieceBbox.left);
+      
+      if (horizontalGapLeft <= snapDistance && this.piecesOverlapVertically(currentPieceBbox, otherBbox)) {
+        // Snap pieza actual a la izquierda de la otra pieza
+        const adjustment = otherBbox.left - currentPieceBbox.right;
+        snappedPiece.x = snappedPiece.x + adjustment;
+        console.log(`🧲 SNAP HORIZONTAL LEFT: Adjusted piece by ${adjustment.toFixed(2)} pixels`);
+      } else if (horizontalGapRight <= snapDistance && this.piecesOverlapVertically(currentPieceBbox, otherBbox)) {
+        // Snap pieza actual a la derecha de la otra pieza
+        const adjustment = otherBbox.right - currentPieceBbox.left;
+        snappedPiece.x = snappedPiece.x + adjustment;
+        console.log(`🧲 SNAP HORIZONTAL RIGHT: Adjusted piece by ${adjustment.toFixed(2)} pixels`);
+      }
+      
+      // Snap vertical (top-bottom)
+      const verticalGapTop = Math.abs(currentPieceBbox.bottom - otherBbox.top);
+      const verticalGapBottom = Math.abs(otherBbox.bottom - currentPieceBbox.top);
+      
+      if (verticalGapTop <= snapDistance && this.piecesOverlapHorizontally(currentPieceBbox, otherBbox)) {
+        // Snap pieza actual arriba de la otra pieza
+        const adjustment = otherBbox.top - currentPieceBbox.bottom;
+        snappedPiece.y = snappedPiece.y + adjustment;
+        console.log(`🧲 SNAP VERTICAL TOP: Adjusted piece by ${adjustment.toFixed(2)} pixels`);
+      } else if (verticalGapBottom <= snapDistance && this.piecesOverlapHorizontally(currentPieceBbox, otherBbox)) {
+        // Snap pieza actual debajo de la otra pieza
+        const adjustment = otherBbox.bottom - currentPieceBbox.top;
+        snappedPiece.y = snappedPiece.y + adjustment;
+        console.log(`🧲 SNAP VERTICAL BOTTOM: Adjusted piece by ${adjustment.toFixed(2)} pixels`);
+      }
+    }
+    
+    return snappedPiece;
+  }
+
+  /**
+   * Verifica si dos bounding boxes se solapan verticalmente
+   */
+  private piecesOverlapVertically(bbox1: any, bbox2: any): boolean {
+    return !(bbox1.bottom <= bbox2.top || bbox2.bottom <= bbox1.top);
+  }
+
+  /**
+   * Verifica si dos bounding boxes se solapan horizontalmente
+   */
+  private piecesOverlapHorizontally(bbox1: any, bbox2: any): boolean {
+    return !(bbox1.right <= bbox2.left || bbox2.right <= bbox1.left);
   }
 
   /**
@@ -728,42 +819,60 @@ export class GameGeometry {
    * Verifica si todas las piezas caben dentro del área de reto
    */
   doPiecesFitInChallengeArea(pieces: PiecePosition[]): boolean {
-    // El área de reto es proporcional al área de juego + espejo
-    // Verificamos que todas las piezas (incluyendo sus reflejos) estén dentro del área
+    console.log(`🔍 CHECKING ${pieces.length} PIECES IN CHALLENGE AREA`);
 
-    for (const piece of pieces) {
-      // Verificar que la pieza original esté dentro del área de juego usando bounding box real
-      if (!this.isPiecePositionInGameArea(piece)) {
+    for (let i = 0; i < pieces.length; i++) {
+      const piece = pieces[i];
+      console.log(`\n--- PIECE ${i + 1} ---`);
+      console.log(`Position: (${piece.x}, ${piece.y}), rotation: ${piece.rotation}°`);
+
+      // Verificar que la pieza original esté dentro del área de juego
+      const originalBbox = this.getPieceBoundingBox(piece);
+      console.log(`Original bbox:`, originalBbox);
+
+      const withinGameArea = originalBbox.left >= 0 && originalBbox.right <= this.config.mirrorLineX &&
+          originalBbox.top >= 0 && originalBbox.bottom <= this.config.height;
+
+      if (!withinGameArea) {
+        console.log(`❌ Original piece outside game area`);
         return false;
       }
 
       // Verificar que el reflejo esté dentro del área del espejo
       const reflectedPiece = this.reflectPieceAcrossMirror(piece);
+      console.log(`Reflected piece position: (${reflectedPiece.x}, ${reflectedPiece.y})`);
+
       const reflectedBbox = this.getPieceBoundingBox(reflectedPiece);
+      console.log(`Reflected bbox:`, reflectedBbox);
 
-      // Si la pieza toca el espejo, el reflejo puede empezar exactamente en la línea del espejo
-      const tolerance = this.isPieceTouchingMirror(piece) ? 1 : 0;
+      // Para piezas que no tocan el espejo, el reflejo puede cruzar hacia el área de juego
+      // Solo verificamos si la pieza DEBE tocar el espejo
+      const pieceTouchesMirror = this.isPieceTouchingMirror(piece);
       
-      // El reflejo debe estar a la derecha de la línea del espejo (con tolerancia si toca el espejo)
-      if (reflectedBbox.left < this.config.mirrorLineX - tolerance) {
-        return false;
+      if (!pieceTouchesMirror) {
+        // Si la pieza no toca el espejo, el reflejo puede estar en cualquier lado
+        // pero debe estar dentro del área total (juego + espejo)
+        if (reflectedBbox.left < 0 || reflectedBbox.right > 2 * this.config.mirrorLineX) {
+          console.log(`❌ Reflected piece outside total area: left=${reflectedBbox.left}, right=${reflectedBbox.right}`);
+          return false;
+        }
+      } else {
+        // Si la pieza toca el espejo, su reflejo debe estar en el área del espejo
+        const tolerance = 5; // Tolerancia pequeña para errores de cálculo
+        if (reflectedBbox.left < this.config.mirrorLineX - tolerance) {
+          console.log(`❌ Reflected piece of mirror-touching piece crosses back: left=${reflectedBbox.left} < ${this.config.mirrorLineX - tolerance}`);
+          return false;
+        }
       }
 
-      // Y dentro de los límites verticales
-      if (reflectedBbox.top < 0 || reflectedBbox.bottom > this.config.height) {
-        return false;
-      }
-      
-      // Verificar que el reflejo no se salga demasiado del área permitida
-      // Área total disponible es 2 * mirrorLineX (juego + espejo)
-      const totalAreaWidth = 2 * this.config.mirrorLineX;
-      if (reflectedBbox.right > totalAreaWidth) {
-        return false;
-      }
+      console.log(`✅ Piece ${i + 1} validation passed`);
     }
 
+    console.log(`✅ ALL PIECES FIT IN CHALLENGE AREA`);
     return true;
   }
+
+
 
   /**
    * Valida si una challenge card es válida según las reglas:

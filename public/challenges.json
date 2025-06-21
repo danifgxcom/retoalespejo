@@ -11,9 +11,9 @@
         {
           "type": "A",
           "face": "front",
-          "x": 468.98066401624385,
-          "y": 363.6213012549905,
-          "rotation": 315,
+          "x": 650,
+          "y": 387.74,
+          "rotation": 270,
           "comment": "Converted from relative coordinates: x=0 (touching mirror), y=0 (centered) - CORRECTED"
         }
       ],
