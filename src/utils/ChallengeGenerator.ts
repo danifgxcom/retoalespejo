@@ -2,10 +2,315 @@ import { GameGeometry, PiecePosition } from './GameGeometry.ts';
 import { Challenge, ObjectivePattern } from '../components/ChallengeCard';
 
 export class ChallengeGenerator {
+  // Static cache to ensure challenges are only loaded once per application lifetime
+  private static cachedDefaultChallenges: Challenge[] | null = null;
+
   private geometry: GameGeometry;
+  private defaultChallenges: Challenge[] | null = null;
+  private customChallenges: Challenge[] | null = null;
+
+  // Embedded fallback challenges in case the JSON file can't be loaded
+  // Estos challenges están validados y garantizados para funcionar correctamente
+  private readonly embeddedChallenges: Challenge[] = [
+    {
+      "id": 1,
+      "name": "Tarjeta 1: Corazón Simple",
+      "description": "Forma un corazón con una pieza A tocando el espejo",
+      "piecesNeeded": 1,
+      "difficulty": "Principiante",
+      "targetPattern": "heart_simple",
+      "objective": {
+        "playerPieces": [
+          {
+            "type": "A",
+            "face": "front",
+            "x": 330, // Posición validada para tocar exactamente el espejo
+            "y": 300,
+            "rotation": 0
+          }
+        ],
+        "symmetricPattern": []
+      },
+      "targetPieces": [
+        {
+          "type": "A",
+          "face": "front",
+          "x": 330,
+          "y": 300,
+          "rotation": 0
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Tarjeta 2: Pieza Rotada",
+      "description": "Forma un patrón con una pieza A rotada 90° tocando el espejo",
+      "piecesNeeded": 1,
+      "difficulty": "Fácil",
+      "targetPattern": "rotated_piece",
+      "objective": {
+        "playerPieces": [
+          {
+            "type": "A",
+            "face": "front",
+            "x": 330, // Posición validada para tocar exactamente el espejo
+            "y": 300,
+            "rotation": 90
+          }
+        ],
+        "symmetricPattern": []
+      },
+      "targetPieces": [
+        {
+          "type": "A",
+          "face": "front",
+          "x": 330,
+          "y": 300,
+          "rotation": 90
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Tarjeta 3: Torre Vertical",
+      "description": "Forma una torre con dos piezas A apiladas",
+      "piecesNeeded": 2,
+      "difficulty": "Fácil",
+      "targetPattern": "vertical_tower",
+      "objective": {
+        "playerPieces": [
+          {
+            "type": "A",
+            "face": "front",
+            "x": 330, // Alineadas verticalmente
+            "y": 200, // Posición superior - ajustada para que quepa en el área
+            "rotation": 0
+          },
+          {
+            "type": "A",
+            "face": "front",
+            "x": 330, // Pieza que toca el espejo
+            "y": 300, // Posición inferior - ajustada para tocar la pieza superior
+            "rotation": 0
+          }
+        ],
+        "symmetricPattern": []
+      },
+      "targetPieces": [
+        {
+          "type": "A",
+          "face": "front",
+          "x": 330,
+          "y": 200,
+          "rotation": 0
+        },
+        {
+          "type": "A",
+          "face": "front",
+          "x": 330,
+          "y": 300,
+          "rotation": 0
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "Tarjeta 4: Forma en L",
+      "description": "Forma una L con tres piezas A conectadas",
+      "piecesNeeded": 3,
+      "difficulty": "Intermedio",
+      "targetPattern": "l_shape",
+      "objective": {
+        "playerPieces": [
+          {
+            "type": "A",
+            "face": "front",
+            "x": 72, // Posición superior de la L
+            "y": 200, // Calculada para formar L conectada y estar dentro del área
+            "rotation": 0
+          },
+          {
+            "type": "A",
+            "face": "front",
+            "x": 72, // Posición central de la L
+            "y": 300,
+            "rotation": 0
+          },
+          {
+            "type": "A",
+            "face": "front",
+            "x": 330, // Pieza que toca el espejo
+            "y": 300,
+            "rotation": 0
+          }
+        ],
+        "symmetricPattern": []
+      },
+      "targetPieces": [
+        {
+          "type": "A",
+          "face": "front",
+          "x": 72,
+          "y": 200,
+          "rotation": 0
+        },
+        {
+          "type": "A",
+          "face": "front",
+          "x": 72,
+          "y": 300,
+          "rotation": 0
+        },
+        {
+          "type": "A",
+          "face": "front",
+          "x": 330,
+          "y": 300,
+          "rotation": 0
+        }
+      ]
+    }
+  ];
 
   constructor(geometry: GameGeometry) {
     this.geometry = geometry;
+
+    // Complete the symmetricPattern for embedded challenges
+    this.embeddedChallenges.forEach(challenge => {
+      if (!challenge.objective.symmetricPattern || challenge.objective.symmetricPattern.length === 0) {
+        const playerPieces = challenge.objective.playerPieces;
+        const mirrorPieces = playerPieces.map(piece => this.geometry.reflectPieceAcrossMirror(piece));
+        challenge.objective.symmetricPattern = [...playerPieces, ...mirrorPieces];
+      }
+    });
+  }
+
+  // Flag para controlar si ya se está cargando un archivo
+  private isLoadingFile: boolean = false;
+
+  // Cache para URLs ya cargadas
+  private static urlCache: Map<string, Challenge[]> = new Map();
+
+  /**
+   * Carga los desafíos desde un archivo JSON
+   * @param url URL del archivo JSON o identificador único
+   * @param isCustom Indica si son desafíos personalizados
+   * @param preloadedChallenges Desafíos ya parseados (opcional, para evitar fetch)
+   * @returns Promise con los desafíos cargados
+   */
+  async loadChallengesFromFile(
+    url: string, 
+    isCustom: boolean = false, 
+    preloadedChallenges?: Challenge[]
+  ): Promise<Challenge[]> {
+    // Si es un archivo personalizado (blob URL), no usar caché
+    const isCustomFile = url.startsWith('blob:') || isCustom;
+
+    // Verificar si ya tenemos esta URL en caché (solo para archivos no personalizados)
+    if (!isCustomFile && ChallengeGenerator.urlCache.has(url)) {
+      console.log(`Usando desafíos en caché para URL: ${url}`);
+      const cachedChallenges = ChallengeGenerator.urlCache.get(url) || [];
+
+      // Almacenar en la instancia según el tipo
+      if (isCustom) {
+        this.customChallenges = cachedChallenges;
+      } else {
+        this.defaultChallenges = cachedChallenges;
+      }
+
+      return cachedChallenges;
+    }
+
+    // Evitar múltiples cargas simultáneas del mismo archivo
+    if (this.isLoadingFile && !isCustomFile) {
+      console.log('Ya se está cargando un archivo, ignorando solicitud adicional');
+      return isCustom ? (this.customChallenges || []) : (this.defaultChallenges || []);
+    }
+
+    // Solo marcar como cargando para archivos no personalizados
+    if (!isCustomFile) {
+      this.isLoadingFile = true;
+    }
+
+    try {
+      let challenges: Challenge[];
+
+      // Si tenemos desafíos precargados, usarlos directamente
+      if (preloadedChallenges && preloadedChallenges.length > 0) {
+        console.log(`Usando desafíos precargados (${preloadedChallenges.length})`);
+        challenges = preloadedChallenges;
+      } else {
+        // De lo contrario, cargar desde la URL
+        console.log(`Intentando cargar desafíos desde: ${url}`);
+
+        // Set a timeout for the fetch operation
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
+        const response = await fetch(url, { 
+          signal: controller.signal,
+          headers: {
+            'Accept': 'application/json',
+            // Usar caché agresivo para archivos no personalizados
+            'Cache-Control': isCustomFile ? 'no-cache' : 'max-age=31536000'
+          }
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          throw new Error(`Error al cargar los desafíos: ${response.statusText}`);
+        }
+
+        challenges = await response.json();
+      }
+      console.log(`Desafíos cargados correctamente: ${challenges.length} desafíos encontrados`);
+
+      // Validar y completar los desafíos cargados
+      const validChallenges = challenges.map(challenge => {
+        // Asegurarse de que symmetricPattern esté completo
+        if (!challenge.objective.symmetricPattern || challenge.objective.symmetricPattern.length === 0) {
+          const playerPieces = challenge.objective.playerPieces;
+          const mirrorPieces = playerPieces.map(piece => this.geometry.reflectPieceAcrossMirror(piece));
+          challenge.objective.symmetricPattern = [...playerPieces, ...mirrorPieces];
+        }
+        return challenge;
+      });
+
+      // Almacenar los desafíos según su tipo
+      if (isCustom) {
+        this.customChallenges = validChallenges;
+      } else {
+        this.defaultChallenges = validChallenges;
+        // Guardar en el caché estático para archivos no personalizados
+        ChallengeGenerator.cachedDefaultChallenges = validChallenges;
+      }
+
+      // Guardar en el caché de URLs (solo para archivos no personalizados)
+      if (!isCustomFile) {
+        ChallengeGenerator.urlCache.set(url, validChallenges);
+      }
+
+      return validChallenges;
+    } catch (error) {
+      console.error('Error al cargar los desafíos:', error);
+
+      // Log more detailed error information
+      if (error instanceof TypeError && error.message === 'Failed to fetch') {
+        console.warn('Error de red al intentar cargar el archivo. Verificar que el archivo exista y sea accesible.');
+      } else if (error.name === 'AbortError') {
+        console.warn('La carga de desafíos ha excedido el tiempo límite.');
+      } else if (error instanceof SyntaxError) {
+        console.warn('El archivo JSON no tiene un formato válido.');
+      }
+
+      return [];
+    } finally {
+      // Solo desmarcar como cargando para archivos no personalizados
+      if (!isCustomFile) {
+        this.isLoadingFile = false;
+      }
+    }
   }
 
   /**
@@ -205,7 +510,7 @@ export class ChallengeGenerator {
   generateHorizontalBlockChallenge(): Challenge {
     // Una pieza tocando el espejo, otra exactamente a su izquierda tocándola
     const mirrorPosition = this.geometry.getPositionTouchingMirror(300, 0);
-    
+
     const playerPieces: PiecePosition[] = [
       {
         type: 'A',
@@ -228,15 +533,15 @@ export class ChallengeGenerator {
     let leftBound = 0;
     let rightBound = playerPieces[1].x;
     let bestX = leftBound;
-    
+
     // Búsqueda binaria para encontrar la posición óptima
     for (let iteration = 0; iteration < 20; iteration++) {
       const midX = (leftBound + rightBound) / 2;
       playerPieces[0].x = midX;
-      
+
       const distance = this.geometry.getMinDistanceBetweenPieces(playerPieces[0], playerPieces[1]);
       const overlap = this.geometry.doPiecesOverlap(playerPieces[0], playerPieces[1]);
-      
+
       if (overlap) {
         // Si se solapan, mover la pieza hacia la izquierda
         rightBound = midX;
@@ -248,13 +553,13 @@ export class ChallengeGenerator {
         bestX = midX;
         break;
       }
-      
+
       // Actualizar la mejor posición encontrada
       if (!overlap && distance <= targetTolerance + 3) {
         bestX = midX;
       }
     }
-    
+
     playerPieces[0].x = bestX;
 
     return {
@@ -296,7 +601,7 @@ export class ChallengeGenerator {
     // Validar y ajustar iterativamente
     let validation = this.geometry.validateChallengeCard(playerPieces);
     let attempts = 0;
-    
+
     while (!validation.isValid && attempts < 50) {
       console.log(`Challenge 3 attempt ${attempts + 1}:`, {
         touchesMirror: validation.touchesMirror,
@@ -315,19 +620,19 @@ export class ChallengeGenerator {
       if (!validation.piecesConnected || validation.hasPieceOverlaps) {
         // Obtener bounding box de la pieza inferior
         const piece2Bbox = this.geometry.getPieceBoundingBox(playerPieces[1]);
-        
+
         // Calcular donde debe estar la pieza superior
         const tempPiece1 = { ...playerPieces[0] };
         tempPiece1.y = 0;
         const tempBbox1 = this.geometry.getPieceBoundingBox(tempPiece1);
-        
+
         // La pieza superior debe tocar la inferior por abajo
         const desiredBottomEdge = piece2Bbox.top;
         const piece1Height = tempBbox1.bottom - tempBbox1.top;
         const piece1OffsetY = tempBbox1.top;
-        
+
         playerPieces[0].y = desiredBottomEdge - piece1Height + piece1OffsetY;
-        
+
         console.log(`Positioning piece 1 at y=${playerPieces[0].y} to touch piece 2 vertically`);
       }
 
@@ -335,7 +640,7 @@ export class ChallengeGenerator {
       if (validation.hasPieceOverlaps) {
         const bbox1 = this.geometry.getPieceBoundingBox(playerPieces[0]);
         const bbox2 = this.geometry.getPieceBoundingBox(playerPieces[1]);
-        
+
         const overlapAmount = bbox1.bottom - bbox2.top;
         if (overlapAmount > 0) {
           playerPieces[0].y -= (overlapAmount + 2);
@@ -396,7 +701,7 @@ export class ChallengeGenerator {
     // Validar y ajustar iterativamente
     let validation = this.geometry.validateChallengeCard(playerPieces);
     let attempts = 0;
-    
+
     while (!validation.isValid && attempts < 50) {
       console.log(`Challenge 4 attempt ${attempts + 1}:`, {
         touchesMirror: validation.touchesMirror,
@@ -417,25 +722,25 @@ export class ChallengeGenerator {
         const piece2Bbox = this.geometry.getPieceBoundingBox(playerPieces[2]);
         const tempPiece1 = { ...playerPieces[1], x: 0 };
         const tempBbox1 = this.geometry.getPieceBoundingBox(tempPiece1);
-        
+
         // Pieza 1 debe tocar pieza 2 horizontalmente
         const piece1Width = tempBbox1.right - tempBbox1.left;
         const piece1OffsetX = tempBbox1.left;
         playerPieces[1].x = piece2Bbox.left - piece1Width + piece1OffsetX;
-        
+
         // Posicionar pieza 0 (arriba) encima de la pieza 1
         const piece1Bbox = this.geometry.getPieceBoundingBox(playerPieces[1]);
         const tempPiece0 = { ...playerPieces[0], y: 0 };
         const tempBbox0 = this.geometry.getPieceBoundingBox(tempPiece0);
-        
+
         // Alinear horizontalmente con pieza 1
         playerPieces[0].x = playerPieces[1].x;
-        
+
         // Posicionar verticalmente para tocar pieza 1
         const piece0Height = tempBbox0.bottom - tempBbox0.top;
         const piece0OffsetY = tempBbox0.top;
         playerPieces[0].y = piece1Bbox.top - piece0Height + piece0OffsetY;
-        
+
         console.log(`Positioned L-shape: piece0(${playerPieces[0].x},${playerPieces[0].y}), piece1(${playerPieces[1].x},${playerPieces[1].y}), piece2(${playerPieces[2].x},${playerPieces[2].y})`);
       }
 
@@ -447,7 +752,7 @@ export class ChallengeGenerator {
             if (this.geometry.doPiecesOverlap(playerPieces[i], playerPieces[j])) {
               const bbox1 = this.geometry.getPieceBoundingBox(playerPieces[i]);
               const bbox2 = this.geometry.getPieceBoundingBox(playerPieces[j]);
-              
+
               // Separar las piezas según el tipo de conexión
               if (i === 0 && j === 1) { // Piezas 0 y 1 (vertical)
                 const overlapY = bbox1.bottom - bbox2.top;
@@ -521,9 +826,27 @@ export class ChallengeGenerator {
 
   /**
    * Genera todos los challenges disponibles
+   * @returns Array con todos los challenges disponibles
    */
   generateAllChallenges(): Challenge[] {
-    // Generar solo los challenges predefinidos válidos
+    // Si tenemos desafíos personalizados cargados, usarlos
+    if (this.customChallenges && this.customChallenges.length > 0) {
+      return this.customChallenges;
+    }
+
+    // Si tenemos desafíos por defecto cargados, usarlos
+    if (this.defaultChallenges && this.defaultChallenges.length > 0) {
+      return this.defaultChallenges;
+    }
+
+    // Si tenemos desafíos embebidos, usarlos como fallback
+    if (this.embeddedChallenges && this.embeddedChallenges.length > 0) {
+      console.log("Usando desafíos embebidos como fallback");
+      return this.embeddedChallenges;
+    }
+
+    // Si no hay desafíos cargados ni embebidos, generar los predefinidos
+    console.log("No hay desafíos cargados, generando predefinidos...");
     const predefinedChallenges = [
       this.generateHeartChallenge(),
       this.generateHorizontalBlockChallenge(),
@@ -531,7 +854,7 @@ export class ChallengeGenerator {
       this.generateSimpleLShapeChallenge()
     ];
 
-    // Verificar que todos los challenges predefinidos son válidos (solo una vez)
+    // Verificar que todos los challenges predefinidos son válidos
     predefinedChallenges.forEach((challenge, index) => {
       const validation = this.geometry.validateChallengeCard(challenge.objective.playerPieces);
       if (!validation.isValid) {
@@ -539,8 +862,87 @@ export class ChallengeGenerator {
       }
     });
 
-    // Solo devolver los challenges predefinidos (sin aleatorios por ahora)
     return predefinedChallenges;
+  }
+
+  // Flag para controlar si ya se intentó cargar los desafíos
+  private hasTriedLoading: boolean = false;
+
+  /**
+   * Obtiene los desafíos disponibles (cargados o generados)
+   * @returns Promise con los desafíos disponibles
+   */
+  async getAvailableChallenges(): Promise<Challenge[]> {
+    // Si ya tenemos desafíos personalizados cargados, devolverlos inmediatamente
+    if (this.customChallenges && this.customChallenges.length > 0) {
+      console.log('Usando desafíos personalizados previamente cargados');
+      return this.customChallenges;
+    }
+
+    // Si ya tenemos desafíos por defecto cargados en esta instancia, devolverlos inmediatamente
+    if (this.defaultChallenges && this.defaultChallenges.length > 0) {
+      console.log('Usando desafíos por defecto previamente cargados en esta instancia');
+      return this.defaultChallenges;
+    }
+
+    // Si ya tenemos desafíos por defecto cargados en el cache estático, devolverlos inmediatamente
+    if (ChallengeGenerator.cachedDefaultChallenges && ChallengeGenerator.cachedDefaultChallenges.length > 0) {
+      console.log('Usando desafíos por defecto del cache estático');
+      this.defaultChallenges = ChallengeGenerator.cachedDefaultChallenges;
+      return this.defaultChallenges;
+    }
+
+    // Si ya intentamos cargar los desafíos antes, no volver a intentarlo
+    // Esto evita múltiples intentos de carga en caso de fallos
+    if (this.hasTriedLoading) {
+      console.log('Ya se intentó cargar los desafíos anteriormente, usando fallback');
+      const fallbackChallenges = this.generateAllChallenges();
+      ChallengeGenerator.cachedDefaultChallenges = fallbackChallenges;
+      return fallbackChallenges;
+    }
+
+    this.hasTriedLoading = true;
+
+    try {
+      // Intentar cargar los desafíos solo desde la ubicación más probable
+      const primaryPath = window.location.origin + '/challenges.json';
+
+      console.log(`Intentando cargar desafíos desde la ubicación principal: ${primaryPath}`);
+      const loadedChallenges = await this.loadChallengesFromFile(primaryPath);
+
+      if (loadedChallenges && loadedChallenges.length > 0) {
+        console.log(`Desafíos cargados correctamente`);
+        // Guardar en el cache estático
+        ChallengeGenerator.cachedDefaultChallenges = loadedChallenges;
+        return loadedChallenges;
+      }
+
+      // Si la ubicación principal falla, intentar con una ubicación alternativa
+      // pero solo si es diferente a la primera
+      const fallbackPath = '/challenges.json';
+      if (primaryPath !== fallbackPath) {
+        console.log(`Intentando cargar desde ubicación alternativa: ${fallbackPath}`);
+        const fallbackChallenges = await this.loadChallengesFromFile(fallbackPath);
+
+        if (fallbackChallenges && fallbackChallenges.length > 0) {
+          console.log(`Desafíos cargados correctamente desde ubicación alternativa`);
+          // Guardar en el cache estático
+          ChallengeGenerator.cachedDefaultChallenges = fallbackChallenges;
+          return fallbackChallenges;
+        }
+      }
+
+      console.warn('No se pudieron cargar los desafíos desde las ubicaciones conocidas');
+    } catch (error) {
+      console.warn('Error al cargar los desafíos:', error);
+    }
+
+    console.log('Usando desafíos embebidos o generando predefinidos como fallback');
+    // Si no se pudieron cargar, usar los embebidos o generar los predefinidos
+    const fallbackChallenges = this.generateAllChallenges();
+    // Guardar en el cache estático
+    ChallengeGenerator.cachedDefaultChallenges = fallbackChallenges;
+    return fallbackChallenges;
   }
 
   /**
@@ -548,7 +950,7 @@ export class ChallengeGenerator {
    */
   generateSimpleVerticalTowerChallenge(): Challenge {
     const mirrorPosition = this.geometry.getPositionTouchingMirror(350, 0);
-    
+
     const playerPieces: PiecePosition[] = [
       {
         type: 'A',
@@ -571,15 +973,15 @@ export class ChallengeGenerator {
     let topBound = 100;
     let bottomBound = playerPieces[1].y;
     let bestY = topBound;
-    
+
     // Búsqueda binaria para posicionamiento vertical
     for (let iteration = 0; iteration < 20; iteration++) {
       const midY = (topBound + bottomBound) / 2;
       playerPieces[0].y = midY;
-      
+
       const distance = this.geometry.getMinDistanceBetweenPieces(playerPieces[0], playerPieces[1]);
       const overlap = this.geometry.doPiecesOverlap(playerPieces[0], playerPieces[1]);
-      
+
       if (overlap) {
         // Si se solapan, mover la pieza hacia arriba
         bottomBound = midY;
@@ -591,13 +993,13 @@ export class ChallengeGenerator {
         bestY = midY;
         break;
       }
-      
+
       // Actualizar la mejor posición encontrada
       if (!overlap && distance <= targetTolerance + 3) {
         bestY = midY;
       }
     }
-    
+
     playerPieces[0].y = bestY;
 
     return {
@@ -617,7 +1019,7 @@ export class ChallengeGenerator {
    */
   generateSimpleLShapeChallenge(): Challenge {
     const mirrorPosition = this.geometry.getPositionTouchingMirror(300, 0);
-    
+
     const playerPieces: PiecePosition[] = [
       {
         type: 'A',
@@ -647,15 +1049,15 @@ export class ChallengeGenerator {
     let leftBound = 0;
     let rightBound = playerPieces[2].x;
     let bestX = leftBound;
-    
+
     // Búsqueda binaria para posición horizontal entre piezas 1 y 2
     for (let iteration = 0; iteration < 20; iteration++) {
       const midX = (leftBound + rightBound) / 2;
       playerPieces[1].x = midX;
-      
+
       const distance = this.geometry.getMinDistanceBetweenPieces(playerPieces[1], playerPieces[2]);
       const overlap = this.geometry.doPiecesOverlap(playerPieces[1], playerPieces[2]);
-      
+
       if (overlap) {
         rightBound = midX;
       } else if (distance > targetTolerance) {
@@ -664,29 +1066,29 @@ export class ChallengeGenerator {
         bestX = midX;
         break;
       }
-      
+
       if (!overlap && distance <= targetTolerance + 3) {
         bestX = midX;
       }
     }
-    
+
     playerPieces[1].x = bestX;
-    
+
     // Paso 2: Posicionar pieza 0 (arriba) verticalmente usando búsqueda binaria
     playerPieces[0].x = playerPieces[1].x; // Alinear horizontalmente
-    
+
     let topBound = 150; // Evitar posiciones negativas (considerar el tamaño de la pieza)
     let bottomBound = playerPieces[1].y;
     let bestY = topBound;
-    
+
     // Búsqueda binaria para posición vertical entre piezas 0 y 1
     for (let iteration = 0; iteration < 20; iteration++) {
       const midY = (topBound + bottomBound) / 2;
       playerPieces[0].y = midY;
-      
+
       const distance = this.geometry.getMinDistanceBetweenPieces(playerPieces[0], playerPieces[1]);
       const overlap = this.geometry.doPiecesOverlap(playerPieces[0], playerPieces[1]);
-      
+
       if (overlap) {
         // Si se solapan, mover la pieza hacia arriba
         bottomBound = midY;
@@ -698,14 +1100,14 @@ export class ChallengeGenerator {
         bestY = midY;
         break;
       }
-      
+
       if (!overlap && distance <= targetTolerance + 3) {
         bestY = midY;
       }
     }
-    
+
     playerPieces[0].y = bestY;
-    
+
     // Verificación final: si aún hay solapamiento, ajustar manualmente
     const finalOverlap = this.geometry.doPiecesOverlap(playerPieces[0], playerPieces[1]);
     if (finalOverlap) {

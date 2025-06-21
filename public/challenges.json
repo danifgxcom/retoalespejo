@@ -1,0 +1,137 @@
+[
+  {
+    "id": 1,
+    "name": "Tarjeta 1: Corazón Simple",
+    "description": "Forma un corazón con una pieza A tocando el espejo",
+    "piecesNeeded": 1,
+    "difficulty": "Principiante",
+    "targetPattern": "heart_simple",
+    "objective": {
+      "playerPieces": [
+        {
+          "type": "A",
+          "face": "front",
+          "x": 468.98066401624385,
+          "y": 363.6213012549905,
+          "rotation": 315,
+          "comment": "Converted from relative coordinates: x=0 (touching mirror), y=0 (centered) - CORRECTED"
+        }
+      ],
+      "symmetricPattern": []
+    },
+    "targetPieces": [
+      {
+        "type": "A",
+        "face": "front",
+        "x": 330,
+        "y": 300,
+        "rotation": 0
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "name": "Tarjeta 2: Bloque Horizontal",
+    "description": "Forma un bloque horizontal con dos piezas A tocándose",
+    "piecesNeeded": 2,
+    "difficulty": "Fácil",
+    "targetPattern": "horizontal_block",
+    "objective": {
+      "playerPieces": [
+        {
+          "type": "A",
+          "face": "front",
+          "x": 500,
+          "y": 300,
+          "rotation": 0,
+          "comment": "Converted from relative coordinates: x=-100 (one piece left), y=0 (centered)"
+        },
+        {
+          "type": "A",
+          "face": "front",
+          "x": 330,
+          "y": 300,
+          "rotation": 0,
+          "comment": "Converted from relative coordinates: x=0 (touching mirror), y=0 (centered)"
+        }
+      ],
+      "symmetricPattern": []
+    },
+    "targetPieces": [
+      {
+        "type": "A",
+        "face": "front",
+        "x": 500,
+        "y": 300,
+        "rotation": 0
+      },
+      {
+        "type": "A",
+        "face": "front",
+        "x": 330,
+        "y": 300,
+        "rotation": 0
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "name": "Tarjeta 3: Pieza Rotada",
+    "description": "Forma un patrón con una pieza A rotada 270° tocando el espejo",
+    "piecesNeeded": 1,
+    "difficulty": "Fácil",
+    "targetPattern": "rotated_piece",
+    "objective": {
+      "playerPieces": [
+        {
+          "type": "A",
+          "face": "front",
+          "x": 572,
+          "y": 300,
+          "rotation": 270,
+          "comment": "Adjusted position for 270° rotation to touch mirror properly"
+        }
+      ],
+      "symmetricPattern": []
+    },
+    "targetPieces": [
+      {
+        "type": "A",
+        "face": "front",
+        "x": 572,
+        "y": 300,
+        "rotation": 270
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "name": "Tarjeta 4: Cara Posterior",
+    "description": "Forma un patrón con una pieza A cara posterior tocando el espejo",
+    "piecesNeeded": 1,
+    "difficulty": "Intermedio",
+    "targetPattern": "back_face",
+    "objective": {
+      "playerPieces": [
+        {
+          "type": "A",
+          "face": "back",
+          "x": 330,
+          "y": 300,
+          "rotation": 0,
+          "comment": "Converted from relative coordinates: x=0 (touching mirror), y=0 (centered), back face"
+        }
+      ],
+      "symmetricPattern": []
+    },
+    "targetPieces": [
+      {
+        "type": "A",
+        "face": "back",
+        "x": 330,
+        "y": 300,
+        "rotation": 0
+      }
+    ]
+  }
+]

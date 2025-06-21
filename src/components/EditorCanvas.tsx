@@ -1,0 +1,197 @@
+import React, { useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
+import { Piece, drawPiece } from './GamePiece';
+import { GameGeometry } from '../utils/GameGeometry.ts';
+
+interface EditorCanvasProps {
+  pieces: Piece[];
+  onMouseDown: (e: React.MouseEvent<HTMLCanvasElement>) => void;
+  onMouseMove: (e: React.MouseEvent<HTMLCanvasElement>) => void;
+  onMouseUp: (e: React.MouseEvent<HTMLCanvasElement>) => void;
+  onContextMenu: (e: React.MouseEvent<HTMLCanvasElement>) => void;
+  geometry: GameGeometry;
+}
+
+export interface EditorCanvasRef {
+  getCanvas: () => HTMLCanvasElement | null;
+}
+
+const EditorCanvas = forwardRef<EditorCanvasRef, EditorCanvasProps>(
+  ({ pieces, onMouseDown, onMouseMove, onMouseUp, onContextMenu, geometry }, ref) => {
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const PIECE_SIZE = 100;
+
+    useImperativeHandle(ref, () => ({
+      getCanvas: () => canvasRef.current,
+    }));
+
+    // Constantes del canvas
+    const GAME_AREA_WIDTH = 700;
+    const GAME_AREA_HEIGHT = 600;
+    const BOTTOM_AREA_HEIGHT = 400;
+    const MIRROR_LINE = 700;
+    const CANVAS_WIDTH = 1400; // Game area + mirror area
+    const CANVAS_HEIGHT = 1000; // Game area + piece storage
+
+    // Dibujar áreas de fondo
+    const drawBackgroundAreas = (ctx: CanvasRenderingContext2D) => {
+      // Área de juego con gradiente sutil
+      const gameGradient = ctx.createLinearGradient(0, 0, GAME_AREA_WIDTH, 0);
+      gameGradient.addColorStop(0, '#f8fafc');
+      gameGradient.addColorStop(1, '#e2e8f0');
+      ctx.fillStyle = gameGradient;
+      ctx.fillRect(0, 0, GAME_AREA_WIDTH, GAME_AREA_HEIGHT);
+
+      // Área de espejo con efecto espejo
+      const mirrorGradient = ctx.createLinearGradient(MIRROR_LINE, 0, MIRROR_LINE + GAME_AREA_WIDTH, 0);
+      mirrorGradient.addColorStop(0, '#e2e8f0');
+      mirrorGradient.addColorStop(0.1, '#f1f5f9');
+      mirrorGradient.addColorStop(0.9, '#f1f5f9');
+      mirrorGradient.addColorStop(1, '#e2e8f0');
+      ctx.fillStyle = mirrorGradient;
+      ctx.fillRect(MIRROR_LINE, 0, GAME_AREA_WIDTH, GAME_AREA_HEIGHT);
+
+      // Área de piezas disponibles
+      ctx.fillStyle = '#f9fafb';
+      ctx.fillRect(0, GAME_AREA_HEIGHT, CANVAS_WIDTH, BOTTOM_AREA_HEIGHT);
+
+      // Línea del espejo con efecto brillante
+      ctx.strokeStyle = '#ef4444';
+      ctx.lineWidth = 3;
+      ctx.setLineDash([15, 10]);
+      ctx.lineDashOffset = 0;
+      ctx.shadowColor = '#ef4444';
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.moveTo(MIRROR_LINE, 0);
+      ctx.lineTo(MIRROR_LINE, GAME_AREA_HEIGHT);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.shadowBlur = 0;
+
+      // Bordes decorativos
+      ctx.strokeStyle = '#cbd5e1';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(0, 0, GAME_AREA_WIDTH, GAME_AREA_HEIGHT);
+      ctx.strokeRect(MIRROR_LINE, 0, GAME_AREA_WIDTH, GAME_AREA_HEIGHT);
+      ctx.strokeRect(0, GAME_AREA_HEIGHT, CANVAS_WIDTH, BOTTOM_AREA_HEIGHT);
+    };
+
+    // Dibujar etiquetas de áreas
+    const drawAreaLabels = (ctx: CanvasRenderingContext2D) => {
+      ctx.fillStyle = '#475569';
+      ctx.font = 'bold 18px Arial';
+      ctx.textAlign = 'left';
+
+      // Etiqueta del área de juego
+      ctx.fillText('🎯 ÁREA DE JUEGO', 20, 35);
+
+      // Etiqueta del área del espejo
+      ctx.fillText('🪞 ÁREA DEL ESPEJO', MIRROR_LINE + 20, 35);
+
+      // Etiqueta del área de piezas disponibles
+      ctx.fillText('🧩 PIEZAS DISPONIBLES', 20, GAME_AREA_HEIGHT + 35);
+    };
+
+    // Dibujar grid de referencia
+    const drawReferenceGrid = (ctx: CanvasRenderingContext2D) => {
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([2, 8]);
+
+      // Grid vertical en área de juego
+      for (let x = 50; x < GAME_AREA_WIDTH; x += 50) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, GAME_AREA_HEIGHT);
+        ctx.stroke();
+      }
+
+      // Grid horizontal en área de juego
+      for (let y = 50; y < GAME_AREA_HEIGHT; y += 50) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(GAME_AREA_WIDTH, y);
+        ctx.stroke();
+      }
+
+      // Grid en área del espejo
+      for (let x = MIRROR_LINE + 50; x < CANVAS_WIDTH; x += 50) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, GAME_AREA_HEIGHT);
+        ctx.stroke();
+      }
+
+      for (let y = 50; y < GAME_AREA_HEIGHT; y += 50) {
+        ctx.beginPath();
+        ctx.moveTo(MIRROR_LINE, y);
+        ctx.lineTo(CANVAS_WIDTH, y);
+        ctx.stroke();
+      }
+
+      ctx.setLineDash([]);
+    };
+
+    // Dibujar piezas y sus reflejos
+    const drawPiecesAndReflections = (ctx: CanvasRenderingContext2D) => {
+      pieces.forEach((piece) => {
+        // Dibujar pieza original
+        drawPiece(ctx, piece, piece.x, piece.y, PIECE_SIZE);
+
+        // Si la pieza está en el área de juego, dibujar su reflejo
+        if (piece.placed && piece.y < GAME_AREA_HEIGHT) {
+          const reflectedX = 2 * MIRROR_LINE - piece.x - PIECE_SIZE;
+          
+          ctx.save();
+          ctx.translate(reflectedX + PIECE_SIZE/2, piece.y + PIECE_SIZE/2);
+          ctx.scale(-1, 1);
+          ctx.translate(-PIECE_SIZE/2, -PIECE_SIZE/2);
+          drawPiece(ctx, piece, 0, 0, PIECE_SIZE);
+          ctx.restore();
+        }
+      });
+    };
+
+    // Función principal de dibujo
+    const draw = () => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      // Limpiar canvas
+      ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+      // Dibujar componentes
+      drawBackgroundAreas(ctx);
+      drawReferenceGrid(ctx);
+      drawAreaLabels(ctx);
+      drawPiecesAndReflections(ctx);
+    };
+
+    // Efecto para redibujar cuando cambien las piezas
+    useEffect(() => {
+      draw();
+    }, [pieces]);
+
+    return (
+      <canvas
+        ref={canvasRef}
+        width={CANVAS_WIDTH}
+        height={CANVAS_HEIGHT}
+        className="border border-gray-300 cursor-move"
+        style={{ maxWidth: '100%', height: 'auto' }}
+        onMouseDown={onMouseDown}
+        onMouseMove={onMouseMove}
+        onMouseUp={onMouseUp}
+        onMouseLeave={onMouseUp}
+        onContextMenu={onContextMenu}
+      />
+    );
+  }
+);
+
+EditorCanvas.displayName = 'EditorCanvas';
+
+export default EditorCanvas;

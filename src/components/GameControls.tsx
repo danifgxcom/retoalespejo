@@ -1,5 +1,5 @@
-import React from 'react';
-import { RotateCcw, SkipForward, HelpCircle, RotateCw, FlipHorizontal, CheckCircle, RefreshCw } from 'lucide-react';
+import React, { useRef } from 'react';
+import { RotateCcw, SkipForward, HelpCircle, RotateCw, FlipHorizontal, CheckCircle, RefreshCw, Upload, Edit } from 'lucide-react';
 import { Piece } from './GamePiece';
 
 interface GameControlsProps {
@@ -12,6 +12,9 @@ interface GameControlsProps {
   onRotatePieceCounterClockwise: (pieceId: number) => void;
   onFlipPiece: (pieceId: number) => void;
   onCheckSolution?: () => boolean;
+  onLoadCustomChallenges?: (file: File) => void;
+  onOpenChallengeEditor?: () => void;
+  isLoading?: boolean;
 }
 
 const GameControls: React.FC<GameControlsProps> = ({
@@ -24,14 +27,35 @@ const GameControls: React.FC<GameControlsProps> = ({
   onRotatePieceCounterClockwise,
   onFlipPiece,
   onCheckSolution,
+  onLoadCustomChallenges,
+  onOpenChallengeEditor,
+  isLoading,
 }) => {
   const [solutionMessage, setSolutionMessage] = React.useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleCheckSolution = () => {
     if (onCheckSolution) {
       const isCorrect = onCheckSolution();
       setSolutionMessage(isCorrect ? "¡Correcto! Has resuelto el objetivo." : "Aún no coincide con el objetivo.");
       setTimeout(() => setSolutionMessage(null), 3000);
+    }
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files && files.length > 0 && onLoadCustomChallenges) {
+      onLoadCustomChallenges(files[0]);
+    }
+    // Reset the input value so the same file can be selected again
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleUploadClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
     }
   };
   return (
@@ -74,9 +98,36 @@ const GameControls: React.FC<GameControlsProps> = ({
             >
               <SkipForward size={24} />
             </button>
+            {onLoadCustomChallenges && (
+              <button 
+                onClick={handleUploadClick}
+                className="bg-amber-500 hover:bg-amber-600 text-white p-3 rounded-lg transition-colors shadow-md"
+                title="Cargar retos personalizados"
+                disabled={isLoading}
+              >
+                <Upload size={24} />
+              </button>
+            )}
+            {onOpenChallengeEditor && (
+              <button 
+                onClick={onOpenChallengeEditor}
+                className="bg-indigo-500 hover:bg-indigo-600 text-white p-3 rounded-lg transition-colors shadow-md"
+                title="Editor de retos"
+              >
+                <Edit size={24} />
+              </button>
+            )}
+            {/* Hidden file input */}
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              onChange={handleFileChange} 
+              accept=".json" 
+              className="hidden" 
+            />
           </div>
         </div>
-        
+
         {/* Solution Message */}
         {solutionMessage && (
           <div className={`mt-4 p-3 rounded-lg text-center font-semibold ${

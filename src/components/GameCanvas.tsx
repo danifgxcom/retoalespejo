@@ -163,32 +163,36 @@ const GameCanvas = forwardRef<GameCanvasRef, GameCanvasProps>(
         ctx.rect(MIRROR_LINE, 0, GAME_AREA_WIDTH, GAME_AREA_HEIGHT);
         ctx.clip();
 
-        pieces.forEach(piece => {
-          // Solo reflejar piezas que están en el área de juego o entrando desde abajo
-          const entryMargin = 60;
-          const pieceBottomWithMargin = piece.y + PIECE_SIZE + entryMargin;
-          const isEnteringFromBelow = pieceBottomWithMargin > GAME_AREA_HEIGHT;
-          const isInsideGameArea = piece.y < GAME_AREA_HEIGHT;
+        if (pieces && pieces.length > 0) {
+          pieces.forEach(piece => {
+            if (!piece) return;
 
-          if (isEnteringFromBelow || isInsideGameArea) {
-            ctx.save();
+            // Solo reflejar piezas que están en el área de juego o entrando desde abajo
+            const entryMargin = 60;
+            const pieceBottomWithMargin = piece.y + PIECE_SIZE + entryMargin;
+            const isEnteringFromBelow = pieceBottomWithMargin > GAME_AREA_HEIGHT;
+            const isInsideGameArea = piece.y < GAME_AREA_HEIGHT;
 
-            // Transformación para el reflejo
-            const reflectedX = 2 * MIRROR_LINE - piece.x - PIECE_SIZE;
-            ctx.translate(reflectedX + PIECE_SIZE, piece.y);
-            ctx.scale(-1, 1);
+            if (isEnteringFromBelow || isInsideGameArea) {
+              ctx.save();
 
-            // Crear pieza con ligera transparencia para efecto espejo
-            const mirrorPiece = { 
-              ...piece, 
-              centerColor: piece.centerColor + 'E6', // 90% opacidad
-              triangleColor: piece.triangleColor + 'E6'
-            };
+              // Transformación para el reflejo
+              const reflectedX = 2 * MIRROR_LINE - piece.x - PIECE_SIZE;
+              ctx.translate(reflectedX + PIECE_SIZE, piece.y);
+              ctx.scale(-1, 1);
 
-            drawPiece(ctx, mirrorPiece, 0, 0, PIECE_SIZE);
-            ctx.restore();
-          }
-        });
+              // Crear pieza con ligera transparencia para efecto espejo
+              const mirrorPiece = { 
+                ...piece, 
+                centerColor: piece.centerColor + 'E6', // 90% opacidad
+                triangleColor: piece.triangleColor + 'E6'
+              };
+
+              drawPiece(ctx, mirrorPiece, 0, 0, PIECE_SIZE);
+              ctx.restore();
+            }
+          });
+        }
 
         // Agregar efecto de distorsión del espejo
         const distortionGradient = ctx.createLinearGradient(MIRROR_LINE, 0, MIRROR_LINE + GAME_AREA_WIDTH, 0);
@@ -242,6 +246,15 @@ const GameCanvas = forwardRef<GameCanvasRef, GameCanvasProps>(
 
         // Dibujar marco de la tarjeta
         drawCardFrame(ctx);
+
+        // Si no hay challenge, mostrar mensaje de carga y salir
+        if (!challenge) {
+          ctx.fillStyle = '#64748b';
+          ctx.font = 'italic 16px Arial';
+          ctx.textAlign = 'center';
+          ctx.fillText('Loading challenges...', MIRROR_LINE + GAME_AREA_WIDTH/2, GAME_AREA_HEIGHT + BOTTOM_AREA_HEIGHT/2);
+          return;
+        }
 
         // Usar la validación almacenada en lugar de recalcular
         const validation = challengeValidations[challenge.id] || { isValid: false };
@@ -311,19 +324,24 @@ const GameCanvas = forwardRef<GameCanvasRef, GameCanvasProps>(
 
         // Número del desafío
         ctx.font = 'bold 20px Arial';
-        ctx.fillText(`#${challenge.id}`, MIRROR_LINE + GAME_AREA_WIDTH/2, GAME_AREA_HEIGHT + 95);
+        if (challenge && challenge.id !== undefined) {
+          ctx.fillText(`#${challenge.id}`, MIRROR_LINE + GAME_AREA_WIDTH/2, GAME_AREA_HEIGHT + 95);
+        } else {
+          ctx.fillText('Loading...', MIRROR_LINE + GAME_AREA_WIDTH/2, GAME_AREA_HEIGHT + 95);
+        }
       };
 
       // Función para dibujar piezas sin bordes y con colores originales (sin filtros)
-      const drawPieceClean = (ctx: CanvasRenderingContext2D, piece: Piece, x: number, y: number, size = 100) => {
+      const drawPieceClean = (ctx: CanvasRenderingContext2D, piece: Piece & { isReflected?: boolean }, x: number, y: number, size = 100) => {
         ctx.save();
-        
+
         // Desactivar antialiasing para evitar bordes blancos
         ctx.imageSmoothingEnabled = false;
-        
+
         ctx.translate(x + size/2, y + size/2);
         ctx.rotate((piece.rotation * Math.PI) / 180);
 
+        // Aplicar escala horizontal invertida para piezas tipo B
         if (piece.type === 'B') {
           ctx.scale(-1, 1);
         }
@@ -350,7 +368,7 @@ const GameCanvas = forwardRef<GameCanvasRef, GameCanvasProps>(
 
         // Dibujar triángulos
         ctx.fillStyle = piece.triangleColor;
-        
+
         // Triángulo izquierdo - extender ligeramente para evitar gaps
         ctx.beginPath();
         ctx.moveTo(...coord(0, 0));
@@ -382,7 +400,7 @@ const GameCanvas = forwardRef<GameCanvasRef, GameCanvasProps>(
       const drawUnifiedPattern = (ctx: CanvasRenderingContext2D, pieces: any[], offsetX: number, offsetY: number, scale: number) => {
         // Agrupar piezas por color
         const piecesByColor = new Map<string, any[]>();
-        
+
         pieces.forEach(piece => {
           // Procesar tanto piezas originales como reflejadas
           const originalPiece = piece;
@@ -390,7 +408,7 @@ const GameCanvas = forwardRef<GameCanvasRef, GameCanvasProps>(
             ...geometry.reflectPieceForChallengeCard(piece),
             isReflected: true
           };
-          
+
           [originalPiece, reflectedPiece].forEach(p => {
             const centerColor = p.type === 'A' ? 
               (p.face === 'front' ? '#FFD700' : '#FF4444') : 
@@ -398,7 +416,7 @@ const GameCanvas = forwardRef<GameCanvasRef, GameCanvasProps>(
             const triangleColor = p.type === 'A' ? 
               (p.face === 'front' ? '#FF4444' : '#FFD700') : 
               (p.face === 'front' ? '#FFD700' : '#FF4444');
-            
+
             // Agregar segmentos de centro
             if (!piecesByColor.has(centerColor)) {
               piecesByColor.set(centerColor, []);
@@ -408,7 +426,7 @@ const GameCanvas = forwardRef<GameCanvasRef, GameCanvasProps>(
               segment: 'center',
               color: centerColor
             });
-            
+
             // Agregar segmentos de triángulos
             if (!piecesByColor.has(triangleColor)) {
               piecesByColor.set(triangleColor, []);
@@ -420,34 +438,34 @@ const GameCanvas = forwardRef<GameCanvasRef, GameCanvasProps>(
             });
           });
         });
-        
+
         // Dibujar cada color como una sola forma continua
         piecesByColor.forEach((segments, color) => {
           ctx.fillStyle = color;
           ctx.beginPath();
-          
+
           segments.forEach(segment => {
             const x = offsetX + (segment.x * scale);
             const y = offsetY + (segment.y * scale);
             const size = 100 * scale;
-            
+
             ctx.save();
             ctx.translate(x + size/2, y + size/2);
             ctx.rotate((segment.rotation * Math.PI) / 180);
-            
+
             if (segment.type === 'B') {
               ctx.scale(-1, 1);
             }
-            
+
             if (segment.isReflected) {
               ctx.scale(-1, 1);
             }
-            
+
             const unit = size * 1.28;
             const coord = (coordX: number, coordY: number): [number, number] => [
               coordX * unit, -coordY * unit
             ];
-            
+
             if (segment.segment === 'center') {
               // Cuadrado central
               ctx.moveTo(...coord(1, 0));
@@ -461,76 +479,123 @@ const GameCanvas = forwardRef<GameCanvasRef, GameCanvasProps>(
               ctx.lineTo(...coord(1, 0));
               ctx.lineTo(...coord(1, 1));
               ctx.closePath();
-              
+
               ctx.moveTo(...coord(1, 1));
               ctx.lineTo(...coord(2, 1));
               ctx.lineTo(...coord(1.5, 1.5));
               ctx.closePath();
-              
+
               ctx.moveTo(...coord(2, 0));
               ctx.lineTo(...coord(2, 1));
               ctx.lineTo(...coord(2.5, 0.5));
               ctx.closePath();
             }
-            
+
             ctx.restore();
           });
-          
+
           ctx.fill();
         });
       };
 
-      // Dibujar las piezas objetivo usando el patrón unificado
-      const drawObjectivePieces = (ctx: CanvasRenderingContext2D, challenge: Challenge, contentTop: number, contentHeight: number, mirrorLineInObjective: number, objectiveScaleFactor: number, objectivePieceSize: number) => {
+      // Dibujar las piezas objetivo usando piezas individuales
+      const drawObjectivePieces = (ctx: CanvasRenderingContext2D, challenge: Challenge, contentTop: number, contentHeight: number, _mirrorLineInObjective: number, _objectiveScaleFactor: number, _objectivePieceSize: number) => {
+        // Verificar que el challenge y sus propiedades existan
+        if (!challenge || !challenge.objective || !challenge.objective.playerPieces) {
+          // Si no hay datos válidos, mostrar un mensaje
+          ctx.fillStyle = '#64748b';
+          ctx.font = 'italic 16px Arial';
+          ctx.textAlign = 'center';
+          ctx.fillText('Challenge data not available', MIRROR_LINE + GAME_AREA_WIDTH/2, contentTop + 50);
+          return;
+        }
+
         const playerPieces = challenge.objective.playerPieces;
 
-        // Área disponible para el mini-screenshot
-        const cardAreaWidth = GAME_AREA_WIDTH - 100;
-        const cardAreaHeight = contentHeight - 40;
+        // Área disponible para el mini-screenshot - márgenes ajustados para piezas más grandes
+        const cardAreaWidth = GAME_AREA_WIDTH - 80; // Menos margen para más espacio
+        const cardAreaHeight = contentHeight - 40; // Menos margen para más espacio
+        const maxScale = 0.8; // Escala aumentada para piezas más visibles
 
-        // Offset donde empieza la carta
-        const cardOffsetX = MIRROR_LINE + 50;
+        // Offset donde empieza la carta - ajustado para los márgenes reducidos
+        const cardOffsetX = MIRROR_LINE + 40;
         const cardOffsetY = contentTop + 20;
 
-        // Calcular límites del patrón completo (incluyendo reflejos)
-        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        // Representar proporcionalmente el área de juego completa (0-700) en la challenge card
+        const gameAreaWidth = 700; // Ancho completo del área de juego original
+        const gameAreaHeight = 600; // Alto completo del área de juego original
+        
+        // Calcular escala para representar el área de juego completa
+        const scaleX = (cardAreaWidth / 2) / gameAreaWidth; // Dividir por 2 para área de juego + espejo
+        const scaleY = cardAreaHeight / gameAreaHeight;
+        const scale = Math.min(scaleX, scaleY, maxScale);
 
-        playerPieces.forEach(piecePos => {
-          minX = Math.min(minX, piecePos.x);
-          maxX = Math.max(maxX, piecePos.x + PIECE_SIZE);
-          minY = Math.min(minY, piecePos.y);
-          maxY = Math.max(maxY, piecePos.y + PIECE_SIZE);
+        // Calcular posiciones escaladas manteniendo proporciones del área de juego
+        const scaledPlayerPieces = playerPieces.map(piecePos => ({
+          ...piecePos,
+          x: piecePos.x * scale, // Mantener coordenadas originales escaladas
+          y: piecePos.y * scale
+        }));
 
-          const reflectedPiece = geometry.reflectPieceForChallengeCard(piecePos);
-          minX = Math.min(minX, reflectedPiece.x);
-          maxX = Math.max(maxX, reflectedPiece.x + PIECE_SIZE);
-          minY = Math.min(minY, reflectedPiece.y);
-          maxY = Math.max(maxY, reflectedPiece.y + PIECE_SIZE);
-        });
+        // El área de juego escalada ocupa la mitad izquierda de la carta
+        const gameAreaOffsetX = cardOffsetX;
+        const gameAreaOffsetY = cardOffsetY + (cardAreaHeight - gameAreaHeight * scale) / 2; // Centrar verticalmente
 
-        const patternWidth = maxX - minX;
-        const patternHeight = maxY - minY;
+        // Dibujar línea divisoria para simular el espejo
+        ctx.save();
+        ctx.strokeStyle = '#cbd5e1';
+        ctx.lineWidth = 2;
+        const mirrorLineX = gameAreaOffsetX + gameAreaWidth * scale; // Espejo en x=700 escalado
+        ctx.beginPath();
+        ctx.moveTo(mirrorLineX, gameAreaOffsetY);
+        ctx.lineTo(mirrorLineX, gameAreaOffsetY + gameAreaHeight * scale);
+        ctx.stroke();
+        ctx.restore();
 
-        // Calcular escala
-        const totalGameWidth = GAME_AREA_WIDTH * 2;
-        const scaleX = cardAreaWidth / totalGameWidth;
-        const scaleY = cardAreaHeight / GAME_AREA_HEIGHT;
-        const patternScaleX = cardAreaWidth / patternWidth;
-        const patternScaleY = cardAreaHeight / patternHeight;
-        const scale = Math.min(scaleX, scaleY, patternScaleX, patternScaleY);
-
-        // Calcular centrado
-        const cardCenterX = cardOffsetX + cardAreaWidth / 2;
-        const cardCenterY = cardOffsetY + cardAreaHeight / 2;
-        const patternCenterX = (minX + maxX) / 2;
-        const patternCenterY = (minY + maxY) / 2;
-        const offsetX = cardCenterX - (patternCenterX * scale);
-        const offsetY = cardCenterY - (patternCenterY * scale);
-
-        // Dibujar usando el patrón unificado
+        // Dibujar cada pieza del jugador
         ctx.save();
         ctx.imageSmoothingEnabled = false;
-        drawUnifiedPattern(ctx, playerPieces, offsetX, offsetY, scale);
+
+        scaledPlayerPieces.forEach((piecePos, index) => {
+          // Crear una pieza visual a partir de la posición
+          const displayPiece = {
+            id: 1000 + index,
+            type: piecePos.type,
+            face: piecePos.face,
+            centerColor: piecePos.type === 'A' ? 
+              (piecePos.face === 'front' ? '#FFD700' : '#FF4444') : 
+              (piecePos.face === 'front' ? '#FF4444' : '#FFD700'),
+            triangleColor: piecePos.type === 'A' ? 
+              (piecePos.face === 'front' ? '#FF4444' : '#FFD700') : 
+              (piecePos.face === 'front' ? '#FFD700' : '#FF4444'),
+            x: gameAreaOffsetX + piecePos.x, // Usar offset del área de juego escalada
+            y: gameAreaOffsetY + piecePos.y,
+            rotation: piecePos.rotation,
+            placed: true
+          };
+
+          // Dibujar la pieza del jugador
+          drawPieceClean(ctx, displayPiece, displayPiece.x, displayPiece.y, PIECE_SIZE * scale);
+
+          // Calcular la posición reflejada (lado derecho de la carta)
+          const reflectedX = mirrorLineX + (mirrorLineX - displayPiece.x - PIECE_SIZE * scale);
+
+          // Crear la pieza reflejada
+          const reflectedPiece = {
+            ...displayPiece,
+            x: reflectedX,
+            y: displayPiece.y
+          };
+
+          // Dibujar la pieza reflejada con transformación horizontal
+          ctx.save();
+          ctx.translate(reflectedPiece.x + (PIECE_SIZE * scale)/2, reflectedPiece.y + (PIECE_SIZE * scale)/2);
+          ctx.scale(-1, 1);
+          ctx.translate(-(PIECE_SIZE * scale)/2, -(PIECE_SIZE * scale)/2);
+          drawPieceClean(ctx, reflectedPiece, 0, 0, PIECE_SIZE * scale);
+          ctx.restore();
+        });
+
         ctx.restore();
       };
 
@@ -549,9 +614,13 @@ const GameCanvas = forwardRef<GameCanvasRef, GameCanvasProps>(
         drawAreaLabels(ctx);
 
         // DIBUJAR PIEZAS INTERACTIVAS
-        pieces.forEach(piece => {
-          drawPiece(ctx, piece, piece.x, piece.y, PIECE_SIZE);
-        });
+        if (pieces && pieces.length > 0) {
+          pieces.forEach(piece => {
+            if (piece) {
+              drawPiece(ctx, piece, piece.x, piece.y, PIECE_SIZE);
+            }
+          });
+        }
 
         drawMirrorReflections(ctx);
         drawChallengeCard(ctx);
@@ -560,9 +629,44 @@ const GameCanvas = forwardRef<GameCanvasRef, GameCanvasProps>(
       // Validar todos los desafíos una sola vez al inicializar el componente
       useEffect(() => {
         const validations: {[key: number]: any} = {};
-        challenges.forEach(challenge => {
-          validations[challenge.id] = geometry.validateChallengeCard(challenge.objective.playerPieces);
-        });
+        if (challenges && challenges.length > 0) {
+          console.log('🔍 DEBUGGING CHALLENGES - Total challenges loaded:', challenges.length);
+          
+          challenges.forEach(challenge => {
+            if (challenge && challenge.id !== undefined && challenge.objective && challenge.objective.playerPieces) {
+              console.log(`🎯 Challenge ${challenge.id} (${challenge.name}):`);
+              console.log('  Player pieces:', challenge.objective.playerPieces);
+              
+              // Verificar coordenadas específicamente
+              challenge.objective.playerPieces.forEach((piece, index) => {
+                console.log(`  Piece ${index + 1}: type=${piece.type}, x=${piece.x}, y=${piece.y}, rotation=${piece.rotation}`);
+                
+                // Verificar si toca el espejo manualmente
+                const touchesCheck = geometry.isPieceTouchingMirror(piece);
+                const bbox = geometry.getPieceBoundingBox(piece);
+                console.log(`    Bounding box: left=${bbox.left}, right=${bbox.right}, top=${bbox.top}, bottom=${bbox.bottom}`);
+                console.log(`    Touches mirror: ${touchesCheck}, Distance to mirror: ${Math.abs(bbox.right - 700)}`);
+              });
+              
+              // Usar validación real según las reglas del juego
+              const validation = geometry.validateChallengeCard(challenge.objective.playerPieces);
+              validations[challenge.id] = validation;
+              
+              // Log de validación para debugging
+              console.log(`  ✅ Validation result:`, validation);
+              if (!validation.isValid) {
+                console.warn(`  ❌ Challenge ${challenge.id} (${challenge.name}) NO ES VÁLIDO:`, {
+                  touchesMirror: validation.touchesMirror,
+                  hasPieceOverlaps: validation.hasPieceOverlaps,
+                  hasReflectionOverlaps: validation.hasReflectionOverlaps,
+                  entersMirror: validation.entersMirror,
+                  piecesConnected: validation.piecesConnected,
+                  piecesInArea: validation.piecesInArea
+                });
+              }
+            }
+          });
+        }
         setChallengeValidations(validations);
       }, [challenges, geometry]);
 

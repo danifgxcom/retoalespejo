@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Piece } from '../components/GamePiece';
-import { Challenge, PiecePosition, ObjectivePattern } from '../components/ChallengeCard';
+import { Challenge, PiecePosition } from '../components/ChallengeCard';
 import { GameGeometry, GameAreaConfig } from '../utils/GameGeometry.ts';
 import { ChallengeGenerator } from '../utils/ChallengeGenerator.ts';
 
@@ -14,8 +14,11 @@ export const useGameLogic = () => {
   };
 
   // Inicializar clases de geometría y generador de challenges
-  const geometry = new GameGeometry(gameAreaConfig);
-  const challengeGenerator = new ChallengeGenerator(geometry);
+  const geometry = useMemo(() => new GameGeometry(gameAreaConfig), []);
+  const challengeGenerator = useMemo(() => new ChallengeGenerator(geometry), [geometry]);
+
+  // Ref para controlar si ya se están cargando los desafíos
+  const isLoadingChallengesRef = useRef(false);
 
   // Estados del juego
   const [currentChallenge, setCurrentChallenge] = useState(0);
@@ -23,6 +26,8 @@ export const useGameLogic = () => {
   const [draggedPiece, setDraggedPiece] = useState<Piece | null>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [showInstructions, setShowInstructions] = useState(true);
+  const [challenges, setChallenges] = useState<Challenge[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Configuración de plantillas de piezas
   const createPieceTemplate = (type: 'A' | 'B', face: 'front' | 'back') => {
@@ -48,8 +53,58 @@ export const useGameLogic = () => {
     return geometry.reflectPieceAcrossMirror(piece);
   };
 
-  // Generar challenges usando el generador
-  const challenges: Challenge[] = challengeGenerator.generateAllChallenges();
+  // Función para cargar desafíos desde un archivo personalizado
+  const loadCustomChallenges = useCallback(async (file: File) => {
+    // Evitar cargar múltiples veces simultáneamente
+    if (isLoadingChallengesRef.current) {
+      console.log('Ya se están cargando los desafíos, ignorando solicitud adicional');
+      return;
+    }
+
+    isLoadingChallengesRef.current = true;
+    setIsLoading(true);
+
+    try {
+      console.log('Cargando desafíos personalizados desde archivo subido por el usuario');
+
+      // Cargar directamente desde el contenido del archivo en lugar de crear un blob URL
+      const fileContent = await file.text();
+
+      try {
+        // Intentar parsear el JSON
+        const customChallenges = JSON.parse(fileContent);
+
+        // Verificar que el contenido tiene el formato esperado
+        if (Array.isArray(customChallenges) && customChallenges.length > 0) {
+          // Pasar directamente los desafíos al generador
+          const loadedChallenges = await challengeGenerator.loadChallengesFromFile(
+            // Usar un identificador único para este archivo
+            `custom-${file.name}-${Date.now()}`,
+            true,
+            // Pasar los desafíos ya parseados para evitar otra solicitud fetch
+            customChallenges
+          );
+
+          if (loadedChallenges.length > 0) {
+            console.log(`Cargados ${loadedChallenges.length} desafíos personalizados`);
+            setChallenges(loadedChallenges);
+            setCurrentChallenge(0); // Reiniciar al primer desafío
+          } else {
+            console.error('No se pudieron cargar desafíos personalizados válidos');
+          }
+        } else {
+          console.error('El archivo no contiene un array de desafíos válido');
+        }
+      } catch (parseError) {
+        console.error('Error al parsear el archivo JSON:', parseError);
+      }
+    } catch (error) {
+      console.error('Error al cargar desafíos personalizados:', error);
+    } finally {
+      setIsLoading(false);
+      isLoadingChallengesRef.current = false;
+    }
+  }, [challengeGenerator]);
 
   // Función para alternar cara de la pieza
   const togglePieceFace = (piece: Piece): Piece => {
@@ -242,13 +297,57 @@ export const useGameLogic = () => {
     return inSquare || inLeftTriangle || inTopTriangle || inRightTriangle;
   };
 
+  // Ref para controlar si ya se han cargado los desafíos iniciales
+  const initialChallengesLoadedRef = useRef(false);
+
+  // Cargar desafíos al iniciar - solo una vez
+  useEffect(() => {
+    const loadInitialChallenges = async () => {
+      // Si ya se cargaron los desafíos inicialmente, no volver a cargarlos
+      if (initialChallengesLoadedRef.current) {
+        console.log('Los desafíos ya fueron cargados inicialmente, no se volverán a cargar');
+        return;
+      }
+
+      // Evitar cargar múltiples veces simultáneamente
+      if (isLoadingChallengesRef.current) {
+        console.log('Ya se están cargando los desafíos, ignorando solicitud adicional');
+        return;
+      }
+
+      isLoadingChallengesRef.current = true;
+      setIsLoading(true);
+
+      try {
+        // Intentar cargar los desafíos desde el archivo por defecto
+        const loadedChallenges = await challengeGenerator.getAvailableChallenges();
+        setChallenges(loadedChallenges);
+        // Marcar que ya se cargaron los desafíos iniciales
+        initialChallengesLoadedRef.current = true;
+      } catch (error) {
+        console.error('Error al cargar los desafíos iniciales:', error);
+        // Si falla, usar los desafíos predefinidos
+        setChallenges(challengeGenerator.generateAllChallenges());
+        // Marcar que ya se cargaron los desafíos iniciales (aunque sean los predefinidos)
+        initialChallengesLoadedRef.current = true;
+      } finally {
+        setIsLoading(false);
+        isLoadingChallengesRef.current = false;
+      }
+    };
+
+    loadInitialChallenges();
+  }, []); // Sin dependencias para que solo se ejecute una vez al montar el componente
+
   // Inicializar piezas según el desafío actual
   useEffect(() => {
+    if (isLoading) return;
+
     const challenge = challenges[currentChallenge];
     if (challenge) {
       setPieces(createChallengeSpecificPieces(challenge));
     }
-  }, [currentChallenge]);
+  }, [currentChallenge, challenges, isLoading]);
 
   // Funciones de control - ROTACIÓN EN INCREMENTOS DE 45 GRADOS
   const rotatePiece = (pieceId: number) => {
@@ -343,7 +442,7 @@ export const useGameLogic = () => {
       const hasMatchingPiece = placedPieceTypes.some(placedType => 
         placedType.type === requiredType.type && placedType.face === requiredType.face
       );
-      
+
       if (!hasMatchingPiece) {
         return {
           isCorrect: false,
@@ -381,6 +480,7 @@ export const useGameLogic = () => {
     dragOffset,
     showInstructions,
     challenges,
+    isLoading,
     setPieces,
     setDraggedPiece,
     setDragOffset,
@@ -392,6 +492,7 @@ export const useGameLogic = () => {
     nextChallenge,
     isPieceHit,
     checkSolutionWithMirrors,
+    loadCustomChallenges,
     geometry,
   };
 };

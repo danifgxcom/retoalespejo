@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Challenges Loading</title>
+</head>
+<body>
+    <h1>Debug Challenges Loading</h1>
+    <div id="output"></div>
+    
+    <script>
+        const output = document.getElementById('output');
+        
+        function log(message) {
+            console.log(message);
+            output.innerHTML += '<p>' + message + '</p>';
+        }
+        
+        async function testChallengesLoading() {
+            log('=== TESTING CHALLENGES LOADING ===');
+            
+            // Test 1: Direct fetch
+            try {
+                log('Intentando cargar /challenges.json directamente...');
+                const response = await fetch('/challenges.json');
+                log('Respuesta HTTP: ' + response.status + ' ' + response.statusText);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log('✅ Archivo cargado correctamente!');
+                    log('Número de challenges: ' + data.length);
+                    log('Primer challenge: ' + JSON.stringify(data[0], null, 2));
+                    
+                    // Verificar coordenadas del primer challenge
+                    if (data[0] && data[0].objective && data[0].objective.playerPieces) {
+                        const firstPiece = data[0].objective.playerPieces[0];
+                        log('Coordenadas de la primera pieza: x=' + firstPiece.x + ', y=' + firstPiece.y);
+                        
+                        if (firstPiece.x === 330) {
+                            log('✅ Las coordenadas son correctas (x=330)');
+                        } else {
+                            log('❌ Las coordenadas son incorrectas. Esperado x=330, obtenido x=' + firstPiece.x);
+                        }
+                    }
+                } else {
+                    log('❌ Error al cargar archivo: ' + response.status);
+                }
+            } catch (error) {
+                log('❌ Error en fetch: ' + error.message);
+            }
+            
+            // Test 2: Full URL
+            try {
+                log('\\nIntentando cargar con URL completa...');
+                const fullUrl = window.location.origin + '/challenges.json';
+                log('URL completa: ' + fullUrl);
+                
+                const response = await fetch(fullUrl);
+                log('Respuesta HTTP (URL completa): ' + response.status + ' ' + response.statusText);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log('✅ Archivo cargado correctamente con URL completa!');
+                } else {
+                    log('❌ Error con URL completa: ' + response.status);
+                }
+            } catch (error) {
+                log('❌ Error con URL completa: ' + error.message);
+            }
+        }
+        
+        // Ejecutar tests al cargar la página
+        testChallengesLoading();
+    </script>
+</body>
+</html>

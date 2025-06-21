@@ -362,6 +362,17 @@ export class GameGeometry {
   }
 
   /**
+   * Verifica si una pieza completa (considerando su bounding box) está dentro del área de juego
+   */
+  isPiecePositionInGameArea(piece: PiecePosition): boolean {
+    const bbox = this.getPieceBoundingBox(piece);
+    return bbox.left >= 0 && 
+           bbox.right <= this.config.mirrorLineX &&
+           bbox.top >= 0 && 
+           bbox.bottom <= this.config.height;
+  }
+
+  /**
    * Escala coordenadas para mostrar en un área más pequeña (como challenge card)
    */
   scalePosition(position: Position, scaleFactor: number, offset: Position = { x: 0, y: 0 }): Position {
@@ -489,8 +500,17 @@ export class GameGeometry {
 
   /**
    * Detecta si una pieza se solapa con su propio reflejo en el espejo
+   * IMPORTANTE: Si la pieza está tocando correctamente el espejo, su reflejo
+   * coincidirá exactamente con ella en la línea del espejo, lo cual es esperado
+   * y no debe considerarse como solapamiento problemático.
    */
   detectPieceReflectionOverlap(piece: PiecePosition): boolean {
+    // Si la pieza está tocando el espejo correctamente, no hay solapamiento problemático
+    if (this.isPieceTouchingMirror(piece)) {
+      return false; // Las piezas que tocan el espejo pueden "coincidir" con su reflejo
+    }
+    
+    // Solo verificar solapamiento real si la pieza NO está tocando el espejo
     const reflectedPiece = this.reflectPieceAcrossMirror(piece);
     return this.doPiecesOverlap(piece, reflectedPiece);
   }
@@ -712,8 +732,8 @@ export class GameGeometry {
     // Verificamos que todas las piezas (incluyendo sus reflejos) estén dentro del área
 
     for (const piece of pieces) {
-      // Verificar que la pieza original esté dentro del área de juego
-      if (!this.isPositionInGameArea(piece)) {
+      // Verificar que la pieza original esté dentro del área de juego usando bounding box real
+      if (!this.isPiecePositionInGameArea(piece)) {
         return false;
       }
 
@@ -721,13 +741,23 @@ export class GameGeometry {
       const reflectedPiece = this.reflectPieceAcrossMirror(piece);
       const reflectedBbox = this.getPieceBoundingBox(reflectedPiece);
 
-      // El reflejo debe estar a la derecha de la línea del espejo
-      if (reflectedBbox.left < this.config.mirrorLineX) {
+      // Si la pieza toca el espejo, el reflejo puede empezar exactamente en la línea del espejo
+      const tolerance = this.isPieceTouchingMirror(piece) ? 1 : 0;
+      
+      // El reflejo debe estar a la derecha de la línea del espejo (con tolerancia si toca el espejo)
+      if (reflectedBbox.left < this.config.mirrorLineX - tolerance) {
         return false;
       }
 
       // Y dentro de los límites verticales
       if (reflectedBbox.top < 0 || reflectedBbox.bottom > this.config.height) {
+        return false;
+      }
+      
+      // Verificar que el reflejo no se salga demasiado del área permitida
+      // Área total disponible es 2 * mirrorLineX (juego + espejo)
+      const totalAreaWidth = 2 * this.config.mirrorLineX;
+      if (reflectedBbox.right > totalAreaWidth) {
         return false;
       }
     }

@@ -1,0 +1,221 @@
+{
+  "coordinate_system": "mirror_relative",
+  "description": "Challenges using mirror-relative coordinates. X=0 means touching the mirror, negative values are to the left, positive to the right. Y=0 is vertical center, negative is up, positive is down.",
+  "mirror_position": 0,
+  "piece_size": 100,
+  
+  "challenges": [
+    {
+      "id": 1,
+      "name": "Tarjeta 1: Corazón Simple",
+      "description": "Forma un corazón con una pieza A tocando el espejo",
+      "piecesNeeded": 1,
+      "difficulty": "Principiante",
+      "targetPattern": "heart_simple",
+      "pieces": [
+        {
+          "type": "A",
+          "face": "front",
+          "x": 0,
+          "y": 0,
+          "rotation": 270,
+          "comment": "Pieza A sin rotación tocando el espejo - patrón corazón simple"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Tarjeta 2: Bloque Horizontal",
+      "description": "Forma un bloque horizontal con dos piezas A tocándose",
+      "piecesNeeded": 2,
+      "difficulty": "Fácil",
+      "targetPattern": "horizontal_block",
+      "pieces": [
+        {
+          "type": "A",
+          "face": "front",
+          "x": -100,
+          "y": 0,
+          "rotation": 0,
+          "comment": "Primera pieza, una unidad completa a la izquierda"
+        },
+        {
+          "type": "A",
+          "face": "front",
+          "x": 0,
+          "y": 0,
+          "rotation": 0,
+          "comment": "Segunda pieza tocando el espejo"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Tarjeta 3: Pieza Rotada",
+      "description": "Forma un patrón con una pieza A rotada 90° tocando el espejo",
+      "piecesNeeded": 1,
+      "difficulty": "Fácil",
+      "targetPattern": "rotated_piece",
+      "pieces": [
+        {
+          "type": "A",
+          "face": "front",
+          "x": 0,
+          "y": 0,
+          "rotation": 90,
+          "comment": "Pieza rotada 90° tocando el espejo"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "Tarjeta 4: Cara Posterior",
+      "description": "Forma un patrón con una pieza A cara posterior tocando el espejo",
+      "piecesNeeded": 1,
+      "difficulty": "Intermedio",
+      "targetPattern": "back_face",
+      "pieces": [
+        {
+          "type": "A",
+          "face": "back",
+          "x": 0,
+          "y": 0,
+          "rotation": 0,
+          "comment": "Pieza con cara posterior (colores invertidos) tocando el espejo"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "name": "Tarjeta 5: Torre Vertical",
+      "description": "Forma una torre con dos piezas A apiladas verticalmente",
+      "piecesNeeded": 2,
+      "difficulty": "Intermedio",
+      "targetPattern": "vertical_tower",
+      "pieces": [
+        {
+          "type": "A",
+          "face": "front",
+          "x": 0,
+          "y": -50,
+          "rotation": 0,
+          "comment": "Pieza superior, tocando el espejo, 50px arriba del centro"
+        },
+        {
+          "type": "A",
+          "face": "front",
+          "x": 0,
+          "y": 50,
+          "rotation": 0,
+          "comment": "Pieza inferior, tocando el espejo, 50px abajo del centro"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "name": "Tarjeta 6: Forma L",
+      "description": "Forma una L con una pieza horizontal y otra vertical",
+      "piecesNeeded": 2,
+      "difficulty": "Intermedio",
+      "targetPattern": "l_shape",
+      "pieces": [
+        {
+          "type": "A",
+          "face": "front",
+          "x": 0,
+          "y": 0,
+          "rotation": 0,
+          "comment": "Pieza base tocando el espejo"
+        },
+        {
+          "type": "A",
+          "face": "front",
+          "x": 0,
+          "y": -100,
+          "rotation": 0,
+          "comment": "Pieza superior formando la L, 100px arriba"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "name": "Tarjeta 7: Pieza Tipo B",
+      "description": "Introduce una pieza tipo B tocando el espejo",
+      "piecesNeeded": 1,
+      "difficulty": "Intermedio",
+      "targetPattern": "type_b_simple",
+      "pieces": [
+        {
+          "type": "B",
+          "face": "front",
+          "x": 0,
+          "y": 0,
+          "rotation": 0,
+          "comment": "Pieza tipo B (geometría espejada) tocando el espejo"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "name": "Tarjeta 8: Combinación A y B",
+      "description": "Combina una pieza tipo A y tipo B",
+      "piecesNeeded": 2,
+      "difficulty": "Avanzado",
+      "targetPattern": "mixed_types",
+      "pieces": [
+        {
+          "type": "A",
+          "face": "front",
+          "x": -100,
+          "y": 0,
+          "rotation": 0,
+          "comment": "Pieza tipo A a la izquierda"
+        },
+        {
+          "type": "B",
+          "face": "front",
+          "x": 0,
+          "y": 0,
+          "rotation": 0,
+          "comment": "Pieza tipo B tocando el espejo"
+        }
+      ]
+    }
+  ],
+
+  "coordinate_examples": {
+    "touching_mirror": {
+      "x": 0,
+      "description": "Pieza toca exactamente el espejo"
+    },
+    "left_of_mirror": {
+      "x": -50,
+      "description": "Pieza 50px a la izquierda de tocar el espejo"
+    },
+    "one_piece_left": {
+      "x": -100,
+      "description": "Una pieza completa a la izquierda (para que dos piezas se toquen)"
+    },
+    "vertical_center": {
+      "y": 0,
+      "description": "Centro vertical del área de juego"
+    },
+    "above_center": {
+      "y": -50,
+      "description": "50px arriba del centro"
+    },
+    "below_center": {
+      "y": 50,
+      "description": "50px abajo del centro"
+    }
+  },
+
+  "validation_notes": [
+    "Todas las piezas deben tener x <= 0 (no pueden estar en el área del espejo)",
+    "Al menos una pieza debe tener x = 0 (tocar el espejo)",
+    "Los valores Y deben estar dentro del rango del área de juego",
+    "Las piezas no pueden solaparse entre sí",
+    "Las piezas deben formar una figura conectada",
+    "El reflejo de las piezas debe caber en el área del espejo"
+  ]
+}

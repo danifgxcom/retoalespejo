@@ -1,11 +1,13 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import GameCanvas, { GameCanvasRef } from './components/GameCanvas';
 import GameControls from './components/GameControls';
+import { ChallengeEditorApp } from './ChallengeEditorApp';
 import { useGameLogic } from './hooks/useGameLogic';
 import { useMouseHandlers } from './hooks/useMouseHandlers';
 
 const MirrorChallengeGame: React.FC = () => {
   const canvasRef = useRef<GameCanvasRef>(null);
+  const [showChallengeEditor, setShowChallengeEditor] = useState(false);
 
   const {
     currentChallenge,
@@ -14,6 +16,7 @@ const MirrorChallengeGame: React.FC = () => {
     dragOffset,
     showInstructions,
     challenges,
+    isLoading,
     setPieces,
     setDraggedPiece,
     setDragOffset,
@@ -25,6 +28,7 @@ const MirrorChallengeGame: React.FC = () => {
     nextChallenge,
     isPieceHit,
     checkSolutionWithMirrors,
+    loadCustomChallenges,
     geometry,
   } = useGameLogic();
 
@@ -46,6 +50,10 @@ const MirrorChallengeGame: React.FC = () => {
     geometry,
   });
 
+  if (showChallengeEditor) {
+    return <ChallengeEditorApp onClose={() => setShowChallengeEditor(false)} />;
+  }
+
   return (
       <div className="h-screen overflow-hidden bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 p-1">
         <div className="max-w-7xl mx-auto h-full flex flex-col">
@@ -59,6 +67,9 @@ const MirrorChallengeGame: React.FC = () => {
               onRotatePieceCounterClockwise={rotatePieceCounterClockwise}
               onFlipPiece={flipPiece}
               onCheckSolution={checkSolutionWithMirrors}
+              onLoadCustomChallenges={loadCustomChallenges}
+              onOpenChallengeEditor={() => setShowChallengeEditor(true)}
+              isLoading={isLoading}
           />
 
           {/* Área de juego */}
