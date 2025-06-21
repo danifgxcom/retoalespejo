@@ -19,21 +19,21 @@ export const PieceLabel: React.FC<PieceLabelProps> = ({
 
   const labelStyle: React.CSSProperties = {
     position: 'absolute',
-    left: x + size / 2 - 15,
-    top: y - 25,
-    width: 30,
-    height: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    left: x + size / 2 - 25,
+    top: y - 35,
+    width: 50,
+    height: 30,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
     color: 'white',
-    borderRadius: '12px',
+    borderRadius: '18px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: '12px',
+    fontSize: '18px',
     fontWeight: 'bold',
     zIndex: 1000,
-    border: '2px solid #fff',
-    boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
+    border: '3px solid #fff',
+    boxShadow: '0 4px 8px rgba(0,0,0,0.4)',
     pointerEvents: 'none',
     transform: 'scale(1)',
     transition: 'transform 0.2s ease'
@@ -57,24 +57,32 @@ export const drawPieceLabel = (
   size: number = 100
 ): void => {
   const labelX = x + size / 2;
-  const labelY = y - 10;
-  const labelRadius = 12;
+  const labelY = y - 25; // Más separado de la pieza
+  const labelRadius = 25; // Aún más grande para mejor visibilidad
 
-  // Fondo del label
+  // Fondo del label con sombra
   ctx.save();
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+  
+  // Sombra
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+  ctx.beginPath();
+  ctx.arc(labelX + 2, labelY + 2, labelRadius, 0, Math.PI * 2);
+  ctx.fill();
+  
+  // Fondo principal
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
   ctx.beginPath();
   ctx.arc(labelX, labelY, labelRadius, 0, Math.PI * 2);
   ctx.fill();
 
-  // Borde blanco
+  // Borde blanco grueso
   ctx.strokeStyle = '#ffffff';
-  ctx.lineWidth = 2;
+  ctx.lineWidth = 3;
   ctx.stroke();
 
-  // Texto del número
+  // Texto del número - MUCHO MÁS GRANDE
   ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 12px Arial';
+  ctx.font = 'bold 28px Arial'; // Tamaño aumentado a 28px para máxima visibilidad
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText(pieceId.toString(), labelX, labelY);

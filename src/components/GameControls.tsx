@@ -204,8 +204,11 @@ const GameControls: React.FC<GameControlsProps> = ({
       <div className="mt-2 grid grid-cols-2 md:grid-cols-4 gap-3">
         {pieces.map(piece => (
           <div key={piece.id} className="bg-gradient-to-br from-white to-gray-50 p-3 rounded-xl shadow-md border border-gray-200 hover:shadow-lg transition-shadow">
-            <div className="text-sm font-bold mb-2 text-gray-800 text-center">
-              🧩 Pieza {piece.id} ({piece.type})
+            <div className="text-sm font-bold mb-2 text-gray-800 text-center flex items-center justify-center">
+              <div className="w-8 h-8 bg-black text-white rounded-full flex items-center justify-center text-lg font-bold mr-2 shadow-lg">
+                {piece.id}
+              </div>
+              <span>Pieza {piece.type}</span>
             </div>
             <div className="grid grid-cols-3 gap-1 mb-2">
               <button

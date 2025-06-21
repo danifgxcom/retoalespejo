@@ -203,70 +203,70 @@ export const useGameLogic = () => {
       switch (count) {
         case 1:
           const pos1 = { 
-            x: -24, // Coordenadas que funcionan
-            y: 616,
+            x: 80, // Posición centrada en área de piezas
+            y: 650,
             rotation: 45
           };
           console.log(`✓ 1 piece at (${pos1.x}, ${pos1.y})`);
           return [pos1];
         case 2:
-          // 2 piezas: usar las primeras 2 posiciones que funcionan para 4 piezas
+          // 2 piezas: distribuir horizontalmente en área de piezas
           const pos2 = [
             { 
-              x: -24, // Coordenadas que funcionan
-              y: 616,
+              x: 100, // Primera pieza a la izquierda
+              y: 750,
               rotation: 45
             },
             { 
-              x: 243,
-              y: 921,
+              x: 350, // Segunda pieza a la derecha
+              y: 750,
               rotation: 225
             }
           ];
           console.log(`✓ 2 pieces at (${pos2[0].x}, ${pos2[0].y}) and (${pos2[1].x}, ${pos2[1].y})`);
           return pos2;
         case 3:
-          // 3 piezas: usar las primeras 3 posiciones que funcionan para 4 piezas
+          // 3 piezas: distribuir en fila en área de piezas
           const pos3 = [
             { 
-              x: -24, // Coordenadas que funcionan
-              y: 616,
+              x: 80, // Primera pieza
+              y: 750,
               rotation: 45
             },
             { 
-              x: 243,
-              y: 921,
+              x: 250, // Segunda pieza
+              y: 750,
               rotation: 225
             },
             { 
-              x: 285,
-              y: 614,
+              x: 420, // Tercera pieza
+              y: 750,
               rotation: 45
             }
           ];
           console.log(`✓ 3 pieces at positions: ${pos3.map(p => `(${p.x},${p.y})`).join(', ')}`);
           return pos3;
         case 4:
-          // 4 piezas usando las coordenadas exactas del snapshot
+          // 4 piezas en grid 2x2 dentro del área de piezas
           const pos4 = [
             { 
-              x: -24, // Coordenadas exactas del snapshot
-              y: 616,
+              x: 120, // Primera fila, primera columna
+              y: 680,
               rotation: 45
             },
             { 
-              x: 243,
-              y: 921,
+              x: 350, // Primera fila, segunda columna
+              y: 680,
               rotation: 225
             },
             { 
-              x: 556, // Coordenadas exactas del snapshot
-              y: 926,
+              x: 120, // Segunda fila, primera columna
+              y: 850,
               rotation: 225
             },
             { 
-              x: 285,
-              y: 614,
+              x: 350, // Segunda fila, segunda columna
+              y: 850,
               rotation: 45
             }
           ];

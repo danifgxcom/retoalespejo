@@ -707,7 +707,7 @@ const GameCanvas = forwardRef<GameCanvasRef, GameCanvasProps>(
 
         // USAR GAMEAREARENDERER para dibujar piezas con etiquetas
         if (gameAreaRenderer) {
-          gameAreaRenderer.drawGamePieces(ctx, pieces, draggedPiece, debugMode, debugMode);
+          gameAreaRenderer.drawGamePieces(ctx, pieces, draggedPiece, debugMode, true);
         } else {
           // Fallback legacy
           if (pieces && pieces.length > 0) {
