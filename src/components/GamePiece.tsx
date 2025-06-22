@@ -46,15 +46,12 @@ const drawShape = (ctx: CanvasRenderingContext2D, coordinates: [number, number][
 };
 
 export const drawPiece = (ctx: CanvasRenderingContext2D, piece: Piece, x: number, y: number, size = 80) => {
-  console.log(`🎨 Drawing piece ${piece.id} (${piece.type}, ${piece.face}) at (${x}, ${y}) - CENTER: ${piece.centerColor}, TRIANGLE: ${piece.triangleColor}`);
-  
   ctx.save();
   ctx.translate(x + size/2, y + size/2);
   ctx.rotate((piece.rotation * Math.PI) / 180);
 
   // Si es pieza tipo B, aplicar espejo horizontal
   if (piece.type === 'B') {
-    console.log(`🔄 Applying horizontal flip for piece type B (${piece.id})`);
     ctx.scale(-1, 1);
   }
 

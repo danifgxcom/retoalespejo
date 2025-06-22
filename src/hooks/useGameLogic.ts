@@ -700,7 +700,7 @@ export const useGameLogic = () => {
           // Distancia combinada (posición + rotación)
           const combinedDistance = positionDistance + rotationDistance;
 
-          console.log(`🧮 Evaluando match Target ${i} -> Placed ${j}: pos=${positionDistance.toFixed(1)}px, rot=${normalizedRotationDiff}°, combined=${combinedDistance.toFixed(1)}`);
+          // Removed excessive logging for performance
 
           if (combinedDistance < bestDistance) {
             bestDistance = combinedDistance;
@@ -713,7 +713,7 @@ export const useGameLogic = () => {
       if (bestMatch && bestIndex !== -1) {
         assignments[i] = bestMatch;
         usedIndices[bestIndex] = true;
-        console.log(`🎯 Asignación: Target ${i} (${target.x}, ${target.y}) -> Placed (${bestMatch.x}, ${bestMatch.y}) dist=${bestDistance.toFixed(1)}px`);
+        // Assignment successful - logging removed for performance
       }
     }
 

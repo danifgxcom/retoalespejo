@@ -10,8 +10,8 @@ interface ChallengeThumbnailProps {
 
 const ChallengeThumbnail: React.FC<ChallengeThumbnailProps> = ({
   challenge,
-  width = 120,
-  height = 80
+  width = 140,
+  height = 100
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -33,32 +33,37 @@ const ChallengeThumbnail: React.FC<ChallengeThumbnailProps> = ({
     const playerPieces = challenge.objective.playerPieces;
     if (playerPieces.length === 0) return;
 
-    // Find bounding box of all pieces
+    // Find bounding box of all pieces (including rotations)
     let minX = Infinity, maxX = -Infinity;
     let minY = Infinity, maxY = -Infinity;
 
     playerPieces.forEach(piece => {
       const pieceSize = 100; // Standard piece size
-      minX = Math.min(minX, piece.x);
-      maxX = Math.max(maxX, piece.x + pieceSize);
-      minY = Math.min(minY, piece.y);
-      maxY = Math.max(maxY, piece.y + pieceSize);
+      // Calculate approximate bounds considering rotation
+      const centerX = piece.x + pieceSize / 2;
+      const centerY = piece.y + pieceSize / 2;
+      const radius = pieceSize * 0.8; // Approximate radius for rotated piece
+      
+      minX = Math.min(minX, centerX - radius);
+      maxX = Math.max(maxX, centerX + radius);
+      minY = Math.min(minY, centerY - radius);
+      maxY = Math.max(maxY, centerY + radius);
     });
 
     const patternWidth = maxX - minX;
     const patternHeight = maxY - minY;
 
-    // Calculate scale to fit in thumbnail with padding
-    const padding = 10;
+    // Calculate scale to fit in thumbnail with minimal padding
+    const padding = 8;
     const scaleX = (width - padding * 2) / patternWidth;
     const scaleY = (height - padding * 2) / patternHeight;
-    const scale = Math.min(scaleX, scaleY, 0.3); // Max scale of 0.3
+    const scale = Math.min(scaleX, scaleY, 0.5); // Increased max scale
 
-    // Calculate center offset
+    // Calculate center offset for tight crop
     const centerX = (width - patternWidth * scale) / 2;
     const centerY = (height - patternHeight * scale) / 2;
 
-    // Draw pieces
+    // Draw only the player pieces (no mirror, no reflections)
     playerPieces.forEach(piecePos => {
       const x = (piecePos.x - minX) * scale + centerX;
       const y = (piecePos.y - minY) * scale + centerY;
@@ -78,48 +83,6 @@ const ChallengeThumbnail: React.FC<ChallengeThumbnailProps> = ({
       };
 
       drawPiece(ctx, displayPiece, x, y, size);
-    });
-
-    // Draw mirror line
-    const mirrorX = width / 2;
-    ctx.strokeStyle = '#ef4444';
-    ctx.lineWidth = 1;
-    ctx.setLineDash([3, 2]);
-    ctx.beginPath();
-    ctx.moveTo(mirrorX, 5);
-    ctx.lineTo(mirrorX, height - 5);
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    // Draw mirrored pieces
-    playerPieces.forEach(piecePos => {
-      const originalX = (piecePos.x - minX) * scale + centerX;
-      const y = (piecePos.y - minY) * scale + centerY;
-      const size = 100 * scale;
-
-      // Mirror reflection
-      const mirroredX = width - originalX - size;
-
-      // Create mirrored piece
-      const mirroredPiece = {
-        id: 998,
-        type: piecePos.type,
-        face: piecePos.face,
-        centerColor: piecePos.face === 'front' ? '#FFD700' : '#FF4444',
-        triangleColor: piecePos.face === 'front' ? '#FF4444' : '#FFD700',
-        x: 0,
-        y: 0,
-        rotation: piecePos.rotation,
-        placed: true
-      };
-
-      // Draw mirrored piece with horizontal flip
-      ctx.save();
-      ctx.translate(mirroredX + size/2, y + size/2);
-      ctx.scale(-1, 1);
-      ctx.translate(-size/2, -size/2);
-      drawPiece(ctx, mirroredPiece, 0, 0, size);
-      ctx.restore();
     });
 
   }, [challenge, width, height]);

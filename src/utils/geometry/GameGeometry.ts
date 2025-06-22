@@ -442,13 +442,11 @@ export class GameGeometry {
     
     // Si hay penetración real (> 15px), no es conexión válida  
     if (penetrationDepth > 15) {
-      console.log(`❌ TOUCH CHECK: Pieces have real penetration: ${penetrationDepth.toFixed(3)}px`);
       return false;
     }
 
     // Si hay contacto/solapamiento mínimo (0.05-15px), es conexión perfecta
     if (penetrationDepth >= 0.05) {
-      console.log(`✅ TOUCH CHECK: Perfect contact with minimal overlap: ${penetrationDepth.toFixed(3)}px`);
       return true;
     }
 
@@ -457,18 +455,15 @@ export class GameGeometry {
     
     // Gap visible = línea blanca = conexión inválida (más estricto)
     if (minDistance > 0.5) {
-      console.log(`❌ TOUCH CHECK: Visible gap between pieces: ${minDistance.toFixed(3)}px`);
       return false;
     }
 
     // Contacto ultra-cercano (gap micro-invisible)
     if (minDistance <= 0.5) {
-      console.log(`✅ TOUCH CHECK: Ultra-close contact (gap: ${minDistance.toFixed(3)}px)`);
       return true;
     }
 
     // Contacto exacto sin gap ni penetración
-    console.log(`✅ TOUCH CHECK: Exact contact without gap or penetration`);
     return true;
   }
 
@@ -642,18 +637,15 @@ export class GameGeometry {
   snapPieceToNearbyTargets(piece: PiecePosition, otherPieces: PiecePosition[], snapDistance: number = 30): PiecePosition {
     let snappedPiece = { ...piece };
     
-    console.log(`🧲 INTELLIGENT SNAP: Starting for piece at (${piece.x.toFixed(1)}, ${piece.y.toFixed(1)})`);
-    
     // 1. Primero verificar si hay gaps pequeños que necesitan cierre inmediato
     for (const otherPiece of otherPieces) {
       const gapDistance = this.getMinDistanceBetweenPieces(snappedPiece, otherPiece);
       
-      if (gapDistance > 0.1 && gapDistance <= 10) { // Gap visible (incluso micro-gaps)
-        console.log(`🚨 DETECTED GAP: ${gapDistance.toFixed(3)}px - applying ultra-precise snap`);
+      if (gapDistance > 0.05 && gapDistance <= 15) { // Gap visible - más agresivo
         const closeGapPosition = this.closeSmallGap(snappedPiece, otherPiece, gapDistance);
         if (closeGapPosition) {
           snappedPiece = closeGapPosition;
-          console.log(`✨ GAP CLOSED: Moved piece to eliminate ${gapDistance.toFixed(3)}px gap`);
+          // Gap cerrado exitosamente
           
           // Verificar el resultado y ajustar si es necesario
           const finalGap = this.getMinDistanceBetweenPieces(snappedPiece, otherPiece);

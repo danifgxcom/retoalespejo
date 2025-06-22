@@ -202,14 +202,7 @@ export const ChallengeEditorApp: React.FC<ChallengeEditorAppProps> = ({ onClose 
                 
                 {/* Challenge Thumbnail - Mini Canvas Preview */}
                 <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-3 mb-4 flex-1 flex items-center justify-center border border-blue-100">
-                  <div className="text-center">
-                    <div className="mb-2">
-                      <ChallengeThumbnail challenge={challenge} width={100} height={60} />
-                    </div>
-                    <div className="text-xs text-gray-600">
-                      Reto #{challenge.id}
-                    </div>
-                  </div>
+                  <ChallengeThumbnail challenge={challenge} width={140} height={100} />
                 </div>
                 
                 {/* Description */}
