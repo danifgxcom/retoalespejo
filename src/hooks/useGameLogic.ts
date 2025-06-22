@@ -683,13 +683,23 @@ export const useGameLogic = () => {
         // Verificar compatibilidad de tipo y cara
         if (placed.type === target.type && placed.face === target.face) {
           // Calcular distancia euclidiana
-          const distance = Math.sqrt(
+          const positionDistance = Math.sqrt(
             Math.pow(placed.x - target.x, 2) + 
             Math.pow(placed.y - target.y, 2)
           );
 
-          if (distance < bestDistance) {
-            bestDistance = distance;
+          // Calcular diferencia de rotación (normalizada)
+          const rotationDiff = Math.abs(placed.rotation - target.rotation);
+          const normalizedRotationDiff = Math.min(rotationDiff, 360 - rotationDiff);
+          const rotationDistance = normalizedRotationDiff / 10; // Escalar para que esté en escala similar a posición
+
+          // Distancia combinada (posición + rotación)
+          const combinedDistance = positionDistance + rotationDistance;
+
+          console.log(`🧮 Evaluando match Target ${i} -> Placed ${j}: pos=${positionDistance.toFixed(1)}px, rot=${normalizedRotationDiff}°, combined=${combinedDistance.toFixed(1)}`);
+
+          if (combinedDistance < bestDistance) {
+            bestDistance = combinedDistance;
             bestMatch = placed;
             bestIndex = j;
           }
@@ -767,29 +777,34 @@ export const useGameLogic = () => {
             // Calcular distancia relativa en el objetivo
             const targetDistanceX = target2.x - target1.x;
             const targetDistanceY = target2.y - target1.y;
+            const targetDistance = Math.sqrt(targetDistanceX * targetDistanceX + targetDistanceY * targetDistanceY);
 
             // Calcular distancia relativa en las piezas colocadas
             const placedDistanceX = placed2.x - placed1.x;
             const placedDistanceY = placed2.y - placed1.y;
+            const placedDistance = Math.sqrt(placedDistanceX * placedDistanceX + placedDistanceY * placedDistanceY);
 
-            // Verificar si las distancias relativas son similares
-            const deltaX = Math.abs(placedDistanceX - targetDistanceX);
-            const deltaY = Math.abs(placedDistanceY - targetDistanceY);
+            // Verificar si la distancia euclidiana es similar (más tolerante)
+            const distanceDiff = Math.abs(placedDistance - targetDistance);
+            const relativeError = targetDistance > 0 ? (distanceDiff / targetDistance) * 100 : 0;
 
-            console.log(`📏 Distancia entre ${target1.type} y ${target2.type}:`);
-            console.log(`  Objetivo: (${targetDistanceX.toFixed(1)}, ${targetDistanceY.toFixed(1)})`);
-            console.log(`  Colocado: (${placedDistanceX.toFixed(1)}, ${placedDistanceY.toFixed(1)})`);
-            console.log(`  Diferencia: (${deltaX.toFixed(1)}, ${deltaY.toFixed(1)})`);
+            console.log(`📏 Distancia entre piezas ${i+1} y ${j+1}:`);
+            console.log(`  Objetivo: ${targetDistance.toFixed(1)}px (${targetDistanceX.toFixed(1)}, ${targetDistanceY.toFixed(1)})`);
+            console.log(`  Colocado: ${placedDistance.toFixed(1)}px (${placedDistanceX.toFixed(1)}, ${placedDistanceY.toFixed(1)})`);
+            console.log(`  Diferencia: ${distanceDiff.toFixed(1)}px (${relativeError.toFixed(1)}% error)`);
 
-            if (deltaX > POSITION_TOLERANCE || deltaY > POSITION_TOLERANCE) {
-              console.log(`❌ Posición relativa incorrecta entre ${target1.type} y ${target2.type}`);
+            // Tolerancia más generosa: 20% de error o máximo 50px
+            const tolerance = Math.max(POSITION_TOLERANCE, targetDistance * 0.2);
+            
+            if (distanceDiff > tolerance) {
+              console.log(`❌ Distancia incorrecta (tolerancia: ${tolerance.toFixed(1)}px)`);
               return {
                 success: false,
-                message: `La posición relativa entre las piezas ${target1.type} y ${target2.type} no es correcta`
+                message: `La distancia entre las piezas no es correcta (${relativeError.toFixed(1)}% de error)`
               };
             }
 
-            console.log(`✅ Posición relativa correcta entre ${target1.type} y ${target2.type}`);
+            console.log(`✅ Distancia correcta (dentro de tolerancia: ${tolerance.toFixed(1)}px)`);
           }
         }
       }
