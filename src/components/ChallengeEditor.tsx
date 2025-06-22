@@ -32,6 +32,7 @@ export const ChallengeEditor: React.FC<ChallengeEditorProps> = ({
   const [challengeDifficulty, setChallengeDifficulty] = useState<string>(initialChallenge?.difficulty || 'Fácil');
   const [validationResult, setValidationResult] = useState<any>(null);
   const [debugMode, setDebugMode] = useState(false);
+  const [interactingPieceId, setInteractingPieceId] = useState<number | null>(null);
 
   // Geometry configuration
   const geometry = new GameGeometry({
@@ -53,7 +54,7 @@ export const ChallengeEditor: React.FC<ChallengeEditorProps> = ({
     const pieceDrawCenterY = piece.y + size/2;
 
     // Traducir el punto al origen de la pieza
-    let translatedX = x - pieceDrawCenterX;
+    const translatedX = x - pieceDrawCenterX;
     const translatedY = y - pieceDrawCenterY;
 
     // Rotar en sentido contrario para "desrotar" el punto
@@ -140,22 +141,28 @@ export const ChallengeEditor: React.FC<ChallengeEditorProps> = ({
     canvasRef,
     rotatePiece: rotatePieceById,
     geometry,
+    setInteractingPieceId,
   });
 
   // Initialize pieces from existing challenge
   useEffect(() => {
     if (selectedChallenge) {
-      const loadedPieces: Piece[] = selectedChallenge.objective.playerPieces.map((piecePos, index) => ({
-        id: index + 1,
-        type: piecePos.type,
-        face: piecePos.face,
-        centerColor: piecePos.face === 'front' ? '#FFD700' : '#FF6B6B',
-        triangleColor: piecePos.face === 'front' ? '#FF6B6B' : '#FFD700',
-        x: piecePos.x,
-        y: piecePos.y,
-        rotation: piecePos.rotation,
-        placed: true
-      }));
+      console.log(`🎯 EDITOR: Loading challenge ${selectedChallenge.id}:`, selectedChallenge.objective.playerPieces);
+      const loadedPieces: Piece[] = selectedChallenge.objective.playerPieces.map((piecePos, index) => {
+        const piece = {
+          id: index + 1,
+          type: piecePos.type,
+          face: piecePos.face,
+          centerColor: piecePos.face === 'front' ? '#FFD700' : '#FF4444',
+          triangleColor: piecePos.face === 'front' ? '#FF4444' : '#FFD700',
+          x: piecePos.x,
+          y: piecePos.y,
+          rotation: piecePos.rotation,
+          placed: true
+        };
+        console.log(`🧩 EDITOR: Created piece ${piece.id} (${piece.type}, ${piece.face}) - center: ${piece.centerColor}, triangle: ${piece.triangleColor}`);
+        return piece;
+      });
       setPieces(loadedPieces);
       setChallengeName(selectedChallenge.name);
       setChallengeDescription(selectedChallenge.description);
@@ -170,7 +177,7 @@ export const ChallengeEditor: React.FC<ChallengeEditorProps> = ({
       type,
       face: 'front',
       centerColor: '#FFD700', // Yellow for front face
-      triangleColor: '#FF6B6B', // Red for front face
+      triangleColor: '#FF4444', // Red for front face
       x: 50 + (pieces.length * 120) % 500,
       y: 650,
       rotation: 0,
@@ -190,8 +197,8 @@ export const ChallengeEditor: React.FC<ChallengeEditorProps> = ({
       p.id === piece.id ? { 
         ...p, 
         face: p.face === 'front' ? 'back' : 'front',
-        centerColor: p.face === 'front' ? '#FF6B6B' : '#FFD700',
-        triangleColor: p.face === 'front' ? '#FFD700' : '#FF6B6B'
+        centerColor: p.face === 'front' ? '#FF4444' : '#FFD700',
+        triangleColor: p.face === 'front' ? '#FFD700' : '#FF4444'
       } : p
     ));
   };
@@ -381,7 +388,7 @@ export const ChallengeEditor: React.FC<ChallengeEditorProps> = ({
     pieces.forEach((piece, index) => {
       const area = piece.y < 600 ? 'JUEGO' : 'PIEZAS';
 
-      console.log(`Pieza ${piece.id} (${piece.type}, ${piece.face}): x=${piece.x}, y=${piece.y}, rotation=${piece.rotation}, placed=${piece.placed}, área=${area}`);
+      console.log(`Pieza ${piece.id} (${piece.type}, ${piece.face}): x=${piece.x}, y=${piece.y}, rotation=${piece.rotation}, placed=${piece.placed}, área=${area}, CENTER=${piece.centerColor}, TRIANGLE=${piece.triangleColor}`);
     });
 
     // Información de validación si existe

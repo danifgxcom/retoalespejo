@@ -1,0 +1,851 @@
+
+> reto-al-espejo@0.0.0 lint
+> eslint . --ext js,jsx,ts,tsx --report-unused-disable-directives --max-warnings 0
+/home/danifgx/projects/retoalespejo/calculate-position.js
+  12:1  warning  Unexpected console statement  no-console
+  15:1  warning  Unexpected console statement  no-console
+  16:1  warning  Unexpected console statement  no-console
+  17:1  warning  Unexpected console statement  no-console
+/home/danifgx/projects/retoalespejo/debug-geometry.js
+  15:1  warning  Unexpected console statement  no-console
+  27:1  warning  Unexpected console statement  no-console
+  31:1  warning  Unexpected console statement  no-console
+  32:1  warning  Unexpected console statement  no-console
+/home/danifgx/projects/retoalespejo/debug-position.js
+  19:1  warning  Unexpected console statement  no-console
+  20:1  warning  Unexpected console statement  no-console
+  21:1  warning  Unexpected console statement  no-console
+  22:1  warning  Unexpected console statement  no-console
+  23:1  warning  Unexpected console statement  no-console
+  24:1  warning  Unexpected console statement  no-console
+  25:1  warning  Unexpected console statement  no-console
+/home/danifgx/projects/retoalespejo/src/ChallengeEditorApp.tsx
+   20:6  warning  React Hook useEffect has a missing dependency: 'loadChallenges'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+   28:7  warning  Unexpected console statement                                                                                       no-console
+   55:7  warning  Unexpected console statement                                                                                       no-console
+   79:7  warning  Unexpected console statement                                                                                       no-console
+  103:9  warning  Unexpected console statement                                                                                       no-console
+/home/danifgx/projects/retoalespejo/src/MirrorChallengeGame.tsx
+   42:5   warning  'responsiveCanvas' is assigned a value but never used            no-unused-vars
+   42:5   warning  'responsiveCanvas' is assigned a value but never used            @typescript-eslint/no-unused-vars
+   70:7   warning  Unexpected console statement                                     no-console
+   72:7   warning  Unexpected console statement                                     no-console
+   83:9   warning  Unexpected console statement                                     no-console
+  157:27  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  157:42  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+/home/danifgx/projects/retoalespejo/src/components/ChallengeEditor.tsx
+   10:13  warning  'challenge' is defined but never used                   no-unused-vars
+   33:60  error    Unexpected any. Specify a different type                @typescript-eslint/no-explicit-any
+   56:9   error    'translatedX' is never reassigned. Use 'const' instead  prefer-const
+  210:5   warning  Unexpected console statement                            no-console
+  212:5   warning  Unexpected console statement                            no-console
+  216:7   warning  Unexpected console statement                            no-console
+  223:9   warning  Unexpected console statement                            no-console
+  224:9   warning  Unexpected console statement                            no-console
+  225:9   warning  Unexpected console statement                            no-console
+  226:9   warning  Unexpected console statement                            no-console
+  227:9   warning  Unexpected console statement                            no-console
+  228:9   warning  Unexpected console statement                            no-console
+  236:9   warning  Unexpected console statement                            no-console
+  237:9   warning  Unexpected console statement                            no-console
+  238:9   warning  Unexpected console statement                            no-console
+  256:9   warning  Unexpected console statement                            no-console
+  257:9   warning  Unexpected console statement                            no-console
+  262:15  warning  'pieceSize' is assigned a value but never used          no-unused-vars
+  262:15  warning  'pieceSize' is assigned a value but never used          @typescript-eslint/no-unused-vars
+  272:9   warning  Unexpected console statement                            no-console
+  276:9   warning  Unexpected console statement                            no-console
+  295:13  warning  Unexpected console statement                            no-console
+  300:13  warning  Unexpected console statement                            no-console
+  303:13  warning  Unexpected console statement                            no-console
+  307:13  warning  Unexpected console statement                            no-console
+  310:15  warning  Unexpected console statement                            no-console
+  315:31  warning  Unexpected console statement                            no-console
+  316:34  warning  Unexpected console statement                            no-console
+  322:11  warning  Unexpected console statement                            no-console
+  327:11  warning  Unexpected console statement                            no-console
+  339:17  warning  'altReflected' is assigned a value but never used       no-unused-vars
+  339:17  warning  'altReflected' is assigned a value but never used       @typescript-eslint/no-unused-vars
+  342:11  warning  Unexpected console statement                            no-console
+  347:13  warning  Unexpected console statement                            no-console
+  351:9   warning  Unexpected console statement                            no-console
+  367:5   warning  Unexpected console statement                            no-console
+  368:5   warning  Unexpected console statement                            no-console
+  371:5   warning  Unexpected console statement                            no-console
+  372:5   warning  Unexpected console statement                            no-console
+  373:5   warning  Unexpected console statement                            no-console
+  374:5   warning  Unexpected console statement                            no-console
+  375:5   warning  Unexpected console statement                            no-console
+  376:5   warning  Unexpected console statement                            no-console
+  377:5   warning  Unexpected console statement                            no-console
+  380:5   warning  Unexpected console statement                            no-console
+  381:28  warning  'index' is defined but never used                       no-unused-vars
+  381:28  warning  'index' is defined but never used                       @typescript-eslint/no-unused-vars
+  384:7   warning  Unexpected console statement                            no-console
+  389:7   warning  Unexpected console statement                            no-console
+  390:7   warning  Unexpected console statement                            no-console
+  391:7   warning  Unexpected console statement                            no-console
+  392:7   warning  Unexpected console statement                            no-console
+  393:7   warning  Unexpected console statement                            no-console
+  394:7   warning  Unexpected console statement                            no-console
+  395:7   warning  Unexpected console statement                            no-console
+  396:7   warning  Unexpected console statement                            no-console
+  399:5   warning  Unexpected console statement                            no-console
+  400:5   warning  Unexpected console statement                            no-console
+  401:5   warning  Unexpected console statement                            no-console
+  402:5   warning  Unexpected console statement                            no-console
+/home/danifgx/projects/retoalespejo/src/components/EditorCanvas.tsx
+    7:17  warning  'e' is defined but never used                                                                            no-unused-vars
+    8:17  warning  'e' is defined but never used                                                                            no-unused-vars
+    9:15  warning  'e' is defined but never used                                                                            no-unused-vars
+   10:19  warning  'e' is defined but never used                                                                            no-unused-vars
+   21:66  warning  'geometry' is defined but never used                                                                     no-unused-vars
+   21:66  warning  'geometry' is defined but never used                                                                     @typescript-eslint/no-unused-vars
+  215:8   warning  React Hook useEffect has a missing dependency: 'draw'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+/home/danifgx/projects/retoalespejo/src/components/GameCanvas.tsx
+   11:17   warning  'e' is defined but never used                                                                                  no-unused-vars
+   12:17   warning  'e' is defined but never used                                                                                  no-unused-vars
+   13:15   warning  'e' is defined but never used                                                                                  no-unused-vars
+   14:18   warning  'e' is defined but never used                                                                                  no-unused-vars
+   15:19   warning  'e' is defined but never used                                                                                  no-unused-vars
+   34:88   error    Unexpected any. Specify a different type                                                                       @typescript-eslint/no-explicit-any
+   58:67   warning  'canvas' is defined but never used                                                                             no-unused-vars
+   58:67   warning  'canvas' is defined but never used                                                                             @typescript-eslint/no-unused-vars
+  233:13   warning  'createDisplayPiece' is assigned a value but never used                                                        no-unused-vars
+  233:13   warning  'createDisplayPiece' is assigned a value but never used                                                        @typescript-eslint/no-unused-vars
+  233:45   error    Unexpected any. Specify a different type                                                                       @typescript-eslint/no-explicit-any
+  423:13   warning  'drawUnifiedPattern' is assigned a value but never used                                                        no-unused-vars
+  423:13   warning  'drawUnifiedPattern' is assigned a value but never used                                                        @typescript-eslint/no-unused-vars
+  423:74   error    Unexpected any. Specify a different type                                                                       @typescript-eslint/no-explicit-any
+  425:47   error    Unexpected any. Specify a different type                                                                       @typescript-eslint/no-explicit-any
+  525:132  warning  '_mirrorLineInObjective' is defined but never used                                                             no-unused-vars
+  525:132  warning  '_mirrorLineInObjective' is defined but never used                                                             @typescript-eslint/no-unused-vars
+  525:164  warning  '_objectiveScaleFactor' is defined but never used                                                              no-unused-vars
+  525:164  warning  '_objectiveScaleFactor' is defined but never used                                                              @typescript-eslint/no-unused-vars
+  525:195  warning  '_objectivePieceSize' is defined but never used                                                                no-unused-vars
+  525:195  warning  '_objectivePieceSize' is defined but never used                                                                @typescript-eslint/no-unused-vars
+  575:11   warning  Unexpected console statement                                                                                   no-console
+  576:11   warning  Unexpected console statement                                                                                   no-console
+  577:11   warning  Unexpected console statement                                                                                   no-console
+  578:11   warning  Unexpected console statement                                                                                   no-console
+  579:11   warning  Unexpected console statement                                                                                   no-console
+  580:11   warning  Unexpected console statement                                                                                   no-console
+  581:11   warning  Unexpected console statement                                                                                   no-console
+  582:11   warning  Unexpected console statement                                                                                   no-console
+  638:13   warning  Unexpected console statement                                                                                   no-console
+  639:13   warning  Unexpected console statement                                                                                   no-console
+  640:13   warning  Unexpected console statement                                                                                   no-console
+  641:13   warning  Unexpected console statement                                                                                   no-console
+  748:44   error    Unexpected any. Specify a different type                                                                       @typescript-eslint/no-explicit-any
+  750:11   warning  Unexpected console statement                                                                                   no-console
+  754:15   warning  Unexpected console statement                                                                                   no-console
+  755:15   warning  Unexpected console statement                                                                                   no-console
+  759:17   warning  Unexpected console statement                                                                                   no-console
+  764:17   warning  Unexpected console statement                                                                                   no-console
+  765:17   warning  Unexpected console statement                                                                                   no-console
+  773:15   warning  Unexpected console statement                                                                                   no-console
+  775:17   warning  Unexpected console statement                                                                                   no-console
+  792:10   warning  React Hook useEffect has a missing dependency: 'drawCanvas'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+/home/danifgx/projects/retoalespejo/src/components/GameControls.tsx
+   14:19  warning  'pieceId' is defined but never used                              no-unused-vars
+   15:35  warning  'pieceId' is defined but never used                              no-unused-vars
+   16:17  warning  'pieceId' is defined but never used                              no-unused-vars
+   18:29  warning  'file' is defined but never used                                 no-unused-vars
+   23:23  warning  'pieceId' is defined but never used                              no-unused-vars
+   52:7   warning  Unexpected console statement                                     no-console
+   81:5   warning  Unexpected console statement                                     no-console
+   82:5   warning  Unexpected console statement                                     no-console
+   85:5   warning  Unexpected console statement                                     no-console
+   86:5   warning  Unexpected console statement                                     no-console
+   87:5   warning  Unexpected console statement                                     no-console
+   88:5   warning  Unexpected console statement                                     no-console
+   89:5   warning  Unexpected console statement                                     no-console
+   90:5   warning  Unexpected console statement                                     no-console
+   91:5   warning  Unexpected console statement                                     no-console
+   92:5   warning  Unexpected console statement                                     no-console
+   95:5   warning  Unexpected console statement                                     no-console
+   96:28  warning  'index' is defined but never used                                no-unused-vars
+   96:28  warning  'index' is defined but never used                                @typescript-eslint/no-unused-vars
+  101:7   warning  Unexpected console statement                                     no-console
+  104:5   warning  Unexpected console statement                                     no-console
+  105:5   warning  Unexpected console statement                                     no-console
+  106:5   warning  Unexpected console statement                                     no-console
+  115:5   warning  Unexpected console statement                                     no-console
+  116:5   warning  Unexpected console statement                                     no-console
+  119:7   warning  Unexpected console statement                                     no-console
+  120:7   warning  Unexpected console statement                                     no-console
+  122:9   warning  Unexpected console statement                                     no-console
+  231:19  warning  Unexpected console statement                                     no-console
+  242:19  warning  Unexpected console statement                                     no-console
+  253:19  warning  Unexpected console statement                                     no-console
+  307:78  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  307:87  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  320:61  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  320:80  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  321:36  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  321:50  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+/home/danifgx/projects/retoalespejo/src/components/GamePiece.tsx
+  14:14  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+  19:14  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+  41:14  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+  81:48  error    'piece' is missing in props validation                                                                                          react/prop-types
+  81:55  error    'ctx' is missing in props validation                                                                                            react/prop-types
+  81:60  error    'x' is missing in props validation                                                                                              react/prop-types
+  81:63  error    'y' is missing in props validation                                                                                              react/prop-types
+  81:66  error    'size' is missing in props validation                                                                                           react/prop-types
+/home/danifgx/projects/retoalespejo/src/components/PieceLabel.tsx
+  52:14  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+/home/danifgx/projects/retoalespejo/src/hooks/useGameLogic.ts
+   19:68  warning  React Hook useMemo has a missing dependency: 'gameAreaConfig'. Either include it or remove the dependency array                   react-hooks/exhaustive-deps
+   49:5   warning  Unexpected console statement                                                                                                      no-console
+   55:5   warning  Unexpected console statement                                                                                                      no-console
+   59:7   warning  Unexpected console statement                                                                                                      no-console
+   86:9   warning  Unexpected console statement                                                                                                      no-console
+  113:7   warning  Unexpected console statement                                                                                                      no-console
+  121:7   warning  Unexpected console statement                                                                                                      no-console
+  142:13  warning  Unexpected console statement                                                                                                      no-console
+  146:13  warning  Unexpected console statement                                                                                                      no-console
+  149:11  warning  Unexpected console statement                                                                                                      no-console
+  152:9   warning  Unexpected console statement                                                                                                      no-console
+  155:7   warning  Unexpected console statement                                                                                                      no-console
+  178:9   warning  'createResponsivePieces' is assigned a value but never used                                                                       no-unused-vars
+  178:9   warning  'createResponsivePieces' is assigned a value but never used                                                                       @typescript-eslint/no-unused-vars
+  189:5   warning  Unexpected console statement                                                                                                      no-console
+  202:7   warning  Unexpected console statement                                                                                                      no-console
+  213:7   warning  Unexpected console statement                                                                                                      no-console
+  222:11  warning  'availableAreaX' is assigned a value but never used                                                                               no-unused-vars
+  222:11  warning  'availableAreaX' is assigned a value but never used                                                                               @typescript-eslint/no-unused-vars
+  223:11  warning  'availableAreaY' is assigned a value but never used                                                                               no-unused-vars
+  223:11  warning  'availableAreaY' is assigned a value but never used                                                                               @typescript-eslint/no-unused-vars
+  224:11  warning  'availableAreaWidth' is assigned a value but never used                                                                           no-unused-vars
+  224:11  warning  'availableAreaWidth' is assigned a value but never used                                                                           @typescript-eslint/no-unused-vars
+  225:11  warning  'availableAreaHeight' is assigned a value but never used                                                                          no-unused-vars
+  225:11  warning  'availableAreaHeight' is assigned a value but never used                                                                          @typescript-eslint/no-unused-vars
+  226:11  warning  'pieceSize' is assigned a value but never used                                                                                    no-unused-vars
+  226:11  warning  'pieceSize' is assigned a value but never used                                                                                    @typescript-eslint/no-unused-vars
+  227:11  warning  'margin' is assigned a value but never used                                                                                       no-unused-vars
+  227:11  warning  'margin' is assigned a value but never used                                                                                       @typescript-eslint/no-unused-vars
+  235:7   warning  Unexpected console statement                                                                                                      no-console
+  280:7   warning  Unexpected console statement                                                                                                      no-console
+  288:9   warning  'createInitialPieces' is assigned a value but never used                                                                          no-unused-vars
+  288:9   warning  'createInitialPieces' is assigned a value but never used                                                                          @typescript-eslint/no-unused-vars
+  296:11  warning  'availableAreaY' is assigned a value but never used                                                                               no-unused-vars
+  296:11  warning  'availableAreaY' is assigned a value but never used                                                                               @typescript-eslint/no-unused-vars
+  345:9   error    'translatedX' is never reassigned. Use 'const' instead                                                                            prefer-const
+  397:9   warning  Unexpected console statement                                                                                                      no-console
+  403:9   warning  Unexpected console statement                                                                                                      no-console
+  417:9   warning  Unexpected console statement                                                                                                      no-console
+  429:6   warning  React Hook useEffect has a missing dependency: 'challengeGenerator'. Either include it or remove the dependency array             react-hooks/exhaustive-deps
+  439:7   warning  Unexpected console statement                                                                                                      no-console
+  442:6   warning  React Hook useEffect has a missing dependency: 'createChallengeSpecificPieces'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  446:5   warning  Unexpected console statement                                                                                                      no-console
+  458:5   warning  Unexpected console statement                                                                                                      no-console
+  465:9   warning  Unexpected console statement                                                                                                      no-console
+  474:5   warning  Unexpected console statement                                                                                                      no-console
+  486:5   warning  Unexpected console statement                                                                                                      no-console
+  493:9   warning  Unexpected console statement                                                                                                      no-console
+  502:5   warning  Unexpected console statement                                                                                                      no-console
+  533:9   warning  Unexpected console statement                                                                                                      no-console
+  546:7   warning  Unexpected console statement                                                                                                      no-console
+  571:9   warning  'isPieceMatch' is assigned a value but never used                                                                                 no-unused-vars
+  571:9   warning  'isPieceMatch' is assigned a value but never used                                                                                 @typescript-eslint/no-unused-vars
+  583:9   warning  'getCurrentSymmetricPattern' is assigned a value but never used                                                                   no-unused-vars
+  583:9   warning  'getCurrentSymmetricPattern' is assigned a value but never used                                                                   @typescript-eslint/no-unused-vars
+  597:5   warning  Unexpected console statement                                                                                                      no-console
+  609:9   warning  Unexpected console statement                                                                                                      no-console
+  621:9   warning  Unexpected console statement                                                                                                      no-console
+  628:7   warning  Unexpected console statement                                                                                                      no-console
+  633:7   warning  Unexpected console statement                                                                                                      no-console
+  656:13  warning  Unexpected console statement                                                                                                      no-console
+  657:13  warning  Unexpected console statement                                                                                                      no-console
+  658:13  warning  Unexpected console statement                                                                                                      no-console
+  659:13  warning  Unexpected console statement                                                                                                      no-console
+  662:15  warning  Unexpected console statement                                                                                                      no-console
+  669:13  warning  Unexpected console statement                                                                                                      no-console
+  675:5   warning  Unexpected console statement                                                                                                      no-console
+  684:5   warning  Unexpected console statement                                                                                                      no-console
+  685:5   warning  Unexpected console statement                                                                                                      no-console
+  686:5   warning  Unexpected console statement                                                                                                      no-console
+  690:7   warning  Unexpected console statement                                                                                                      no-console
+  707:5   warning  Unexpected console statement                                                                                                      no-console
+  744:5   warning  Unexpected console statement                                                                                                      no-console
+  754:5   warning  Unexpected console statement                                                                                                      no-console
+/home/danifgx/projects/retoalespejo/src/hooks/useMouseHandlers.ts
+    9:15  warning  'pieces' is defined but never used                                                                                                          no-unused-vars
+   10:21  warning  'piece' is defined but never used                                                                                                           no-unused-vars
+   11:19  warning  'offset' is defined but never used                                                                                                          no-unused-vars
+   12:16  warning  'piece' is defined but never used                                                                                                           no-unused-vars
+   12:30  warning  'x' is defined but never used                                                                                                               no-unused-vars
+   12:41  warning  'y' is defined but never used                                                                                                               no-unused-vars
+   14:17  warning  'pieceId' is defined but never used                                                                                                         no-unused-vars
+   14:34  warning  'fromControl' is defined but never used                                                                                                     no-unused-vars
+   16:27  warning  'pieceId' is defined but never used                                                                                                         no-unused-vars
+   69:6   warning  React Hook useCallback has a missing dependency: 'getCanvasCoordinates'. Either include it or remove the dependency array                   react-hooks/exhaustive-deps
+  105:6   warning  React Hook useCallback has missing dependencies: 'geometry' and 'getCanvasCoordinates'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  166:6   warning  React Hook useCallback has a missing dependency: 'getCanvasCoordinates'. Either include it or remove the dependency array                   react-hooks/exhaustive-deps
+/home/danifgx/projects/retoalespejo/src/hooks/useResponsiveCanvas.ts
+  7:34  warning  'RelativePiecePosition' is defined but never used  no-unused-vars
+  7:34  warning  'RelativePiecePosition' is defined but never used  @typescript-eslint/no-unused-vars
+/home/danifgx/projects/retoalespejo/src/rendering/ChallengeCardRenderer.ts
+   34:17  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   88:75  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  108:75  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  169:19  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  218:15  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  253:40  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  345:19  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  347:5   warning  Unexpected console statement              no-console
+  348:5   warning  Unexpected console statement              no-console
+  349:5   warning  Unexpected console statement              no-console
+  350:5   warning  Unexpected console statement              no-console
+  351:5   warning  Unexpected console statement              no-console
+  352:5   warning  Unexpected console statement              no-console
+  353:5   warning  Unexpected console statement              no-console
+  366:5   warning  Unexpected console statement              no-console
+  367:5   warning  Unexpected console statement              no-console
+  368:5   warning  Unexpected console statement              no-console
+  369:5   warning  Unexpected console statement              no-console
+/home/danifgx/projects/retoalespejo/src/rendering/GameAreaRenderer.ts
+  108:13  warning  'gameAreaHeight' is assigned a value but never used  no-unused-vars
+  108:13  warning  'gameAreaHeight' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  108:29  warning  'mirrorLine' is assigned a value but never used      no-unused-vars
+  108:29  warning  'mirrorLine' is assigned a value but never used      @typescript-eslint/no-unused-vars
+  108:41  warning  'canvasWidth' is assigned a value but never used     no-unused-vars
+  108:41  warning  'canvasWidth' is assigned a value but never used     @typescript-eslint/no-unused-vars
+  259:7   warning  Unexpected console statement                         no-console
+  269:5   warning  Unexpected console statement                         no-console
+  274:7   warning  Unexpected console statement                         no-console
+  301:9   warning  Unexpected console statement                         no-console
+/home/danifgx/projects/retoalespejo/src/services/ChallengeEditorService.ts
+  21:7  warning  Unexpected console statement  no-console
+  61:7  warning  Unexpected console statement  no-console
+  86:7  warning  Unexpected console statement  no-console
+/home/danifgx/projects/retoalespejo/src/services/ChallengeService.ts
+   70:7  warning  Unexpected console statement  no-console
+   77:7  warning  Unexpected console statement  no-console
+  159:9  warning  Unexpected console statement  no-console
+  170:7  warning  Unexpected console statement  no-console
+  178:7  warning  Unexpected console statement  no-console
+  203:7  warning  Unexpected console statement  no-console
+  254:7  warning  Unexpected console statement  no-console
+  271:9  warning  Unexpected console statement  no-console
+  321:9  warning  Unexpected console statement  no-console
+  325:9  warning  Unexpected console statement  no-console
+/home/danifgx/projects/retoalespejo/src/services/RenderingService.ts
+   40:13  warning  'geometry' is defined but never used      no-unused-vars
+   70:54  warning  'canvas' is defined but never used        no-unused-vars
+   70:54  warning  'canvas' is defined but never used        @typescript-eslint/no-unused-vars
+  178:24  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  395:68  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  408:78  warning  'dimensions' is defined but never used    no-unused-vars
+  408:78  warning  'dimensions' is defined but never used    @typescript-eslint/no-unused-vars
+  408:90  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  424:61  warning  'dimensions' is defined but never used    no-unused-vars
+  424:61  warning  'dimensions' is defined but never used    @typescript-eslint/no-unused-vars
+  424:73  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  435:82  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  435:99  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  478:96  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  545:73  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  545:88  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+/home/danifgx/projects/retoalespejo/src/services/ValidationService.ts
+   40:23  warning  'geometry' is defined but never used      no-unused-vars
+  195:26  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  195:36  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+/home/danifgx/projects/retoalespejo/src/tests/ChallengeValidationTest.ts
+   6:3  warning  Unexpected console statement  no-console
+  24:5  warning  Unexpected console statement  no-console
+  29:5  warning  Unexpected console statement  no-console
+  32:7  warning  Unexpected console statement  no-console
+  33:7  warning  Unexpected console statement  no-console
+  34:7  warning  Unexpected console statement  no-console
+  35:7  warning  Unexpected console statement  no-console
+  36:7  warning  Unexpected console statement  no-console
+  39:7  warning  Unexpected console statement  no-console
+  41:9  warning  Unexpected console statement  no-console
+  46:3  warning  Unexpected console statement  no-console
+/home/danifgx/projects/retoalespejo/src/tests/ComprehensiveTest.ts
+   7:3  warning  Unexpected console statement  no-console
+  24:3  warning  Unexpected console statement  no-console
+  26:5  warning  Unexpected console statement  no-console
+  31:5  warning  Unexpected console statement  no-console
+  34:7  warning  Unexpected console statement  no-console
+  35:7  warning  Unexpected console statement  no-console
+  36:7  warning  Unexpected console statement  no-console
+  37:7  warning  Unexpected console statement  no-console
+  38:7  warning  Unexpected console statement  no-console
+  39:7  warning  Unexpected console statement  no-console
+  44:3  warning  Unexpected console statement  no-console
+  47:3  warning  Unexpected console statement  no-console
+  48:3  warning  Unexpected console statement  no-console
+  49:3  warning  Unexpected console statement  no-console
+  50:3  warning  Unexpected console statement  no-console
+  51:3  warning  Unexpected console statement  no-console
+  52:3  warning  Unexpected console statement  no-console
+/home/danifgx/projects/retoalespejo/src/tests/InvalidChallengeTest.ts
+   6:3  warning  Unexpected console statement  no-console
+  57:3  warning  Unexpected console statement  no-console
+  58:3  warning  Unexpected console statement  no-console
+  59:3  warning  Unexpected console statement  no-console
+  60:3  warning  Unexpected console statement  no-console
+  61:3  warning  Unexpected console statement  no-console
+  62:3  warning  Unexpected console statement  no-console
+  64:3  warning  Unexpected console statement  no-console
+  65:3  warning  Unexpected console statement  no-console
+/home/danifgx/projects/retoalespejo/src/tests/OverlapTest.ts
+   6:3   warning  Unexpected console statement  no-console
+  24:5   warning  Unexpected console statement  no-console
+  29:5   warning  Unexpected console statement  no-console
+  31:7   warning  Unexpected console statement  no-console
+  47:9   warning  Unexpected console statement  no-console
+  67:11  warning  Unexpected console statement  no-console
+  68:11  warning  Unexpected console statement  no-console
+  69:11  warning  Unexpected console statement  no-console
+  72:11  warning  Unexpected console statement  no-console
+  79:7   warning  Unexpected console statement  no-console
+  81:7   warning  Unexpected console statement  no-console
+  83:7   warning  Unexpected console statement  no-console
+  88:5   warning  Unexpected console statement  no-console
+  89:5   warning  Unexpected console statement  no-console
+  93:7   warning  Unexpected console statement  no-console
+  97:3   warning  Unexpected console statement  no-console
+/home/danifgx/projects/retoalespejo/src/tests/debug/DebugPositioning.test.ts
+  22:5  warning  Unexpected console statement  no-console
+  23:5  warning  Unexpected console statement  no-console
+  29:5  warning  Unexpected console statement  no-console
+  33:7  warning  Unexpected console statement  no-console
+  49:7  warning  Unexpected console statement  no-console
+  54:9  warning  Unexpected console statement  no-console
+  60:9  warning  Unexpected console statement  no-console
+  65:7  warning  Unexpected console statement  no-console
+/home/danifgx/projects/retoalespejo/src/tests/debug/FindValidPositions.test.ts
+    1:10  warning  'PiecePositioningAlgorithm' is defined but never used  no-unused-vars
+    1:10  warning  'PiecePositioningAlgorithm' is defined but never used  @typescript-eslint/no-unused-vars
+   21:5   warning  Unexpected console statement                           no-console
+   33:7   warning  Unexpected console statement                           no-console
+   44:7   warning  Unexpected console statement                           no-console
+   47:7   warning  Unexpected console statement                           no-console
+   53:7   warning  Unexpected console statement                           no-console
+   56:9   warning  Unexpected console statement                           no-console
+   61:5   warning  Unexpected console statement                           no-console
+   80:5   warning  Unexpected console statement                           no-console
+   81:5   warning  Unexpected console statement                           no-console
+   95:5   warning  Unexpected console statement                           no-console
+   96:5   warning  Unexpected console statement                           no-console
+   97:5   warning  Unexpected console statement                           no-console
+  100:7   warning  Unexpected console statement                           no-console
+/home/danifgx/projects/retoalespejo/src/tests/debug/TestFullArea.test.ts
+  23:5  warning  Unexpected console statement  no-console
+  27:5  warning  Unexpected console statement  no-console
+  30:7  warning  Unexpected console statement  no-console
+  32:9  warning  Unexpected console statement  no-console
+  45:9  warning  Unexpected console statement  no-console
+  51:9  warning  Unexpected console statement  no-console
+  73:9  warning  Unexpected console statement  no-console
+/home/danifgx/projects/retoalespejo/src/tests/integration/CalculateCorrectSpacing.test.ts
+   21:5   warning  Unexpected console statement  no-console
+   22:5   warning  Unexpected console statement  no-console
+   23:5   warning  Unexpected console statement  no-console
+   36:7   warning  Unexpected console statement  no-console
+   37:7   warning  Unexpected console statement  no-console
+   38:7   warning  Unexpected console statement  no-console
+   39:7   warning  Unexpected console statement  no-console
+   40:7   warning  Unexpected console statement  no-console
+   41:7   warning  Unexpected console statement  no-console
+   44:9   warning  Unexpected console statement  no-console
+   48:9   warning  Unexpected console statement  no-console
+   51:11  warning  Unexpected console statement  no-console
+   71:5   warning  Unexpected console statement  no-console
+   72:5   warning  Unexpected console statement  no-console
+   73:5   warning  Unexpected console statement  no-console
+   74:5   warning  Unexpected console statement  no-console
+   87:7   warning  Unexpected console statement  no-console
+   88:7   warning  Unexpected console statement  no-console
+   89:7   warning  Unexpected console statement  no-console
+   90:7   warning  Unexpected console statement  no-console
+   93:9   warning  Unexpected console statement  no-console
+   97:9   warning  Unexpected console statement  no-console
+  100:11  warning  Unexpected console statement  no-console
+/home/danifgx/projects/retoalespejo/src/tests/integration/DebugChallenge3and4.test.ts
+  22:5  warning  Unexpected console statement  no-console
+  27:7  warning  Unexpected console statement  no-console
+  28:7  warning  Unexpected console statement  no-console
+  29:7  warning  Unexpected console statement  no-console
+  35:5  warning  Unexpected console statement  no-console
+  36:5  warning  Unexpected console statement  no-console
+  39:5  warning  Unexpected console statement  no-console
+  51:5  warning  Unexpected console statement  no-console
+  56:7  warning  Unexpected console statement  no-console
+  57:7  warning  Unexpected console statement  no-console
+  58:7  warning  Unexpected console statement  no-console
+  62:5  warning  Unexpected console statement  no-console
+  63:5  warning  Unexpected console statement  no-console
+  64:5  warning  Unexpected console statement  no-console
+  65:5  warning  Unexpected console statement  no-console
+  66:5  warning  Unexpected console statement  no-console
+  67:5  warning  Unexpected console statement  no-console
+  68:5  warning  Unexpected console statement  no-console
+  71:5  warning  Unexpected console statement  no-console
+/home/danifgx/projects/retoalespejo/src/tests/integration/DebugCorrectPosition.test.ts
+  15:5  warning  Unexpected console statement  no-console
+  30:5  warning  Unexpected console statement  no-console
+  31:5  warning  Unexpected console statement  no-console
+  32:5  warning  Unexpected console statement  no-console
+  33:5  warning  Unexpected console statement  no-console
+  34:5  warning  Unexpected console statement  no-console
+  37:5  warning  Unexpected console statement  no-console
+  41:5  warning  Unexpected console statement  no-console
+  42:5  warning  Unexpected console statement  no-console
+  43:5  warning  Unexpected console statement  no-console
+  45:5  warning  Unexpected console statement  no-console
+  49:5  warning  Unexpected console statement  no-console
+  50:5  warning  Unexpected console statement  no-console
+  51:5  warning  Unexpected console statement  no-console
+/home/danifgx/projects/retoalespejo/src/tests/integration/DebugMirrorDetection.test.ts
+  25:5  warning  Unexpected console statement  no-console
+  26:5  warning  Unexpected console statement  no-console
+  27:5  warning  Unexpected console statement  no-console
+  28:5  warning  Unexpected console statement  no-console
+  29:5  warning  Unexpected console statement  no-console
+  30:5  warning  Unexpected console statement  no-console
+  47:5  warning  Unexpected console statement  no-console
+  60:5  warning  Unexpected console statement  no-console
+  61:5  warning  Unexpected console statement  no-console
+  62:5  warning  Unexpected console statement  no-console
+/home/danifgx/projects/retoalespejo/src/tests/integration/DebugReflection.test.ts
+  21:5  warning  Unexpected console statement  no-console
+  22:5  warning  Unexpected console statement  no-console
+  23:5  warning  Unexpected console statement  no-console
+  27:5  warning  Unexpected console statement  no-console
+  28:5  warning  Unexpected console statement  no-console
+  29:5  warning  Unexpected console statement  no-console
+  30:5  warning  Unexpected console statement  no-console
+  33:5  warning  Unexpected console statement  no-console
+  38:5  warning  Unexpected console statement  no-console
+  39:5  warning  Unexpected console statement  no-console
+  46:5  warning  Unexpected console statement  no-console
+  47:5  warning  Unexpected console statement  no-console
+  52:5  warning  Unexpected console statement  no-console
+/home/danifgx/projects/retoalespejo/src/tests/integration/DebugTypeBPosition.test.ts
+  15:5  warning  Unexpected console statement  no-console
+  29:5  warning  Unexpected console statement  no-console
+  30:5  warning  Unexpected console statement  no-console
+  31:5  warning  Unexpected console statement  no-console
+  32:5  warning  Unexpected console statement  no-console
+/home/danifgx/projects/retoalespejo/src/tests/integration/DebugUpdatedChallenges.test.ts
+  22:5  warning  Unexpected console statement  no-console
+  27:7  warning  Unexpected console statement  no-console
+  28:7  warning  Unexpected console statement  no-console
+  29:7  warning  Unexpected console statement  no-console
+  36:5  warning  Unexpected console statement  no-console
+  37:5  warning  Unexpected console statement  no-console
+  38:5  warning  Unexpected console statement  no-console
+  41:5  warning  Unexpected console statement  no-console
+  53:5  warning  Unexpected console statement  no-console
+  58:7  warning  Unexpected console statement  no-console
+  59:7  warning  Unexpected console statement  no-console
+  60:7  warning  Unexpected console statement  no-console
+  64:5  warning  Unexpected console statement  no-console
+  68:5  warning  Unexpected console statement  no-console
+  69:5  warning  Unexpected console statement  no-console
+  70:5  warning  Unexpected console statement  no-console
+  71:5  warning  Unexpected console statement  no-console
+  72:5  warning  Unexpected console statement  no-console
+  73:5  warning  Unexpected console statement  no-console
+  74:5  warning  Unexpected console statement  no-console
+  75:5  warning  Unexpected console statement  no-console
+  76:5  warning  Unexpected console statement  no-console
+  79:5  warning  Unexpected console statement  no-console
+/home/danifgx/projects/retoalespejo/src/tests/integration/FindValidTypeBPosition.test.ts
+  29:7  warning  Unexpected console statement  no-console
+  30:7  warning  Unexpected console statement  no-console
+  31:7  warning  Unexpected console statement  no-console
+  32:7  warning  Unexpected console statement  no-console
+  40:9  warning  Unexpected console statement  no-console
+  47:5  warning  Unexpected console statement  no-console
+/home/danifgx/projects/retoalespejo/src/tests/integration/GameGeometry.test.challenge2.ts
+  26:5  warning  Unexpected console statement  no-console
+  30:5  warning  Unexpected console statement  no-console
+  36:5  warning  Unexpected console statement  no-console
+  40:5  warning  Unexpected console statement  no-console
+  45:5  warning  Unexpected console statement  no-console
+  46:5  warning  Unexpected console statement  no-console
+  50:5  warning  Unexpected console statement  no-console
+  84:5  warning  Unexpected console statement  no-console
+  88:5  warning  Unexpected console statement  no-console
+  92:5  warning  Unexpected console statement  no-console
+/home/danifgx/projects/retoalespejo/src/tests/integration/TestTypeBGeometry.test.ts
+  15:5  warning  Unexpected console statement  no-console
+  28:5  warning  Unexpected console statement  no-console
+  29:5  warning  Unexpected console statement  no-console
+  30:5  warning  Unexpected console statement  no-console
+  31:5  warning  Unexpected console statement  no-console
+  32:5  warning  Unexpected console statement  no-console
+  39:5  warning  Unexpected console statement  no-console
+  40:5  warning  Unexpected console statement  no-console
+  41:5  warning  Unexpected console statement  no-console
+  45:5  warning  Unexpected console statement  no-console
+  58:5  warning  Unexpected console statement  no-console
+  59:5  warning  Unexpected console statement  no-console
+  60:5  warning  Unexpected console statement  no-console
+  61:5  warning  Unexpected console statement  no-console
+/home/danifgx/projects/retoalespejo/src/tests/integration/VisualGeometryTest.test.ts
+   22:5   warning  Unexpected console statement   no-console
+   23:5   warning  Unexpected console statement   no-console
+   24:5   warning  Unexpected console statement   no-console
+   28:5   warning  Unexpected console statement   no-console
+   32:5   warning  Unexpected console statement   no-console
+   36:5   warning  Unexpected console statement   no-console
+   43:5   warning  Unexpected console statement   no-console
+   52:5   warning  Unexpected console statement   no-console
+   54:7   warning  Unexpected console statement   no-console
+   58:59  warning  'y' is defined but never used  no-unused-vars
+   58:59  warning  'y' is defined but never used  @typescript-eslint/no-unused-vars
+   59:5   warning  Unexpected console statement   no-console
+   60:5   warning  Unexpected console statement   no-console
+   61:5   warning  Unexpected console statement   no-console
+   69:5   warning  Unexpected console statement   no-console
+   73:5   warning  Unexpected console statement   no-console
+   78:5   warning  Unexpected console statement   no-console
+   79:5   warning  Unexpected console statement   no-console
+   80:5   warning  Unexpected console statement   no-console
+   83:5   warning  Unexpected console statement   no-console
+   84:5   warning  Unexpected console statement   no-console
+   85:5   warning  Unexpected console statement   no-console
+   86:5   warning  Unexpected console statement   no-console
+   87:5   warning  Unexpected console statement   no-console
+   88:5   warning  Unexpected console statement   no-console
+  152:63  warning  'y' is defined but never used  no-unused-vars
+  152:63  warning  'y' is defined but never used  @typescript-eslint/no-unused-vars
+  153:63  warning  'y' is defined but never used  no-unused-vars
+  153:63  warning  'y' is defined but never used  @typescript-eslint/no-unused-vars
+  154:60  warning  'x' is defined but never used  no-unused-vars
+  154:60  warning  'x' is defined but never used  @typescript-eslint/no-unused-vars
+  155:60  warning  'x' is defined but never used  no-unused-vars
+  155:60  warning  'x' is defined but never used  @typescript-eslint/no-unused-vars
+  158:62  warning  'y' is defined but never used  no-unused-vars
+  158:62  warning  'y' is defined but never used  @typescript-eslint/no-unused-vars
+  159:62  warning  'y' is defined but never used  no-unused-vars
+  159:62  warning  'y' is defined but never used  @typescript-eslint/no-unused-vars
+  160:59  warning  'x' is defined but never used  no-unused-vars
+  160:59  warning  'x' is defined but never used  @typescript-eslint/no-unused-vars
+  161:59  warning  'x' is defined but never used  no-unused-vars
+  161:59  warning  'x' is defined but never used  @typescript-eslint/no-unused-vars
+  163:5   warning  Unexpected console statement   no-console
+  164:5   warning  Unexpected console statement   no-console
+  165:5   warning  Unexpected console statement   no-console
+  166:5   warning  Unexpected console statement   no-console
+  167:5   warning  Unexpected console statement   no-console
+  169:5   warning  Unexpected console statement   no-console
+  170:5   warning  Unexpected console statement   no-console
+  171:5   warning  Unexpected console statement   no-console
+/home/danifgx/projects/retoalespejo/src/tests/integration/verify-all-challenges.test.ts
+  11:1   warning  Unexpected console statement              no-console
+  16:36  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  17:3   warning  Unexpected console statement              no-console
+  22:3   warning  Unexpected console statement              no-console
+  23:3   warning  Unexpected console statement              no-console
+  24:3   warning  Unexpected console statement              no-console
+  25:3   warning  Unexpected console statement              no-console
+  26:3   warning  Unexpected console statement              no-console
+  29:5   warning  Unexpected console statement              no-console
+  39:3   warning  Unexpected console statement              no-console
+  42:1   warning  Unexpected console statement              no-console
+/home/danifgx/projects/retoalespejo/src/tests/runComprehensiveTest.js
+  17:3  warning  Unexpected console statement  no-console
+  22:3  warning  Unexpected console statement  no-console
+  23:3  warning  Unexpected console statement  no-console
+  25:3  warning  Unexpected console statement  no-console
+  26:3  warning  Unexpected console statement  no-console
+/home/danifgx/projects/retoalespejo/src/tests/runInvalidTest.js
+  17:3  warning  Unexpected console statement  no-console
+  22:3  warning  Unexpected console statement  no-console
+  23:3  warning  Unexpected console statement  no-console
+  25:3  warning  Unexpected console statement  no-console
+  26:3  warning  Unexpected console statement  no-console
+/home/danifgx/projects/retoalespejo/src/tests/runOverlapTest.js
+  17:3  warning  Unexpected console statement  no-console
+  22:3  warning  Unexpected console statement  no-console
+  23:3  warning  Unexpected console statement  no-console
+  25:3  warning  Unexpected console statement  no-console
+  26:3  warning  Unexpected console statement  no-console
+/home/danifgx/projects/retoalespejo/src/tests/runTests.js
+  18:3  warning  Unexpected console statement  no-console
+  23:3  warning  Unexpected console statement  no-console
+  24:3  warning  Unexpected console statement  no-console
+  26:3  warning  Unexpected console statement  no-console
+  27:3  warning  Unexpected console statement  no-console
+/home/danifgx/projects/retoalespejo/src/tests/unit/ChallengeCardRenderer.test.ts
+   65:34  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   95:34  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  141:34  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  158:34  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  211:34  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  242:34  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  285:34  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  316:34  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+/home/danifgx/projects/retoalespejo/src/tests/unit/ChallengeGenerator.test.ts
+  23:5   warning  Unexpected console statement  no-console
+  24:5   warning  Unexpected console statement  no-console
+  31:5   warning  Unexpected console statement  no-console
+  35:5   warning  Unexpected console statement  no-console
+  40:5   warning  Unexpected console statement  no-console
+  41:5   warning  Unexpected console statement  no-console
+  45:5   warning  Unexpected console statement  no-console
+  62:5   warning  Unexpected console statement  no-console
+  63:5   warning  Unexpected console statement  no-console
+  67:5   warning  Unexpected console statement  no-console
+  68:5   warning  Unexpected console statement  no-console
+  78:7   warning  Unexpected console statement  no-console
+  80:7   warning  Unexpected console statement  no-console
+  83:9   warning  Unexpected console statement  no-console
+  84:9   warning  Unexpected console statement  no-console
+  86:11  warning  Unexpected console statement  no-console
+  90:11  warning  Unexpected console statement  no-console
+  95:15  warning  Unexpected console statement  no-console
+/home/danifgx/projects/retoalespejo/src/tests/unit/GameAreaRenderer.test.ts
+   72:47  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   89:47  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  100:55  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  120:55  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  134:42  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  154:41  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  198:42  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  206:42  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  217:42  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  231:42  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  237:70  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  239:42  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  273:49  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  280:49  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  292:49  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  304:49  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+/home/danifgx/projects/retoalespejo/src/tests/unit/GameGeometry.legacy.test.ts
+  660:7  warning  Unexpected console statement  no-console
+/home/danifgx/projects/retoalespejo/src/utils/challenges/ChallengeGenerator.ts
+   253:7   warning  Unexpected console statement                      no-console
+   268:7   warning  Unexpected console statement                      no-console
+   282:9   warning  Unexpected console statement                      no-console
+   286:9   warning  Unexpected console statement                      no-console
+   309:7   warning  Unexpected console statement                      no-console
+   338:7   warning  Unexpected console statement                      no-console
+   342:9   warning  Unexpected console statement                      no-console
+   344:9   warning  Unexpected console statement                      no-console
+   346:9   warning  Unexpected console statement                      no-console
+   405:13  warning  'mirrorLineX' is assigned a value but never used  no-unused-vars
+   405:13  warning  'mirrorLineX' is assigned a value but never used  @typescript-eslint/no-unused-vars
+   461:5   warning  Unexpected console statement                      no-console
+   496:7   warning  Unexpected console statement                      no-console
+   516:13  warning  Unexpected console statement                      no-console
+   534:7   warning  Unexpected console statement                      no-console
+   648:7   warning  Unexpected console statement                      no-console
+   678:9   warning  Unexpected console statement                      no-console
+   689:11  warning  Unexpected console statement                      no-console
+   697:5   warning  Unexpected console statement                      no-console
+   748:7   warning  Unexpected console statement                      no-console
+   786:9   warning  Unexpected console statement                      no-console
+   819:5   warning  Unexpected console statement                      no-console
+   886:7   warning  Unexpected console statement                      no-console
+   891:5   warning  Unexpected console statement                      no-console
+   903:9   warning  Unexpected console statement                      no-console
+   920:7   warning  Unexpected console statement                      no-console
+   926:7   warning  Unexpected console statement                      no-console
+   932:7   warning  Unexpected console statement                      no-console
+   940:7   warning  Unexpected console statement                      no-console
+   952:7   warning  Unexpected console statement                      no-console
+   956:9   warning  Unexpected console statement                      no-console
+   966:9   warning  Unexpected console statement                      no-console
+   970:11  warning  Unexpected console statement                      no-console
+   977:7   warning  Unexpected console statement                      no-console
+   979:7   warning  Unexpected console statement                      no-console
+   982:5   warning  Unexpected console statement                      no-console
+  1156:13  warning  'distance' is assigned a value but never used     no-unused-vars
+  1156:13  warning  'distance' is assigned a value but never used     @typescript-eslint/no-unused-vars
+  1158:7   warning  Unexpected console statement                      no-console
+/home/danifgx/projects/retoalespejo/src/utils/challenges/ChallengeMigration.ts
+   29:25  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   73:7   warning  Unexpected console statement              no-console
+  182:7   warning  Unexpected console statement              no-console
+/home/danifgx/projects/retoalespejo/src/utils/geometry/GameGeometry.ts
+    49:11   warning  'reflectedRight' is assigned a value but never used  no-unused-vars
+    49:11   warning  'reflectedRight' is assigned a value but never used  @typescript-eslint/no-unused-vars
+    62:5    warning  Unexpected console statement                         no-console
+   235:41   error    Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+   235:53   error    Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+   259:42   error    Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+   259:54   error    Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+   365:7    warning  Unexpected console statement                         no-console
+   445:7    warning  Unexpected console statement                         no-console
+   451:7    warning  Unexpected console statement                         no-console
+   460:7    warning  Unexpected console statement                         no-console
+   466:7    warning  Unexpected console statement                         no-console
+   471:5    warning  Unexpected console statement                         no-console
+   645:5    warning  Unexpected console statement                         no-console
+   652:9    warning  Unexpected console statement                         no-console
+   656:11   warning  Unexpected console statement                         no-console
+   661:13   warning  Unexpected console statement                         no-console
+   670:24   error    Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+   699:7    warning  Unexpected console statement                         no-console
+   704:9    warning  Unexpected console statement                         no-console
+   709:7    warning  Unexpected console statement                         no-console
+   719:7    warning  Unexpected console statement                         no-console
+   722:5    warning  Unexpected console statement                         no-console
+   729:81   warning  'gapDistance' is defined but never used              no-unused-vars
+   729:81   warning  'gapDistance' is defined but never used              @typescript-eslint/no-unused-vars
+   811:108  error    Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+   852:48   error    Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+   852:60   error    Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+   873:9    warning  Unexpected console statement                         no-console
+  1011:42   error    Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+  1011:54   error    Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+  1018:44   error    Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+  1018:56   error    Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+  1378:5    warning  Unexpected console statement                         no-console
+  1382:7    warning  Unexpected console statement                         no-console
+  1383:7    warning  Unexpected console statement                         no-console
+  1387:7    warning  Unexpected console statement                         no-console
+  1393:9    warning  Unexpected console statement                         no-console
+  1399:7    warning  Unexpected console statement                         no-console
+  1402:7    warning  Unexpected console statement                         no-console
+  1412:11   warning  Unexpected console statement                         no-console
+  1419:11   warning  Unexpected console statement                         no-console
+  1424:7    warning  Unexpected console statement                         no-console
+  1427:5    warning  Unexpected console statement                         no-console
+  1473:5    warning  Unexpected console statement                         no-console
+  1483:11   warning  Unexpected console statement                         no-console
+  1488:5    warning  Unexpected console statement                         no-console
+  1489:5    warning  Unexpected console statement                         no-console
+  1490:5    warning  Unexpected console statement                         no-console
+  1491:5    warning  Unexpected console statement                         no-console
+  1492:5    warning  Unexpected console statement                         no-console
+  1493:5    warning  Unexpected console statement                         no-console
+/home/danifgx/projects/retoalespejo/src/utils/positioning/PiecePositioningAlgorithm.ts
+   93:5  warning  'spacing' is defined but never used           no-unused-vars
+   93:5  warning  'spacing' is defined but never used           @typescript-eslint/no-unused-vars
+  170:9  error    Unexpected lexical declaration in case block  no-case-declarations
+  171:9  error    Unexpected lexical declaration in case block  no-case-declarations
+  194:9  error    Unexpected lexical declaration in case block  no-case-declarations
+  195:9  error    Unexpected lexical declaration in case block  no-case-declarations
+  228:9  error    Unexpected lexical declaration in case block  no-case-declarations
+  229:9  error    Unexpected lexical declaration in case block  no-case-declarations
+/home/danifgx/projects/retoalespejo/src/utils/rendering/ResponsiveCanvas.ts
+  27:13  warning  'currentWidth' is defined but never used   no-unused-vars
+  28:13  warning  'currentHeight' is defined but never used  no-unused-vars
+/home/danifgx/projects/retoalespejo/test-challenges.js
+  21:1  warning  Unexpected console statement  no-console
+  22:1  warning  Unexpected console statement  no-console
+  26:1  warning  Unexpected console statement  no-console
+  32:1  warning  Unexpected console statement  no-console
+  36:1  warning  Unexpected console statement  no-console
+  41:1  warning  Unexpected console statement  no-console
+  42:1  warning  Unexpected console statement  no-console
+  46:1  warning  Unexpected console statement  no-console
+  50:1  warning  Unexpected console statement  no-console
+  72:1  warning  Unexpected console statement  no-console
+  76:1  warning  Unexpected console statement  no-console
+  80:1  warning  Unexpected console statement  no-console
+  85:1  warning  Unexpected console statement  no-console
+  86:1  warning  Unexpected console statement  no-console
+  90:1  warning  Unexpected console statement  no-console
+✖ 793 problems (83 errors, 710 warnings)
+  2 errors and 0 warnings potentially fixable with the `--fix` option.

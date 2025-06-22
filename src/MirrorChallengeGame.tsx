@@ -21,7 +21,9 @@ const MirrorChallengeGame: React.FC = () => {
     challenges,
     isLoading,
     interactingPieceId,
-    controlActionPieceId,
+    temporaryDraggedPieceId,
+    animatingPieceId,
+    setControlEffect,
     setPieces,
     setDraggedPiece,
     setDragOffset,
@@ -109,6 +111,8 @@ const MirrorChallengeGame: React.FC = () => {
         <div className="max-w-7xl mx-auto h-full flex flex-col">
           <GameControls
               pieces={pieces}
+              challenges={challenges}
+              currentChallenge={currentChallenge}
               showInstructions={showInstructions}
               onToggleInstructions={() => setShowInstructions(!showInstructions)}
               onResetLevel={resetLevel}
@@ -122,6 +126,7 @@ const MirrorChallengeGame: React.FC = () => {
               isLoading={isLoading}
               debugMode={debugMode}
               onToggleDebugMode={() => setDebugMode(!debugMode)}
+              setControlEffect={setControlEffect}
           />
 
           {/* Área de juego */}
@@ -141,18 +146,19 @@ const MirrorChallengeGame: React.FC = () => {
                   debugMode={debugMode}
                   draggedPiece={draggedPiece}
                   interactingPieceId={interactingPieceId}
-                  controlActionPieceId={controlActionPieceId}
+                  temporaryDraggedPieceId={temporaryDraggedPieceId}
+                  animatingPieceId={animatingPieceId}
               />
             </div>
 
             {/* Footer integrado */}
             <div className="text-center py-1">
               <p className="text-gray-400 text-xs">
-                Basado en "Reto al Espejo" de Educa
+                Basado en &quot;Reto al Espejo&quot; de Educa
               </p>
             </div>
           </div>
-          
+
           {/* Test responsive flotante - solo en modo debug */}
           {debugMode && (
             <div className="absolute top-4 left-4 z-10">

@@ -1502,4 +1502,67 @@ export class GameGeometry {
       piecesInArea
     };
   }
+
+  /**
+   * Verifica si una pieza está completamente dentro del área de almacenamiento de piezas
+   */
+  isPieceCompletelyInStorageArea(piece: PiecePosition, canvasWidth: number, canvasHeight: number): boolean {
+    const storageAreaTop = this.config.height; // y >= 600
+    const storageAreaBottom = canvasHeight; // y <= 1000
+    const storageAreaLeft = 0; // x >= 0
+    const storageAreaRight = this.config.mirrorLineX; // x <= 700
+    
+    const bbox = this.getPieceBoundingBox(piece);
+    
+    const isInside = bbox.left >= storageAreaLeft && 
+                    bbox.right <= storageAreaRight && 
+                    bbox.top >= storageAreaTop && 
+                    bbox.bottom <= storageAreaBottom;
+    
+    console.log(`🔍 Storage validation for piece at (${piece.x.toFixed(1)}, ${piece.y.toFixed(1)}):`, {
+      bbox: `(${bbox.left.toFixed(1)}, ${bbox.top.toFixed(1)}) to (${bbox.right.toFixed(1)}, ${bbox.bottom.toFixed(1)})`,
+      storageArea: `(${storageAreaLeft}, ${storageAreaTop}) to (${storageAreaRight}, ${storageAreaBottom})`,
+      isCompletelyInside: isInside
+    });
+    
+    return isInside;
+  }
+
+  /**
+   * Ajusta la posición de una pieza para que esté completamente dentro del área de almacenamiento
+   */
+  constrainPieceToStorageArea(piece: PiecePosition, canvasWidth: number, canvasHeight: number): PiecePosition {
+    const storageAreaTop = this.config.height; // y >= 600
+    const storageAreaBottom = canvasHeight; // y <= 1000
+    const storageAreaLeft = 0; // x >= 0
+    const storageAreaRight = this.config.mirrorLineX; // x <= 700
+    
+    const bbox = this.getPieceBoundingBox(piece);
+    let newX = piece.x;
+    let newY = piece.y;
+    
+    // Ajustar horizontalmente
+    if (bbox.left < storageAreaLeft) {
+      const overlap = storageAreaLeft - bbox.left;
+      newX = piece.x + overlap;
+    } else if (bbox.right > storageAreaRight) {
+      const overlap = bbox.right - storageAreaRight;
+      newX = piece.x - overlap;
+    }
+    
+    // Ajustar verticalmente
+    if (bbox.top < storageAreaTop) {
+      const overlap = storageAreaTop - bbox.top;
+      newY = piece.y + overlap;
+    } else if (bbox.bottom > storageAreaBottom) {
+      const overlap = bbox.bottom - storageAreaBottom;
+      newY = piece.y - overlap;
+    }
+    
+    return {
+      ...piece,
+      x: newX,
+      y: newY
+    };
+  }
 }

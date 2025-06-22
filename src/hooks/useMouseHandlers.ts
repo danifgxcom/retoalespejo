@@ -11,7 +11,7 @@ interface UseMouseHandlersProps {
   setDragOffset: (offset: { x: number; y: number }) => void;
   isPieceHit: (piece: Piece, x: number, y: number) => boolean;
   canvasRef: React.RefObject<{ getCanvas: () => HTMLCanvasElement | null }>;
-  rotatePiece: (pieceId: number) => void;
+  rotatePiece: (pieceId: number, fromControl?: boolean) => void;
   geometry: GameGeometry;
   setInteractingPieceId: (pieceId: number | null) => void;
 }
@@ -160,7 +160,8 @@ export const useMouseHandlers = ({
 
     const clickedPiece = pieces.slice().reverse().find((p) => isPieceHit(p, coords.x, coords.y));
     if (clickedPiece) {
-      rotatePiece(clickedPiece.id);
+      // Rotación desde ratón: NO usar animación azul, pero sí permitir la rotación
+      rotatePiece(clickedPiece.id, true); // fromControl = true para evitar animación azul
     }
   }, [canvasRef, pieces, isPieceHit, rotatePiece]);
 

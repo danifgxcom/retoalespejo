@@ -1,9 +1,12 @@
 import React, { useRef } from 'react';
 import { RotateCcw, SkipForward, HelpCircle, RotateCw, FlipHorizontal, CheckCircle, RefreshCw, Upload, Edit, Camera, Bug } from 'lucide-react';
 import { Piece } from './GamePiece';
+import { Challenge } from './ChallengeCard';
 
 interface GameControlsProps {
   pieces: Piece[];
+  challenges: Challenge[];
+  currentChallenge: number;
   showInstructions: boolean;
   onToggleInstructions: () => void;
   onResetLevel: () => void;
@@ -11,16 +14,19 @@ interface GameControlsProps {
   onRotatePiece: (pieceId: number) => void;
   onRotatePieceCounterClockwise: (pieceId: number) => void;
   onFlipPiece: (pieceId: number) => void;
-  onCheckSolution?: () => boolean;
+  onCheckSolution?: () => { isCorrect: boolean; message: string };
   onLoadCustomChallenges?: (file: File) => void;
   onOpenChallengeEditor?: () => void;
   isLoading?: boolean;
   debugMode?: boolean;
   onToggleDebugMode?: () => void;
+  setControlEffect?: (pieceId: number | null) => void;
 }
 
 const GameControls: React.FC<GameControlsProps> = ({
   pieces,
+  challenges,
+  currentChallenge,
   showInstructions,
   onToggleInstructions,
   onResetLevel,
@@ -34,15 +40,23 @@ const GameControls: React.FC<GameControlsProps> = ({
   isLoading,
   debugMode,
   onToggleDebugMode,
+  setControlEffect,
 }) => {
   const [solutionMessage, setSolutionMessage] = React.useState<string | null>(null);
+  const [isCorrectSolution, setIsCorrectSolution] = React.useState<boolean | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleCheckSolution = () => {
     if (onCheckSolution) {
-      const isCorrect = onCheckSolution();
-      setSolutionMessage(isCorrect ? "¡Correcto! Has resuelto el objetivo." : "Aún no coincide con el objetivo.");
-      setTimeout(() => setSolutionMessage(null), 3000);
+      const result = onCheckSolution();
+      console.log('🎯 Resultado de validación:', result);
+      setSolutionMessage(result.message);
+      // Guardar el resultado para el styling
+      setIsCorrectSolution(result.isCorrect);
+      setTimeout(() => {
+        setSolutionMessage(null);
+        setIsCorrectSolution(null);
+      }, 3000);
     }
   };
 
@@ -66,7 +80,7 @@ const GameControls: React.FC<GameControlsProps> = ({
   const handleSnapshotPieces = () => {
     console.log('📸 SNAPSHOT DE POSICIONES ACTUALES:');
     console.log('=====================================');
-    
+
     // Información del canvas y áreas
     console.log('🖼️ INFORMACIÓN DEL CANVAS:');
     console.log('Canvas interno: 1400x1000');
@@ -76,17 +90,17 @@ const GameControls: React.FC<GameControlsProps> = ({
     console.log('Área de piezas: (0,600) a (350,1000)');
     console.log('Área de objetivo: (350,600) a (700,1000)');
     console.log('');
-    
+
     // Información de las piezas
     console.log('🧩 PIEZAS EN EL JUEGO:');
     pieces.forEach((piece, index) => {
       const area = piece.y < 600 ? 'JUEGO' : 
                    piece.y >= 600 && piece.x < 350 ? 'PIEZAS' :
                    piece.y >= 600 && piece.x >= 350 ? 'OBJETIVO' : 'DESCONOCIDA';
-      
-      console.log(`Pieza ${piece.id} (${piece.type}, ${piece.face}): x=${piece.x}, y=${piece.y}, rotation=${piece.rotation}, placed=${piece.placed}, área=${area}`);
+
+      console.log(`Pieza ${piece.id} (${piece.type}, ${piece.face}): x=${piece.x}, y=${piece.y}, rotation=${piece.rotation}, placed=${piece.placed}, área=${area}, CENTER=${piece.centerColor}, TRIANGLE=${piece.triangleColor}`);
     });
-    
+
     console.log('=====================================');
     console.log('📋 COORDENADAS PARA CÓDIGO:');
     console.log(JSON.stringify(pieces.map(p => ({
@@ -97,6 +111,17 @@ const GameControls: React.FC<GameControlsProps> = ({
       face: p.face,
       placed: p.placed
     })), null, 2));
+
+    console.log('');
+    console.log('🎯 DESAFÍO ACTUAL:');
+    if (challenges[currentChallenge]) {
+      const challenge = challenges[currentChallenge];
+      console.log(`ID: ${challenge.id}, Piezas necesarias: ${challenge.piecesNeeded}`);
+      console.log('Piezas objetivo del jugador:');
+      challenge.objective.playerPieces.forEach((piece, i) => {
+        console.log(`  ${i+1}. Tipo ${piece.type}, cara ${piece.face}, pos (${piece.x.toFixed(1)}, ${piece.y.toFixed(1)}), rot ${piece.rotation}°`);
+      });
+    }
   };
   return (
     <>
@@ -110,14 +135,14 @@ const GameControls: React.FC<GameControlsProps> = ({
           <div className="flex gap-2">
             <button 
               onClick={onToggleInstructions}
-              className="bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-lg transition-colors shadow-md"
+              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white p-3 rounded-xl transition-all transform hover:scale-105 shadow-lg"
               title="Ayuda e instrucciones"
             >
               <HelpCircle size={24} />
             </button>
             <button 
               onClick={onResetLevel}
-              className="bg-red-500 hover:bg-red-600 text-white p-3 rounded-lg transition-colors shadow-md"
+              className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white p-3 rounded-xl transition-all transform hover:scale-105 shadow-lg"
               title="Reiniciar nivel"
             >
               <RefreshCw size={24} />
@@ -125,7 +150,7 @@ const GameControls: React.FC<GameControlsProps> = ({
             {onCheckSolution && (
               <button 
                 onClick={handleCheckSolution}
-                className="bg-green-500 hover:bg-green-600 text-white p-3 rounded-lg transition-colors shadow-md"
+                className="bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white p-3 rounded-xl transition-all transform hover:scale-105 shadow-lg"
                 title="Verificar solución"
               >
                 <CheckCircle size={24} />
@@ -133,7 +158,7 @@ const GameControls: React.FC<GameControlsProps> = ({
             )}
             <button 
               onClick={onNextChallenge}
-              className="bg-purple-500 hover:bg-purple-600 text-white p-3 rounded-lg transition-colors shadow-md"
+              className="bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white p-3 rounded-xl transition-all transform hover:scale-105 shadow-lg"
               title="Siguiente desafío"
             >
               <SkipForward size={24} />
@@ -141,7 +166,7 @@ const GameControls: React.FC<GameControlsProps> = ({
             {onLoadCustomChallenges && (
               <button 
                 onClick={handleUploadClick}
-                className="bg-amber-500 hover:bg-amber-600 text-white p-3 rounded-lg transition-colors shadow-md"
+                className="bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-white p-3 rounded-xl transition-all transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:transform-none"
                 title="Cargar retos personalizados"
                 disabled={isLoading}
               >
@@ -151,7 +176,7 @@ const GameControls: React.FC<GameControlsProps> = ({
             {onOpenChallengeEditor && (
               <button 
                 onClick={onOpenChallengeEditor}
-                className="bg-indigo-500 hover:bg-indigo-600 text-white p-3 rounded-lg transition-colors shadow-md"
+                className="bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-600 hover:to-cyan-700 text-white p-3 rounded-xl transition-all transform hover:scale-105 shadow-lg"
                 title="Editor de retos"
               >
                 <Edit size={24} />
@@ -159,7 +184,7 @@ const GameControls: React.FC<GameControlsProps> = ({
             )}
             <button 
               onClick={handleSnapshotPieces}
-              className="bg-orange-500 hover:bg-orange-600 text-white p-3 rounded-lg transition-colors shadow-md"
+              className="bg-gradient-to-r from-slate-500 to-gray-600 hover:from-slate-600 hover:to-gray-700 text-white p-3 rounded-xl transition-all transform hover:scale-105 shadow-lg"
               title="Snapshot de posiciones actuales"
             >
               <Camera size={24} />
@@ -169,9 +194,9 @@ const GameControls: React.FC<GameControlsProps> = ({
                 onClick={onToggleDebugMode}
                 className={`${
                   debugMode 
-                    ? 'bg-red-500 hover:bg-red-600' 
-                    : 'bg-gray-500 hover:bg-gray-600'
-                } text-white p-3 rounded-lg transition-colors shadow-md`}
+                    ? 'bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700' 
+                    : 'bg-gradient-to-r from-gray-400 to-gray-500 hover:from-gray-500 hover:to-gray-600'
+                } text-white p-3 rounded-xl transition-all transform hover:scale-105 shadow-lg`}
                 title={debugMode ? "Desactivar modo debug" : "Activar modo debug"}
               >
                 <Bug size={24} />
@@ -188,16 +213,6 @@ const GameControls: React.FC<GameControlsProps> = ({
           </div>
         </div>
 
-        {/* Solution Message */}
-        {solutionMessage && (
-          <div className={`mt-4 p-3 rounded-lg text-center font-semibold ${
-            solutionMessage.includes('Correcto') 
-              ? 'bg-green-100 text-green-800 border border-green-200' 
-              : 'bg-yellow-100 text-yellow-800 border border-yellow-200'
-          }`}>
-            {solutionMessage}
-          </div>
-        )}
       </div>
 
       {/* Piece Controls - elegante y compacto */}
@@ -210,34 +225,46 @@ const GameControls: React.FC<GameControlsProps> = ({
               </div>
               <span>Pieza {piece.type}</span>
             </div>
-            <div className="grid grid-cols-3 gap-1 mb-2">
+            <div className="grid grid-cols-3 gap-2 mb-3">
               <button
-                onClick={() => onRotatePieceCounterClockwise(piece.id)}
-                className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white p-2 rounded-lg flex items-center justify-center shadow-md transition-all transform hover:scale-110"
+                onMouseDown={() => {
+                  console.log(`🖱️ MOUSE DOWN - Rotate CCW piece ${piece.id}`);
+                  setControlEffect?.(piece.id);
+                  setTimeout(() => onRotatePieceCounterClockwise(piece.id, true), 10);
+                }}
+                className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white p-2.5 rounded-lg flex items-center justify-center shadow-lg transition-all transform hover:scale-110 active:scale-95"
                 title="Rotar 45° antihorario"
               >
-                <RotateCcw size={20} />
+                <RotateCcw size={18} />
               </button>
               <button
-                onClick={() => onFlipPiece(piece.id)}
-                className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white p-2 rounded-lg flex items-center justify-center shadow-md transition-all transform hover:scale-110"
+                onMouseDown={() => {
+                  console.log(`🖱️ MOUSE DOWN - Flip piece ${piece.id}`);
+                  setControlEffect?.(piece.id);
+                  setTimeout(() => onFlipPiece(piece.id, true), 10);
+                }}
+                className="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white p-2.5 rounded-lg flex items-center justify-center shadow-lg transition-all transform hover:scale-110 active:scale-95"
                 title="Voltear pieza"
               >
-                <FlipHorizontal size={20} />
+                <FlipHorizontal size={18} />
               </button>
               <button
-                onClick={() => onRotatePiece(piece.id)}
-                className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white p-2 rounded-lg flex items-center justify-center shadow-md transition-all transform hover:scale-110"
+                onMouseDown={() => {
+                  console.log(`🖱️ MOUSE DOWN - Rotate piece ${piece.id}`);
+                  setControlEffect?.(piece.id);
+                  setTimeout(() => onRotatePiece(piece.id, true), 10);
+                }}
+                className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white p-2.5 rounded-lg flex items-center justify-center shadow-lg transition-all transform hover:scale-110 active:scale-95"
                 title="Rotar 45° horario"
               >
-                <RotateCw size={20} />
+                <RotateCw size={18} />
               </button>
             </div>
             <div className="text-xs text-center">
-              <span className={`px-2 py-1 rounded-full text-white font-medium ${
+              <span className={`px-3 py-1.5 rounded-full text-white font-semibold shadow-md ${
                 piece.face === 'front' 
-                  ? 'bg-green-500' 
-                  : 'bg-purple-500'
+                  ? 'bg-gradient-to-r from-emerald-400 to-green-500' 
+                  : 'bg-gradient-to-r from-purple-400 to-pink-500'
               }`}>
                 Cara {piece.face === 'front' ? 'A' : 'B'}
               </span>
@@ -277,7 +304,7 @@ const GameControls: React.FC<GameControlsProps> = ({
                       <div>
                         <h4 className="font-bold text-green-800 mb-2">Objetivo del Juego</h4>
                         <p className="text-green-700 leading-relaxed">
-                          Tu misión es recrear el patrón mostrado en el área "OBJETIVO" utilizando las piezas geométricas 
+                          Tu misión es recrear el patrón mostrado en el área &quot;OBJETIVO&quot; utilizando las piezas geométricas 
                           y aprovechando el poder del espejo para completar la figura simétrica.
                         </p>
                       </div>
@@ -290,8 +317,8 @@ const GameControls: React.FC<GameControlsProps> = ({
                       <div>
                         <h4 className="font-bold text-blue-800 mb-2">Movimiento de Piezas</h4>
                         <p className="text-blue-700 leading-relaxed">
-                          Arrastra las piezas desde el área "PIEZAS DISPONIBLES" (parte inferior izquierda) 
-                          hacia el "ÁREA DE JUEGO" (parte superior izquierda). Las piezas se pueden mover libremente 
+                          Arrastra las piezas desde el área &quot;PIEZAS DISPONIBLES&quot; (parte inferior izquierda) 
+                          hacia el &quot;ÁREA DE JUEGO&quot; (parte superior izquierda). Las piezas se pueden mover libremente 
                           dentro de las áreas permitidas.
                         </p>
                       </div>
@@ -367,6 +394,30 @@ const GameControls: React.FC<GameControlsProps> = ({
                     La simetría del espejo puede sorprenderte con soluciones elegantes.
                   </p>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Overlay Message */}
+      {solutionMessage && (
+        <div className="fixed inset-0 pointer-events-none flex items-center justify-center z-50">
+          <div className={`
+            max-w-md mx-4 p-6 rounded-2xl shadow-2xl transform transition-all duration-300 
+            ${isCorrectSolution 
+              ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white' 
+              : 'bg-gradient-to-r from-red-500 to-pink-500 text-white'
+            }
+          `}>
+            <div className="flex items-center justify-center">
+              <div className="text-center">
+                <div className="text-3xl mb-2">
+                  {isCorrectSolution ? '🎉' : '⚠️'}
+                </div>
+                <p className="text-lg font-semibold leading-relaxed">
+                  {solutionMessage}
+                </p>
               </div>
             </div>
           </div>

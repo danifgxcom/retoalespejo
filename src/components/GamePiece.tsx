@@ -10,6 +10,14 @@ export interface Piece {
   placed: boolean;
 }
 
+interface GamePieceProps {
+  piece: Piece;
+  ctx: CanvasRenderingContext2D;
+  x: number;
+  y: number;
+  size?: number;
+}
+
 // Función auxiliar para determinar si una pieza está en área de disponibles
 export const isPieceInAvailableArea = (piece: Piece, gameAreaHeight: number): boolean => {
   return piece.y >= gameAreaHeight;
@@ -27,24 +35,27 @@ const drawShape = (ctx: CanvasRenderingContext2D, coordinates: [number, number][
   ctx.beginPath();
   const [startX, startY] = coordinates[0];
   ctx.moveTo(startX, startY);
-  
+
   for (let i = 1; i < coordinates.length; i++) {
     const [x, y] = coordinates[i];
     ctx.lineTo(x, y);
   }
-  
+
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
 };
 
-export const drawPiece = (ctx: CanvasRenderingContext2D, piece: Piece, x: number, y: number, size = 100) => {
+export const drawPiece = (ctx: CanvasRenderingContext2D, piece: Piece, x: number, y: number, size = 80) => {
+  console.log(`🎨 Drawing piece ${piece.id} (${piece.type}, ${piece.face}) at (${x}, ${y}) - CENTER: ${piece.centerColor}, TRIANGLE: ${piece.triangleColor}`);
+  
   ctx.save();
   ctx.translate(x + size/2, y + size/2);
   ctx.rotate((piece.rotation * Math.PI) / 180);
 
   // Si es pieza tipo B, aplicar espejo horizontal
   if (piece.type === 'B') {
+    console.log(`🔄 Applying horizontal flip for piece type B (${piece.id})`);
     ctx.scale(-1, 1);
   }
 
@@ -77,3 +88,10 @@ export const drawPiece = (ctx: CanvasRenderingContext2D, piece: Piece, x: number
 
   ctx.restore();
 };
+
+const GamePiece: React.FC<GamePieceProps> = ({ piece, ctx, x, y, size = 80 }) => {
+  drawPiece(ctx, piece, x, y, size);
+  return null;
+};
+
+export default GamePiece;

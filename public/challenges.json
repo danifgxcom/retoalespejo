@@ -183,7 +183,7 @@
       "playerPieces": [
         {
           "type": "B",
-          "face": "back",
+          "face": "front",
           "x": 649.98,
           "y": 221.53,
           "rotation": 45
@@ -215,7 +215,7 @@
     "targetPieces": [
       {
         "type": "B",
-        "face": "back",
+        "face": "front",
         "x": 649.98,
         "y": 221.53,
         "rotation": 45

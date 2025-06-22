@@ -18,11 +18,11 @@ export const useGameLogic = () => {
   // Inicializar clases de geometría y generador de challenges
   const geometry = useMemo(() => new GameGeometry(gameAreaConfig), []);
   const challengeGenerator = useMemo(() => new ChallengeGenerator(geometry), [geometry]);
-  
+
   // Sistema de coordenadas responsive
   const [responsiveCanvas, setResponsiveCanvas] = useState<ResponsiveCanvas | null>(null);
   const relativePiecePositions = useMemo(() => new RelativePiecePositions(), []);
-  
+
   // Función para inicializar el sistema responsive
   const initializeResponsiveSystem = useCallback((canvasWidth: number, canvasHeight: number) => {
     const newResponsiveCanvas = new ResponsiveCanvas(canvasWidth, canvasHeight);
@@ -41,7 +41,53 @@ export const useGameLogic = () => {
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [interactingPieceId, setInteractingPieceId] = useState<number | null>(null);
-  const [controlActionPieceId, setControlActionPieceId] = useState<number | null>(null);
+  const [temporaryDraggedPieceId, setTemporaryDraggedPieceId] = useState<number | null>(null);
+  const [animatingPieceId, setAnimatingPieceId] = useState<number | null>(null);
+
+  // Función para activar efecto de control (llamada desde el componente de controles)
+  const setControlEffect = (pieceId: number | null) => {
+    console.log(`🎮 SET CONTROL EFFECT:`, { pieceId, current: temporaryDraggedPieceId });
+    setTemporaryDraggedPieceId(pieceId);
+  };
+
+  // Función helper para animaciones suaves de rotación
+  const animateRotation = (pieceId: number, targetRotation: number, skipAnimation: boolean = false) => {
+    console.log(`⚡ ANIMATE ROTATION ${pieceId}:`, { skipAnimation });
+
+    // Solo activar animación visual si no se está controlando manualmente
+    if (!skipAnimation) {
+      console.log(`⚡ Setting animatingPieceId to ${pieceId}`);
+      setAnimatingPieceId(pieceId);
+    }
+
+    // Aplicar rotación inmediatamente pero marcar como animando
+    setPieces(pieces.map(piece => {
+      if (piece.id === pieceId) {
+        const rotatedPiece = { ...piece, rotation: targetRotation };
+
+        // Aplicar restricciones inmediatamente
+        const constrainedPosition = geometry.constrainPiecePosition(
+          pieceToPosition(rotatedPiece),
+          1400, 1000, true
+        );
+
+        return {
+          ...rotatedPiece,
+          x: constrainedPosition.x,
+          y: constrainedPosition.y
+        };
+      }
+      return piece;
+    }));
+
+    // Limpiar animación después de completarse (solo si se activó)
+    if (!skipAnimation) {
+      setTimeout(() => {
+        console.log(`⚡ Clearing animatingPieceId (was ${pieceId})`);
+        setAnimatingPieceId(null);
+      }, 300); // 300ms de animación
+    }
+  };
 
   // Configuración de plantillas de piezas
   const createPieceTemplate = (type: 'A' | 'B', face: 'front' | 'back') => {
@@ -116,15 +162,14 @@ export const useGameLogic = () => {
   // Función para alternar cara de la pieza
   const togglePieceFace = (piece: Piece): Piece => {
     const isBack = piece.face === 'back';
+    const newFace = isBack ? 'front' : 'back';
+    
+    // Usar la misma lógica que createPieceTemplate para consistencia
     return {
       ...piece,
-      face: isBack ? 'front' : 'back',
-      centerColor: isBack 
-        ? (piece.type === 'A' ? '#FFD700' : '#FF4444')
-        : piece.triangleColor,
-      triangleColor: isBack 
-        ? (piece.type === 'A' ? '#FF4444' : '#FFD700')
-        : piece.centerColor
+      face: newFace,
+      centerColor: newFace === 'front' ? '#FFD700' : '#FF4444',
+      triangleColor: newFace === 'front' ? '#FF4444' : '#FFD700'
     };
   };
 
@@ -136,7 +181,7 @@ export const useGameLogic = () => {
     }
 
     const initialPieces: Piece[] = [];
-    
+
     // Obtener posiciones relativas y convertirlas a absolutas
     const relativePositions = relativePiecePositions.getPositionsForPieceCount(challenge.piecesNeeded);
 
@@ -145,17 +190,17 @@ export const useGameLogic = () => {
     relativePositions.forEach((relPos, index) => {
       const pieceType = index % 2 === 0 ? 'A' : 'B'; // Alternar A, B, A, B...
       const template = createPieceTemplate(pieceType, 'front'); // SIEMPRE empezar con cara front
-      
+
       // Convertir coordenadas relativas a absolutas actuales
       const absolutePos = responsiveCanvas.relativeToAbsolute({
         x: relPos.x,
         y: relPos.y
       });
-      
+
       // Debug de conversión
       console.log(`🔍 Converting relative (${relPos.x.toFixed(3)}, ${relPos.y.toFixed(3)}) to absolute (${Math.round(absolutePos.x)}, ${Math.round(absolutePos.y)})`);
-      
-      const piece = {
+
+      let piece = {
         ...template,
         id: index + 1,
         x: absolutePos.x,
@@ -163,7 +208,7 @@ export const useGameLogic = () => {
         rotation: relPos.rotation,
         placed: false
       };
-      
+
       console.log(`🧩 Responsive piece ${piece.id} (${piece.type}, ${piece.face}) at (${Math.round(piece.x)}, ${Math.round(piece.y)}) R:${piece.rotation}°`);
       initialPieces.push(piece);
     });
@@ -187,7 +232,7 @@ export const useGameLogic = () => {
     // Posiciones fijas que funcionan sin solapamiento
     const getPositionsForPieceCount = (count: number) => {
       console.log(`📏 Using FIXED positions for ${count} pieces`);
-      
+
       switch (count) {
         case 1:
           return [{ x: -22.790523521002072, y: 890.235148963054, rotation: 315 }];
@@ -216,25 +261,100 @@ export const useGameLogic = () => {
 
     const positions = getPositionsForPieceCount(challenge.piecesNeeded);
 
-    // Crear piezas genéricas con cara front - el usuario las configurará como necesite
+    // Crear piezas exactamente como las especifica el reto
+    console.log(`🎯 Creating pieces for challenge ${challenge.id}: "${challenge.name}"`);
+    console.log(`📋 Required pieces from objective:`, challenge.objective.playerPieces);
+    
     for (let i = 0; i < challenge.piecesNeeded; i++) {
-      const pieceType = i % 2 === 0 ? 'A' : 'B'; // Alternar A, B, A, B...
-      const template = createPieceTemplate(pieceType, 'front'); // SIEMPRE empezar con cara front
+      const targetPiece = challenge.objective.playerPieces[i];
+      const template = createPieceTemplate(targetPiece.type, targetPiece.face);
       const position = positions[i];
 
-      const piece = {
+      let piece = {
         ...template,
         id: i + 1,
+        type: targetPiece.type, // Forzar el tipo exacto del reto
+        face: targetPiece.face, // Forzar la cara exacta del reto
         x: position.x,
         y: position.y,
         rotation: position.rotation, // Usar la rotación exacta de la posición
         placed: false // Las piezas empiezan sin colocar, en el área de piezas disponibles
       };
+
+      console.log(`🧩 GAME: Created piece ${piece.id} (${piece.type}, ${piece.face}) - center: ${piece.centerColor}, triangle: ${piece.triangleColor} - Target: (${targetPiece.type}, ${targetPiece.face})`);
+
+      // Validar y ajustar la posición para que esté completamente en el área de almacenamiento
+      const piecePosition = {
+        type: piece.type,
+        face: piece.face,
+        x: piece.x,
+        y: piece.y,
+        rotation: piece.rotation
+      };
+      const isCompletelyInStorage = geometry.isPieceCompletelyInStorageArea(piecePosition, 1400, 1000);
       
-      console.log(`🧩 Creating piece ${piece.id} (${piece.type}, ${piece.face}) at (${piece.x}, ${piece.y})`);
+      if (!isCompletelyInStorage) {
+        console.log(`⚠️ Piece ${piece.id} is NOT completely in storage area, constraining...`);
+        const constrainedPosition = geometry.constrainPieceToStorageArea(piecePosition, 1400, 1000);
+        piece.x = constrainedPosition.x;
+        piece.y = constrainedPosition.y;
+        console.log(`🔧 Piece ${piece.id} constrained from (${position.x.toFixed(1)}, ${position.y.toFixed(1)}) to (${piece.x.toFixed(1)}, ${piece.y.toFixed(1)})`);
+      }
+
+      // Verificar colisiones con otras piezas ya creadas
+      const otherPieces = initialPieces.map(p => ({
+        type: p.type,
+        face: p.face,
+        x: p.x,
+        y: p.y,
+        rotation: p.rotation
+      }));
+      
+      const updatedPiecePosition = {
+        type: piece.type,
+        face: piece.face,
+        x: piece.x,
+        y: piece.y,
+        rotation: piece.rotation
+      };
+      
+      const collisions = geometry.detectPieceCollisions(updatedPiecePosition, otherPieces);
+      if (collisions.hasCollisions) {
+        console.log(`⚠️ Piece ${piece.id} has collisions with other pieces, finding alternative position...`);
+        
+        // Intentar posiciones alternativas
+        const storageAreaWidth = 350; // Área de almacenamiento: x 0-350
+        const storageAreaHeight = 400; // Área de almacenamiento: y 600-1000
+        let foundValidPosition = false;
+        
+        for (let attempts = 0; attempts < 20 && !foundValidPosition; attempts++) {
+          const testX = 50 + (attempts % 6) * 50; // Posiciones en grilla
+          const testY = 650 + Math.floor(attempts / 6) * 80;
+          
+          const testPosition = { ...updatedPiecePosition, x: testX, y: testY };
+          const testConstrainedPosition = geometry.constrainPieceToStorageArea(testPosition, 1400, 1000);
+          
+          const testCollisions = geometry.detectPieceCollisions(testConstrainedPosition, otherPieces);
+          const testInStorage = geometry.isPieceCompletelyInStorageArea(testConstrainedPosition, 1400, 1000);
+          
+          if (!testCollisions.hasCollisions && testInStorage) {
+            piece.x = testConstrainedPosition.x;
+            piece.y = testConstrainedPosition.y;
+            foundValidPosition = true;
+            console.log(`✅ Found collision-free position for piece ${piece.id}: (${piece.x.toFixed(1)}, ${piece.y.toFixed(1)})`);
+          }
+        }
+        
+        if (!foundValidPosition) {
+          console.warn(`❌ Could not find collision-free position for piece ${piece.id}, keeping current position`);
+        }
+      }
+
+      console.log(`🧩 Creating piece ${piece.id} (${piece.type}, ${piece.face}) at storage (${piece.x.toFixed(1)}, ${piece.y.toFixed(1)}) - Target: (${targetPiece.type}, ${targetPiece.face})`);
       initialPieces.push(piece);
     }
 
+    console.log(`✅ Created ${initialPieces.length} pieces matching challenge requirements`);
     return initialPieces;
   };
 
@@ -296,7 +416,7 @@ export const useGameLogic = () => {
     const pieceDrawCenterY = piece.y + size/2;
 
     // Traducir el punto al origen de la pieza
-    let translatedX = x - pieceDrawCenterX;
+    const translatedX = x - pieceDrawCenterX;
     const translatedY = y - pieceDrawCenterY;
 
     // Rotar en sentido contrario para "desrotar" el punto
@@ -395,41 +515,101 @@ export const useGameLogic = () => {
     }
   }, [currentChallenge, challenges, isLoading, responsiveCanvas]);
 
-  // Funciones de control - ROTACIÓN EN INCREMENTOS DE 45 GRADOS
-  const rotatePiece = (pieceId: number) => {
-    setPieces(pieces.map(piece =>
-        piece.id === pieceId
-            ? { ...piece, rotation: (piece.rotation + 45) % 360 }
-            : piece
-    ));
-    
-    // Mostrar el número temporalmente
-    setControlActionPieceId(pieceId);
-    setTimeout(() => setControlActionPieceId(null), 1000); // Desaparecer después de 1 segundo
+  // Funciones de control - ROTACIÓN EN INCREMENTOS DE 45 GRADOS CON ANIMACIÓN
+  const rotatePiece = (pieceId: number, fromControl: boolean = false) => {
+    console.log(`🔄 ROTATE PIECE ${pieceId} - Start:`, {
+      temporaryDraggedPieceId: temporaryDraggedPieceId,
+      animatingPieceId: animatingPieceId,
+      fromControl: fromControl
+    });
+
+    const piece = pieces.find(p => p.id === pieceId);
+    if (!piece) return;
+
+    const targetRotation = (piece.rotation + 45) % 360;
+    // Saltar animación visual si viene de control
+    const skipAnimation = fromControl;
+    console.log(`🔄 ROTATE PIECE ${pieceId} - skipAnimation:`, skipAnimation);
+
+    animateRotation(pieceId, targetRotation, skipAnimation);
+
+    // Si viene de control, programar limpieza automática
+    if (fromControl) {
+      setTimeout(() => {
+        console.log(`🔄 ROTATE PIECE ${pieceId} - Auto-clearing control effect`);
+        setTemporaryDraggedPieceId(null);
+        // Forzar re-render del canvas modificando el array de piezas
+        setPieces(prevPieces => [...prevPieces]);
+      }, 150); // Reducido a 150ms para que se vea mejor
+    }
   };
 
-  const rotatePieceCounterClockwise = (pieceId: number) => {
-    setPieces(pieces.map(piece =>
-        piece.id === pieceId
-            ? { ...piece, rotation: (piece.rotation - 45 + 360) % 360 }
-            : piece
-    ));
-    
-    // Mostrar el número temporalmente
-    setControlActionPieceId(pieceId);
-    setTimeout(() => setControlActionPieceId(null), 1000);
+  const rotatePieceCounterClockwise = (pieceId: number, fromControl: boolean = false) => {
+    console.log(`🔄 ROTATE PIECE CCW ${pieceId} - Start:`, {
+      temporaryDraggedPieceId: temporaryDraggedPieceId,
+      animatingPieceId: animatingPieceId,
+      fromControl: fromControl
+    });
+
+    const piece = pieces.find(p => p.id === pieceId);
+    if (!piece) return;
+
+    const targetRotation = (piece.rotation - 45 + 360) % 360;
+    // Saltar animación visual si viene de control
+    const skipAnimation = fromControl;
+    console.log(`🔄 ROTATE PIECE CCW ${pieceId} - skipAnimation:`, skipAnimation);
+
+    animateRotation(pieceId, targetRotation, skipAnimation);
+
+    // Si viene de control, programar limpieza automática
+    if (fromControl) {
+      setTimeout(() => {
+        console.log(`🔄 ROTATE PIECE CCW ${pieceId} - Auto-clearing control effect`);
+        setTemporaryDraggedPieceId(null);
+        // Forzar re-render del canvas modificando el array de piezas
+        setPieces(prevPieces => [...prevPieces]);
+      }, 150);
+    }
   };
 
-  const flipPiece = (pieceId: number) => {
-    setPieces(pieces.map(piece =>
-        piece.id === pieceId
-            ? togglePieceFace(piece)
-            : piece
-    ));
-    
-    // Mostrar el número temporalmente
-    setControlActionPieceId(pieceId);
-    setTimeout(() => setControlActionPieceId(null), 1000);
+  const flipPiece = (pieceId: number, fromControl: boolean = false) => {
+    console.log(`🔄 FLIP PIECE ${pieceId} - Start:`, {
+      temporaryDraggedPieceId: temporaryDraggedPieceId,
+      fromControl: fromControl
+    });
+
+    setPieces(pieces.map(piece => {
+      if (piece.id === pieceId) {
+        // Aplicar volteo primero
+        const flippedPiece = togglePieceFace(piece);
+
+        // Aplicar restricciones inmediatamente para consistencia
+        const constrainedPosition = geometry.constrainPiecePosition(
+          pieceToPosition(flippedPiece),
+          1400, // Canvas width
+          1000, // Canvas height  
+          true  // Respetar el espejo
+        );
+
+        // Devolver pieza con volteo Y posición restringida
+        return {
+          ...flippedPiece,
+          x: constrainedPosition.x,
+          y: constrainedPosition.y
+        };
+      }
+      return piece;
+    }));
+
+    // Si viene de control, programar limpieza automática
+    if (fromControl) {
+      setTimeout(() => {
+        console.log(`🔄 FLIP PIECE ${pieceId} - Auto-clearing control effect`);
+        setTemporaryDraggedPieceId(null);
+        // Forzar re-render del canvas modificando el array de piezas
+        setPieces(prevPieces => [...prevPieces]);
+      }, 150);
+    }
   };
 
   const resetLevel = () => {
@@ -480,13 +660,108 @@ export const useGameLogic = () => {
     return [...placedPieces, ...mirrorPieces];
   };
 
-  // Función de verificación de solución con espejos
+  // Función para verificar posiciones relativas entre piezas
+  const checkRelativePositions = (
+    placedPieces: PiecePosition[], 
+    targetPieces: PiecePosition[]
+  ): { success: boolean; message: string } => {
+    const POSITION_TOLERANCE = 50; // Margen de error en píxeles
+    const ROTATION_TOLERANCE = 45; // Margen de error en grados
+
+    console.log('🔍 Comparando posiciones relativas:');
+
+    // Para cada pieza objetivo, encontrar la correspondiente colocada
+    for (let i = 0; i < targetPieces.length; i++) {
+      const targetPiece = targetPieces[i];
+
+      // Buscar pieza que coincida en tipo y cara
+      const matchingPiece = placedPieces.find(placed => 
+        placed.type === targetPiece.type && placed.face === targetPiece.face
+      );
+
+      if (!matchingPiece) {
+        console.log(`❌ No se encontró pieza ${targetPiece.type} con cara ${targetPiece.face}`);
+        return {
+          success: false,
+          message: `Falta pieza ${targetPiece.type} con cara ${targetPiece.face}`
+        };
+      }
+
+      // Verificar rotación
+      const rotationDiff = Math.abs(matchingPiece.rotation - targetPiece.rotation);
+      const normalizedRotationDiff = Math.min(rotationDiff, 360 - rotationDiff);
+
+      if (normalizedRotationDiff > ROTATION_TOLERANCE) {
+        console.log(`❌ Pieza ${targetPiece.type} tiene rotación incorrecta: ${matchingPiece.rotation}° vs ${targetPiece.rotation}°`);
+        return {
+          success: false,
+          message: `Pieza ${targetPiece.type} necesita rotación diferente`
+        };
+      }
+
+      console.log(`✅ Pieza ${targetPiece.type}: tipo y cara correctos, rotación OK`);
+    }
+
+    // Si tenemos múltiples piezas, verificar posiciones relativas
+    if (targetPieces.length > 1) {
+      console.log('🔍 Verificando posiciones relativas entre piezas...');
+
+      for (let i = 0; i < targetPieces.length; i++) {
+        for (let j = i + 1; j < targetPieces.length; j++) {
+          const target1 = targetPieces[i];
+          const target2 = targetPieces[j];
+
+          const placed1 = placedPieces.find(p => p.type === target1.type && p.face === target1.face);
+          const placed2 = placedPieces.find(p => p.type === target2.type && p.face === target2.face);
+
+          if (placed1 && placed2) {
+            // Calcular distancia relativa en el objetivo
+            const targetDistanceX = target2.x - target1.x;
+            const targetDistanceY = target2.y - target1.y;
+
+            // Calcular distancia relativa en las piezas colocadas
+            const placedDistanceX = placed2.x - placed1.x;
+            const placedDistanceY = placed2.y - placed1.y;
+
+            // Verificar si las distancias relativas son similares
+            const deltaX = Math.abs(placedDistanceX - targetDistanceX);
+            const deltaY = Math.abs(placedDistanceY - targetDistanceY);
+
+            console.log(`📏 Distancia entre ${target1.type} y ${target2.type}:`);
+            console.log(`  Objetivo: (${targetDistanceX.toFixed(1)}, ${targetDistanceY.toFixed(1)})`);
+            console.log(`  Colocado: (${placedDistanceX.toFixed(1)}, ${placedDistanceY.toFixed(1)})`);
+            console.log(`  Diferencia: (${deltaX.toFixed(1)}, ${deltaY.toFixed(1)})`);
+
+            if (deltaX > POSITION_TOLERANCE || deltaY > POSITION_TOLERANCE) {
+              console.log(`❌ Posición relativa incorrecta entre ${target1.type} y ${target2.type}`);
+              return {
+                success: false,
+                message: `La posición relativa entre las piezas ${target1.type} y ${target2.type} no es correcta`
+              };
+            }
+
+            console.log(`✅ Posición relativa correcta entre ${target1.type} y ${target2.type}`);
+          }
+        }
+      }
+    }
+
+    console.log('✅ Todas las posiciones relativas son correctas');
+    return { success: true, message: "Posiciones correctas" };
+  };
+
+  // Función de verificación de solución con espejos - NUEVA VERSIÓN CON POSICIONES RELATIVAS
   const checkSolutionWithMirrors = (): { isCorrect: boolean; message: string } => {
     const challenge = challenges[currentChallenge];
     const placedPieces = pieces.filter(piece => piece.placed && piece.y < 600).map(pieceToPosition);
 
+    console.log('🔍 VALIDACIÓN DE SOLUCIÓN:');
+    console.log('Challenge objetivo:', challenge.objective.playerPieces);
+    console.log('Piezas colocadas:', placedPieces);
+
     // Verificar si se han colocado todas las piezas necesarias
     if (placedPieces.length !== challenge.piecesNeeded) {
+      console.log(`❌ Número incorrecto de piezas: ${placedPieces.length}/${challenge.piecesNeeded}`);
       return {
         isCorrect: false,
         message: `Necesitas colocar ${challenge.piecesNeeded} piezas. Has colocado ${placedPieces.length}.`
@@ -501,53 +776,56 @@ export const useGameLogic = () => {
       };
     }
 
-    // Verificar que las piezas estén conectadas
+    // Verificar que las piezas estén conectadas usando la validación geométrica avanzada
     const validation = geometry.validateChallengeCard(placedPieces);
-    if (!validation.piecesConnected) {
-      return {
-        isCorrect: false,
-        message: "Las piezas deben estar conectadas entre sí."
-      };
-    }
+    console.log('🔧 Validación geométrica:', validation);
 
-    if (!validation.touchesMirror) {
-      return {
-        isCorrect: false,
-        message: "Al menos una pieza debe tocar el espejo."
-      };
-    }
-
-    // Verificar si las piezas colocadas coinciden con los tipos, caras Y posiciones requeridas
-    const targetPieces = challenge.objective.playerPieces;
-    
-    // Para cada pieza objetivo, verificar que haya una pieza colocada que coincida
-    const tolerance = 50; // Tolerancia de posición en píxeles
-    const rotationTolerance = 45; // Tolerancia de rotación en grados
-    
-    for (const targetPiece of targetPieces) {
-      const matchingPiece = placedPieces.find(placedPiece => {
-        const typeMatch = placedPiece.type === targetPiece.type;
-        const faceMatch = placedPiece.face === targetPiece.face;
-        
-        const xDiff = Math.abs(placedPiece.x - targetPiece.x);
-        const yDiff = Math.abs(placedPiece.y - targetPiece.y);
-        const positionMatch = xDiff <= tolerance && yDiff <= tolerance;
-        
-        const rotationDiff = Math.abs(placedPiece.rotation - targetPiece.rotation);
-        const normalizedRotationDiff = Math.min(rotationDiff, 360 - rotationDiff);
-        const rotationMatch = normalizedRotationDiff <= rotationTolerance;
-        
-        return typeMatch && faceMatch && positionMatch && rotationMatch;
-      });
-      
-      if (!matchingPiece) {
+    if (!validation.isValid) {
+      if (!validation.piecesConnected) {
         return {
           isCorrect: false,
-          message: `Falta una pieza de tipo ${targetPiece.type} cara ${targetPiece.face} en la posición correcta.`
+          message: "Las piezas deben estar conectadas entre sí."
         };
       }
+      if (!validation.touchesMirror) {
+        return {
+          isCorrect: false,
+          message: "Al menos una pieza debe tocar el espejo."
+        };
+      }
+      if (validation.hasPieceOverlaps) {
+        return {
+          isCorrect: false,
+          message: "Las piezas no pueden solaparse."
+        };
+      }
+      if (validation.entersMirror) {
+        return {
+          isCorrect: false,
+          message: "Las piezas no pueden entrar en el área del espejo."
+        };
+      }
+      return {
+        isCorrect: false,
+        message: "La configuración de piezas no es válida."
+      };
     }
 
+    // NUEVA VALIDACIÓN: Verificar disposición relativa de piezas
+    const targetPieces = challenge.objective.playerPieces;
+    const isPositionMatch = checkRelativePositions(placedPieces, targetPieces);
+
+    console.log('📍 Verificación de posiciones relativas:', isPositionMatch);
+
+    if (!isPositionMatch.success) {
+      return {
+        isCorrect: false,
+        message: isPositionMatch.message
+      };
+    }
+
+    // Si pasa todas las validaciones, es válido
+    console.log('✅ ¡Solución correcta!');
     return {
       isCorrect: true,
       message: "¡Excelente! Has completado el desafío correctamente."
@@ -563,7 +841,9 @@ export const useGameLogic = () => {
     challenges,
     isLoading,
     interactingPieceId,
-    controlActionPieceId,
+    temporaryDraggedPieceId,
+    animatingPieceId,
+    setControlEffect,
     setPieces,
     setDraggedPiece,
     setDragOffset,

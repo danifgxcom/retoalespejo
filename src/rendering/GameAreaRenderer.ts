@@ -251,8 +251,32 @@ export class GameAreaRenderer {
   /**
    * Draws interactive game pieces
    */
-  drawGamePieces(ctx: CanvasRenderingContext2D, pieces: Piece[], draggedPiece: Piece | null, debugMode: boolean = false, showLabels: boolean = false, interactingPieceId?: number | null, controlActionPieceId?: number | null): void {
+  drawGamePieces(ctx: CanvasRenderingContext2D, pieces: Piece[], draggedPiece: Piece | null, debugMode: boolean = false, showLabels: boolean = false, interactingPieceId?: number | null, temporaryDraggedPieceId?: number | null, animatingPieceId?: number | null): void {
     if (!pieces || pieces.length === 0) return;
+
+    // Debug snapshot: mostrar estados actuales
+    if (debugMode) {
+      console.log('🎯 DEBUG CANVAS SNAPSHOT:', {
+        draggedPiece: draggedPiece ? `Piece ${draggedPiece.id}` : 'null',
+        temporaryDraggedPieceId: temporaryDraggedPieceId,
+        animatingPieceId: animatingPieceId,
+        showLabels: showLabels,
+        timestamp: new Date().toISOString().split('T')[1]
+      });
+    }
+
+    // SIEMPRE loggear el estado de temporaryDraggedPieceId
+    console.log(`🖼️ RENDERING - temporaryDraggedPieceId: ${temporaryDraggedPieceId}`);
+    
+    // Log especial para debug de efectos visuales
+    const hasVisualEffects = temporaryDraggedPieceId !== null || animatingPieceId !== null || (draggedPiece !== null);
+    if (hasVisualEffects) {
+      console.log(`✨ VISUAL EFFECTS ACTIVE:`, {
+        temporaryDraggedPieceId,
+        animatingPieceId,
+        draggedPiece: draggedPiece?.id || null
+      });
+    }
 
     pieces.forEach(piece => {
       if (!piece) return;
@@ -265,15 +289,34 @@ export class GameAreaRenderer {
       // Draw the piece
       drawPiece(ctx, piece, piece.x, piece.y, this.config.pieceSize);
       
-      // Visual border for dragged piece
-      if (draggedPiece && piece.id === draggedPiece.id) {
+      // Visual border for dragged piece (real drag or temporary from controls)
+      const isDraggedPiece = (draggedPiece && piece.id === draggedPiece.id) ||
+                            (temporaryDraggedPieceId !== null && piece.id === temporaryDraggedPieceId);
+      
+      // Visual effect for animating piece (solo si NO está siendo controlado manualmente)
+      const isAnimatingPiece = animatingPieceId !== null && piece.id === animatingPieceId && !isDraggedPiece;
+      
+      // Debug específico para cada pieza
+      if (debugMode && (isDraggedPiece || isAnimatingPiece)) {
+        console.log(`🔍 Piece ${piece.id} effects:`, {
+          isDraggedPiece: isDraggedPiece,
+          isAnimatingPiece: isAnimatingPiece,
+          draggedPieceId: draggedPiece?.id || 'null',
+          temporaryDraggedPieceId: temporaryDraggedPieceId,
+          animatingPieceId: animatingPieceId
+        });
+      }
+      
+      if (isDraggedPiece) {
         this.drawDraggedPieceBorder(ctx, piece);
       }
+      
+      if (isAnimatingPiece) {
+        this.drawAnimatingPieceEffect(ctx, piece);
+      }
 
-      // Draw piece label si: debug mode, arrastrando, o acción de control temporal
-      const shouldShowLabel = showLabels || 
-                             (draggedPiece && piece.id === draggedPiece.id) ||
-                             (controlActionPieceId !== null && piece.id === controlActionPieceId);
+      // Draw piece label si: debug mode O si se está arrastrando (real o temporal)
+      const shouldShowLabel = showLabels || isDraggedPiece;
       
       if (shouldShowLabel) {
         drawPieceLabel(ctx, piece.id, piece.x, piece.y, this.config.pieceSize);
@@ -300,6 +343,27 @@ export class GameAreaRenderer {
     ctx.font = '12px Arial';
     ctx.fillText(`(${Math.round(piece.x)}, ${Math.round(piece.y)})`, piece.x, piece.y - 5);
     ctx.fillText(`R:${piece.rotation}°`, piece.x, piece.y + realSize + 15);
+  }
+
+  /**
+   * Draws effect around animating piece
+   */
+  private drawAnimatingPieceEffect(ctx: CanvasRenderingContext2D, piece: Piece): void {
+    const { pieceSize } = this.config;
+    
+    ctx.save();
+    ctx.strokeStyle = '#3b82f6'; // Blue color for animation
+    ctx.lineWidth = 3;
+    ctx.shadowColor = '#3b82f6';
+    ctx.shadowBlur = 6;
+    
+    // Draw subtle border around piece
+    const borderSize = pieceSize * 1.5;
+    const borderX = piece.x - (borderSize - pieceSize) / 2;
+    const borderY = piece.y - (borderSize - pieceSize) / 2;
+    ctx.strokeRect(borderX, borderY, borderSize, borderSize);
+    
+    ctx.restore();
   }
 
   /**

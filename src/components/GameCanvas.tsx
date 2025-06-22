@@ -17,7 +17,8 @@ interface GameCanvasProps {
   debugMode?: boolean;
   draggedPiece?: Piece | null;
   interactingPieceId?: number | null;
-  controlActionPieceId?: number | null;
+  temporaryDraggedPieceId?: number | null;
+  animatingPieceId?: number | null;
 }
 
 export interface GameCanvasRef {
@@ -25,7 +26,7 @@ export interface GameCanvasRef {
 }
 
 const GameCanvas = forwardRef<GameCanvasRef, GameCanvasProps>(
-    ({ pieces, currentChallenge, challenges, onMouseDown, onMouseMove, onMouseUp, onMouseLeave, onContextMenu, geometry, debugMode = false, draggedPiece, interactingPieceId, controlActionPieceId }, ref) => {
+    ({ pieces, currentChallenge, challenges, onMouseDown, onMouseMove, onMouseUp, onMouseLeave, onContextMenu, geometry, debugMode = false, draggedPiece, interactingPieceId, temporaryDraggedPieceId, animatingPieceId }, ref) => {
       const canvasRef = useRef<HTMLCanvasElement>(null);
       const PIECE_SIZE = 100; // Tamaño lógico de la pieza (25% más grande: 80 * 1.25 = 100)
 
@@ -230,12 +231,9 @@ const GameCanvas = forwardRef<GameCanvasRef, GameCanvasProps>(
 
       // Helper para convertir PiecePosition a Piece para visualización
       const createDisplayPiece = (piecePos: any, idOffset: number, xOffset: number = 0, yOffset: number = 0): Piece => {
-        let centerColor = piecePos.type === 'A' ? '#FFD700' : '#FF4444';
-        let triangleColor = piecePos.type === 'A' ? '#FF4444' : '#FFD700';
-
-        if (piecePos.face === 'back') {
-          [centerColor, triangleColor] = [triangleColor, centerColor];
-        }
+        // Usar la misma lógica que createPieceTemplate para consistencia
+        let centerColor = piecePos.face === 'front' ? '#FFD700' : '#FF4444';
+        let triangleColor = piecePos.face === 'front' ? '#FF4444' : '#FFD700';
 
         return {
           id: 1000 + idOffset,
@@ -606,17 +604,13 @@ const GameCanvas = forwardRef<GameCanvasRef, GameCanvasProps>(
         ctx.imageSmoothingEnabled = false;
 
         scaledPlayerPieces.forEach((piecePos, index) => {
-          // Crear una pieza visual a partir de la posición
+          // Crear una pieza visual a partir de la posición - usar lógica consistente
           const displayPiece = {
             id: 1000 + index,
             type: piecePos.type,
             face: piecePos.face,
-            centerColor: piecePos.type === 'A' ? 
-              (piecePos.face === 'front' ? '#FFD700' : '#FF4444') : 
-              (piecePos.face === 'front' ? '#FF4444' : '#FFD700'),
-            triangleColor: piecePos.type === 'A' ? 
-              (piecePos.face === 'front' ? '#FF4444' : '#FFD700') : 
-              (piecePos.face === 'front' ? '#FFD700' : '#FF4444'),
+            centerColor: piecePos.face === 'front' ? '#FFD700' : '#FF4444',
+            triangleColor: piecePos.face === 'front' ? '#FF4444' : '#FFD700',
             x: gameAreaOffsetX + piecePos.x, // Usar offset del área de juego escalada
             y: gameAreaOffsetY + piecePos.y,
             rotation: piecePos.rotation,
@@ -710,7 +704,7 @@ const GameCanvas = forwardRef<GameCanvasRef, GameCanvasProps>(
 
         // USAR GAMEAREARENDERER para dibujar piezas con etiquetas interactivas
         if (gameAreaRenderer) {
-          gameAreaRenderer.drawGamePieces(ctx, pieces, draggedPiece, debugMode, debugMode, interactingPieceId, controlActionPieceId);
+          gameAreaRenderer.drawGamePieces(ctx, pieces, draggedPiece, debugMode, debugMode, interactingPieceId, temporaryDraggedPieceId, animatingPieceId);
         } else {
           // Fallback legacy
           if (pieces && pieces.length > 0) {
