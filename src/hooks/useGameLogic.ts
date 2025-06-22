@@ -711,7 +711,7 @@ export const useGameLogic = () => {
     placedPieces: PiecePosition[], 
     targetPieces: PiecePosition[]
   ): { success: boolean; message: string } => {
-    const POSITION_TOLERANCE = 50; // Margen de error en píxeles
+    const POSITION_TOLERANCE = 100; // Margen de error en píxeles (aumentado para mayor flexibilidad)
     const ROTATION_TOLERANCE = 45; // Margen de error en grados
 
     console.log('🔍 Comparando posiciones relativas:');
@@ -860,16 +860,23 @@ export const useGameLogic = () => {
       };
     }
 
-    // NUEVA VALIDACIÓN: Verificar disposición relativa de piezas
+    // VALIDACIÓN SIMPLIFICADA: Solo verificar que las piezas estén bien geométricamente
+    // Para reto 2, si pasa la validación geométrica (conexión + espejo), es válido
+    console.log('✅ Validación geométrica pasada - configuración válida');
+    
+    // Validación adicional opcional: verificar que tenemos los tipos y caras correctos
     const targetPieces = challenge.objective.playerPieces;
-    const isPositionMatch = checkRelativePositions(placedPieces, targetPieces);
-
-    console.log('📍 Verificación de posiciones relativas:', isPositionMatch);
-
-    if (!isPositionMatch.success) {
+    const hasCorrectPieces = targetPieces.every(target => 
+      placedPieces.some(placed => 
+        placed.type === target.type && 
+        placed.face === target.face
+      )
+    );
+    
+    if (!hasCorrectPieces) {
       return {
         isCorrect: false,
-        message: isPositionMatch.message
+        message: "Las piezas colocadas no tienen los tipos y caras correctos."
       };
     }
 
