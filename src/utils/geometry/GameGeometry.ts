@@ -357,7 +357,7 @@ export class GameGeometry {
    */
   doPiecesOverlapSignificantly(piece1: PiecePosition, piece2: PiecePosition): boolean {
     const penetrationDepth = this.getPenetrationDepth(piece1, piece2);
-    const penetrationThreshold = 3; // Más de 3 pixels = penetración real problemática
+    const penetrationThreshold = 15; // Más de 15 pixels = penetración real problemática (ajustado para permitir conexiones válidas)
     
     const isSignificant = penetrationDepth > penetrationThreshold;
     
@@ -374,7 +374,7 @@ export class GameGeometry {
    */
   private doPolygonsOverlap(vertices1: Array<[number, number]>, vertices2: Array<[number, number]>): boolean {
     const polygons = [vertices1, vertices2];
-    const overlapTolerance = 2; // Tolerancia de 2 pixels para solapamientos mínimos
+    const overlapTolerance = 5; // Tolerancia de 5 pixels para solapamientos mínimos (ajustado para permitir conexiones)
 
     for (const polygon of polygons) {
       for (let i = 0; i < polygon.length - 1; i++) {
@@ -440,13 +440,13 @@ export class GameGeometry {
   doPiecesTouch(piece1: PiecePosition, piece2: PiecePosition): boolean {
     const penetrationDepth = this.getPenetrationDepth(piece1, piece2);
     
-    // Si hay penetración real (> 3px), no es conexión válida
-    if (penetrationDepth > 3) {
+    // Si hay penetración real (> 15px), no es conexión válida  
+    if (penetrationDepth > 15) {
       console.log(`❌ TOUCH CHECK: Pieces have real penetration: ${penetrationDepth.toFixed(3)}px`);
       return false;
     }
 
-    // Si hay contacto/solapamiento mínimo (0.05-3px), es conexión perfecta
+    // Si hay contacto/solapamiento mínimo (0.05-15px), es conexión perfecta
     if (penetrationDepth >= 0.05) {
       console.log(`✅ TOUCH CHECK: Perfect contact with minimal overlap: ${penetrationDepth.toFixed(3)}px`);
       return true;
