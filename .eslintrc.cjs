@@ -36,6 +36,7 @@ module.exports = {
     '@typescript-eslint/no-explicit-any': 'off',
     'prefer-const': 'error',
     'react/no-unescaped-entities': 'error',
-    'no-case-declarations': 'off'
+    'no-case-declarations': 'off',
+    'react/prop-types': 'off'
   }
 };

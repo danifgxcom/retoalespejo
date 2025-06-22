@@ -3,6 +3,9 @@ import { Piece, drawPiece } from './GamePiece';
 import { Challenge } from './ChallengeCard';
 import { GameGeometry } from '../utils/geometry/GameGeometry';
 import { GameAreaRenderer } from '../rendering/GameAreaRenderer';
+import { CANVAS_CONSTANTS } from '../utils/canvas/CanvasConstants';
+import { CanvasDrawing } from '../utils/canvas/CanvasDrawing';
+import { PieceColors } from '../utils/piece/PieceColors';
 
 interface GameCanvasProps {
   pieces: Piece[];
@@ -28,8 +31,6 @@ export interface GameCanvasRef {
 const GameCanvas = forwardRef<GameCanvasRef, GameCanvasProps>(
     ({ pieces, currentChallenge, challenges, onMouseDown, onMouseMove, onMouseUp, onMouseLeave, onContextMenu, geometry, debugMode = false, draggedPiece, interactingPieceId, temporaryDraggedPieceId, animatingPieceId }, ref) => {
       const canvasRef = useRef<HTMLCanvasElement>(null);
-      const PIECE_SIZE = 100; // Tamaño lógico de la pieza (25% más grande: 80 * 1.25 = 100)
-
       // Almacenar los resultados de validación para cada desafío
       const [challengeValidations, setChallengeValidations] = useState<{[key: number]: any}>({});
 
@@ -37,11 +38,16 @@ const GameCanvas = forwardRef<GameCanvasRef, GameCanvasProps>(
         getCanvas: () => canvasRef.current,
       }));
 
-      // Constantes del canvas
-      const GAME_AREA_WIDTH = 700;
-      const GAME_AREA_HEIGHT = 600;
-      const BOTTOM_AREA_HEIGHT = 400;
-      const MIRROR_LINE = 700;
+      // Use shared constants
+      const {
+        GAME_AREA_WIDTH,
+        GAME_AREA_HEIGHT, 
+        BOTTOM_AREA_HEIGHT,
+        MIRROR_LINE,
+        PIECE_SIZE,
+        CANVAS_WIDTH,
+        CANVAS_HEIGHT
+      } = CANVAS_CONSTANTS;
 
       // Crear instancia de GameAreaRenderer
       const gameAreaRenderer = useMemo(() => new GameAreaRenderer({
@@ -49,74 +55,22 @@ const GameCanvas = forwardRef<GameCanvasRef, GameCanvasProps>(
         gameAreaHeight: GAME_AREA_HEIGHT,
         bottomAreaHeight: BOTTOM_AREA_HEIGHT,
         mirrorLine: MIRROR_LINE,
-        canvasWidth: 1400,
-        canvasHeight: 1000,
+        canvasWidth: CANVAS_WIDTH,
+        canvasHeight: CANVAS_HEIGHT,
         pieceSize: PIECE_SIZE
       }), []);
 
-      // Dibujar áreas de fondo con diseño elegante
+      // Use shared drawing utility
       const drawBackgroundAreas = (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => {
-        // Área de juego con gradiente elegante
-        const gameGradient = ctx.createRadialGradient(
-          GAME_AREA_WIDTH / 2, GAME_AREA_HEIGHT / 2, 0, 
-          GAME_AREA_WIDTH / 2, GAME_AREA_HEIGHT / 2, GAME_AREA_WIDTH
-        );
-        gameGradient.addColorStop(0, '#ffffff');
-        gameGradient.addColorStop(0.6, '#f8fafc');
-        gameGradient.addColorStop(1, '#e2e8f0');
-        ctx.fillStyle = gameGradient;
-        ctx.fillRect(0, 0, GAME_AREA_WIDTH, GAME_AREA_HEIGHT);
-
-        // Área de espejo con efecto metálico y reflectante
-        const mirrorGradient = ctx.createLinearGradient(MIRROR_LINE, 0, MIRROR_LINE + GAME_AREA_WIDTH, 0);
-        mirrorGradient.addColorStop(0, '#e8f4f8');
-        mirrorGradient.addColorStop(0.2, '#f1f8fc');
-        mirrorGradient.addColorStop(0.5, '#ffffff');
-        mirrorGradient.addColorStop(0.8, '#f1f8fc');
-        mirrorGradient.addColorStop(1, '#d6eaf8');
-        ctx.fillStyle = mirrorGradient;
-        ctx.fillRect(MIRROR_LINE, 0, GAME_AREA_WIDTH, GAME_AREA_HEIGHT);
-
-        // Efecto de brillo en el espejo
-        const gloss = ctx.createLinearGradient(MIRROR_LINE, 0, MIRROR_LINE + GAME_AREA_WIDTH, 0);
-        gloss.addColorStop(0, 'rgba(255, 255, 255, 0.1)');
-        gloss.addColorStop(0.5, 'rgba(255, 255, 255, 0.3)');
-        gloss.addColorStop(1, 'rgba(255, 255, 255, 0.1)');
-        ctx.fillStyle = gloss;
-        ctx.fillRect(MIRROR_LINE, 0, GAME_AREA_WIDTH, GAME_AREA_HEIGHT);
-
-        // Área de piezas disponibles con gradiente cálido
-        const pieceAreaGradient = ctx.createLinearGradient(0, GAME_AREA_HEIGHT, 0, GAME_AREA_HEIGHT + BOTTOM_AREA_HEIGHT);
-        pieceAreaGradient.addColorStop(0, '#fef7ed');
-        pieceAreaGradient.addColorStop(1, '#f3e8ff');
-        ctx.fillStyle = pieceAreaGradient;
-        ctx.fillRect(0, GAME_AREA_HEIGHT, GAME_AREA_WIDTH, BOTTOM_AREA_HEIGHT);
-
-        // Área de objetivo con fondo limpio
-        const objectiveGradient = ctx.createLinearGradient(MIRROR_LINE, GAME_AREA_HEIGHT, MIRROR_LINE, GAME_AREA_HEIGHT + BOTTOM_AREA_HEIGHT);
-        objectiveGradient.addColorStop(0, '#ffffff');
-        objectiveGradient.addColorStop(1, '#f8fafc');
-        ctx.fillStyle = objectiveGradient;
-        ctx.fillRect(MIRROR_LINE, GAME_AREA_HEIGHT, GAME_AREA_WIDTH, BOTTOM_AREA_HEIGHT);
+        CanvasDrawing.drawBackgroundAreas(ctx);
       };
 
       // Dibujar marco de espejo clásico en bordes exteriores y líneas divisorias elegantes
       const drawMirrorFrameAndDivisions = (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => {
         // Líneas divisorias PRIMERO (sin marco interferiendo)
         
-        // Línea del espejo con efecto brillante (igual que en EditorCanvas)
-        ctx.strokeStyle = '#ef4444';
-        ctx.lineWidth = 3;
-        ctx.setLineDash([15, 10]);
-        ctx.lineDashOffset = 0;
-        ctx.shadowColor = '#ef4444';
-        ctx.shadowBlur = 8;
-        ctx.beginPath();
-        ctx.moveTo(MIRROR_LINE, 0);
-        ctx.lineTo(MIRROR_LINE, GAME_AREA_HEIGHT);
-        ctx.stroke();
-        ctx.setLineDash([]);
-        ctx.shadowBlur = 0;
+        // Use shared mirror line drawing
+        CanvasDrawing.drawMirrorLine(ctx);
 
         // Divisoria horizontal elegante
         ctx.strokeStyle = '#8b7355';
@@ -133,13 +87,8 @@ const GameCanvas = forwardRef<GameCanvasRef, GameCanvasProps>(
         ctx.fillStyle = shadowGradient;
         ctx.fillRect(0, GAME_AREA_HEIGHT, canvas.width, 15);
 
-        // Divisoria vertical inferior
-        ctx.strokeStyle = '#cbd5e1';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(MIRROR_LINE, GAME_AREA_HEIGHT);
-        ctx.lineTo(MIRROR_LINE, canvas.height);
-        ctx.stroke();
+        // Use shared area borders
+        CanvasDrawing.drawAreaBorders(ctx);
       };
 
       // Dibujar etiquetas de áreas con estilo elegante
@@ -232,8 +181,8 @@ const GameCanvas = forwardRef<GameCanvasRef, GameCanvasProps>(
       // Helper para convertir PiecePosition a Piece para visualización
       const createDisplayPiece = (piecePos: any, idOffset: number, xOffset: number = 0, yOffset: number = 0): Piece => {
         // Usar la misma lógica que createPieceTemplate para consistencia
-        let centerColor = piecePos.face === 'front' ? '#FFD700' : '#FF4444';
-        let triangleColor = piecePos.face === 'front' ? '#FF4444' : '#FFD700';
+        const centerColor = piecePos.face === 'front' ? '#FFD700' : '#FF4444';
+        const triangleColor = piecePos.face === 'front' ? '#FF4444' : '#FFD700';
 
         return {
           id: 1000 + idOffset,

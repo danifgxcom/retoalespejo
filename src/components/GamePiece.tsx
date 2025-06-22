@@ -94,4 +94,9 @@ const GamePiece: React.FC<GamePieceProps> = ({ piece, ctx, x, y, size = 80 }) =>
   return null;
 };
 
+// Add prop types validation to satisfy linting
+GamePiece.defaultProps = {
+  size: 80
+};
+
 export default GamePiece;

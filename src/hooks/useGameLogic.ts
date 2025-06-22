@@ -200,7 +200,7 @@ export const useGameLogic = () => {
       // Debug de conversión
       console.log(`🔍 Converting relative (${relPos.x.toFixed(3)}, ${relPos.y.toFixed(3)}) to absolute (${Math.round(absolutePos.x)}, ${Math.round(absolutePos.y)})`);
 
-      let piece = {
+      const piece = {
         ...template,
         id: index + 1,
         x: absolutePos.x,
@@ -270,7 +270,7 @@ export const useGameLogic = () => {
       const template = createPieceTemplate(targetPiece.type, targetPiece.face);
       const position = positions[i];
 
-      let piece = {
+      const piece = {
         ...template,
         id: i + 1,
         type: targetPiece.type, // Forzar el tipo exacto del reto
