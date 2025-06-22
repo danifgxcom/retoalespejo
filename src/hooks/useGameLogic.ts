@@ -660,6 +660,52 @@ export const useGameLogic = () => {
     return [...placedPieces, ...mirrorPieces];
   };
 
+  // Función para encontrar la asignación óptima de piezas por proximidad
+  const findOptimalPieceAssignment = (
+    placedPieces: PiecePosition[], 
+    targetPieces: PiecePosition[]
+  ): PiecePosition[] => {
+    const assignments: PiecePosition[] = new Array(targetPieces.length);
+    const usedIndices: boolean[] = new Array(placedPieces.length).fill(false);
+
+    // Para cada posición objetivo, encontrar la pieza colocada más cercana compatible
+    for (let i = 0; i < targetPieces.length; i++) {
+      const target = targetPieces[i];
+      let bestMatch: PiecePosition | null = null;
+      let bestDistance = Infinity;
+      let bestIndex = -1;
+
+      for (let j = 0; j < placedPieces.length; j++) {
+        if (usedIndices[j]) continue; // Ya asignada
+
+        const placed = placedPieces[j];
+        
+        // Verificar compatibilidad de tipo y cara
+        if (placed.type === target.type && placed.face === target.face) {
+          // Calcular distancia euclidiana
+          const distance = Math.sqrt(
+            Math.pow(placed.x - target.x, 2) + 
+            Math.pow(placed.y - target.y, 2)
+          );
+
+          if (distance < bestDistance) {
+            bestDistance = distance;
+            bestMatch = placed;
+            bestIndex = j;
+          }
+        }
+      }
+
+      if (bestMatch && bestIndex !== -1) {
+        assignments[i] = bestMatch;
+        usedIndices[bestIndex] = true;
+        console.log(`🎯 Asignación: Target ${i} (${target.x}, ${target.y}) -> Placed (${bestMatch.x}, ${bestMatch.y}) dist=${bestDistance.toFixed(1)}px`);
+      }
+    }
+
+    return assignments;
+  };
+
   // Función para verificar posiciones relativas entre piezas
   const checkRelativePositions = (
     placedPieces: PiecePosition[], 
@@ -706,13 +752,16 @@ export const useGameLogic = () => {
     if (targetPieces.length > 1) {
       console.log('🔍 Verificando posiciones relativas entre piezas...');
 
+      // Crear matching óptimo por proximidad en lugar de por tipo/cara
+      const assignments = findOptimalPieceAssignment(placedPieces, targetPieces);
+      
       for (let i = 0; i < targetPieces.length; i++) {
         for (let j = i + 1; j < targetPieces.length; j++) {
           const target1 = targetPieces[i];
           const target2 = targetPieces[j];
 
-          const placed1 = placedPieces.find(p => p.type === target1.type && p.face === target1.face);
-          const placed2 = placedPieces.find(p => p.type === target2.type && p.face === target2.face);
+          const placed1 = assignments[i];
+          const placed2 = assignments[j];
 
           if (placed1 && placed2) {
             // Calcular distancia relativa en el objetivo
