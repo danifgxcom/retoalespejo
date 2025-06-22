@@ -31,7 +31,6 @@ export const canPieceShowReflection = (piece: Piece, gameAreaHeight: number): bo
 // Helper para dibujar un path y rellenarlo
 const drawShape = (ctx: CanvasRenderingContext2D, coordinates: [number, number][], fillColor: string) => {
   ctx.fillStyle = fillColor;
-  ctx.strokeStyle = fillColor;
   ctx.beginPath();
   const [startX, startY] = coordinates[0];
   ctx.moveTo(startX, startY);
@@ -43,7 +42,7 @@ const drawShape = (ctx: CanvasRenderingContext2D, coordinates: [number, number][
 
   ctx.closePath();
   ctx.fill();
-  ctx.stroke();
+  // Removed stroke() to eliminate white lines between connected pieces
 };
 
 export const drawPiece = (ctx: CanvasRenderingContext2D, piece: Piece, x: number, y: number, size = 80) => {
@@ -63,27 +62,27 @@ export const drawPiece = (ctx: CanvasRenderingContext2D, piece: Piece, x: number
   // Transformar coordenadas para centrar correctamente
   const coord = (x: number, y: number): [number, number] => [x * unit, -y * unit];
 
-  ctx.lineWidth = 1;
+  ctx.lineWidth = 0; // No stroke for seamless connections
 
-  // Dibujar cuadrado central - vértices (1,0), (2,0), (2,1), (1,1)
+  // Dibujar cuadrado central con pequeño overlap para eliminar gaps
   drawShape(ctx, [
-    coord(1, 0), coord(2, 0), coord(2, 1), coord(1, 1)
+    coord(0.99, -0.01), coord(2.01, -0.01), coord(2.01, 1.01), coord(0.99, 1.01)
   ], piece.centerColor);
 
-  // Dibujar los tres triángulos
-  // Triángulo rectángulo izquierdo - vértices (0,0), (1,0), (1,1)
+  // Dibujar los tres triángulos con overlap
+  // Triángulo rectángulo izquierdo
   drawShape(ctx, [
-    coord(0, 0), coord(1, 0), coord(1, 1)
+    coord(-0.01, -0.01), coord(1.01, -0.01), coord(1.01, 1.01)
   ], piece.triangleColor);
 
-  // Triángulo superior - vértices (1,1), (2,1), (1.5,1.5)
+  // Triángulo superior
   drawShape(ctx, [
-    coord(1, 1), coord(2, 1), coord(1.5, 1.5)
+    coord(0.99, 1.01), coord(2.01, 1.01), coord(1.5, 1.51)
   ], piece.triangleColor);
 
-  // Triángulo derecho - vértices (2,0), (2,1), (2.5,0.5)
+  // Triángulo derecho
   drawShape(ctx, [
-    coord(2, 0), coord(2, 1), coord(2.5, 0.5)
+    coord(1.99, -0.01), coord(1.99, 1.01), coord(2.51, 0.5)
   ], piece.triangleColor);
 
   ctx.restore();

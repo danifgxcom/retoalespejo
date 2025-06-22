@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { RotateCcw, SkipForward, HelpCircle, RotateCw, FlipHorizontal, CheckCircle, RefreshCw, Upload, Edit, Camera, Bug } from 'lucide-react';
+import { RotateCcw, SkipForward, SkipBack, HelpCircle, RotateCw, FlipHorizontal, CheckCircle, RefreshCw, Upload, Edit, Camera, Bug } from 'lucide-react';
 import { Piece } from './GamePiece';
 import { Challenge } from './ChallengeCard';
 
@@ -11,6 +11,7 @@ interface GameControlsProps {
   onToggleInstructions: () => void;
   onResetLevel: () => void;
   onNextChallenge: () => void;
+  onPreviousChallenge: () => void;
   onRotatePiece: (pieceId: number) => void;
   onRotatePieceCounterClockwise: (pieceId: number) => void;
   onFlipPiece: (pieceId: number) => void;
@@ -31,6 +32,7 @@ const GameControls: React.FC<GameControlsProps> = ({
   onToggleInstructions,
   onResetLevel,
   onNextChallenge,
+  onPreviousChallenge,
   onRotatePiece,
   onRotatePieceCounterClockwise,
   onFlipPiece,
@@ -156,6 +158,13 @@ const GameControls: React.FC<GameControlsProps> = ({
                 <CheckCircle size={24} />
               </button>
             )}
+            <button 
+              onClick={onPreviousChallenge}
+              className="bg-gradient-to-r from-gray-500 to-slate-600 hover:from-gray-600 hover:to-slate-700 text-white p-3 rounded-xl transition-all transform hover:scale-105 shadow-lg"
+              title="Desafío anterior"
+            >
+              <SkipBack size={24} />
+            </button>
             <button 
               onClick={onNextChallenge}
               className="bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white p-3 rounded-xl transition-all transform hover:scale-105 shadow-lg"

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ChallengeEditor } from './components/ChallengeEditor';
 import { Challenge } from './components/ChallengeCard';
 import { ChallengeEditorService } from './services/ChallengeEditorService';
+import ChallengeThumbnail from './components/ui/ChallengeThumbnail';
 
 interface ChallengeEditorAppProps {
   onClose?: () => void;
@@ -200,24 +201,23 @@ export const ChallengeEditorApp: React.FC<ChallengeEditorAppProps> = ({ onClose 
                 </div>
                 
                 {/* Challenge Thumbnail - Mini Canvas Preview */}
-                <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-4 mb-4 flex-1 flex items-center justify-center border border-blue-100">
+                <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-3 mb-4 flex-1 flex items-center justify-center border border-blue-100">
                   <div className="text-center">
-                    <div className="text-3xl mb-2">🪞</div>
-                    <div className="text-xs text-gray-600">
-                      Patrón del Reto #{challenge.id}
+                    <div className="mb-2">
+                      <ChallengeThumbnail challenge={challenge} width={100} height={60} />
                     </div>
-                    <div className="mt-2 flex justify-center space-x-1">
-                      {Array.from({ length: challenge.piecesNeeded }).map((_, i) => (
-                        <div key={i} className="w-3 h-3 bg-gradient-to-r from-yellow-400 to-red-500 rounded-sm"></div>
-                      ))}
+                    <div className="text-xs text-gray-600">
+                      Reto #{challenge.id}
                     </div>
                   </div>
                 </div>
                 
                 {/* Description */}
-                <p className="text-gray-600 text-sm mb-4 line-clamp-2 flex-shrink-0">
-                  {challenge.description}
-                </p>
+                <div className="text-gray-600 text-sm mb-4 flex-shrink-0 h-12 overflow-hidden">
+                  <p className="line-clamp-3">
+                    {challenge.description}
+                  </p>
+                </div>
                 
                 {/* Stats */}
                 <div className="flex justify-between items-center mb-4 flex-shrink-0">

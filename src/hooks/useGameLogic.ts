@@ -626,6 +626,10 @@ export const useGameLogic = () => {
     setCurrentChallenge((currentChallenge + 1) % challenges.length);
   };
 
+  const previousChallenge = () => {
+    setCurrentChallenge((currentChallenge - 1 + challenges.length) % challenges.length);
+  };
+
   // Helper para convertir Piece a PiecePosition
   const pieceToPosition = (piece: Piece): PiecePosition => ({
     type: piece.type,
@@ -925,6 +929,7 @@ export const useGameLogic = () => {
     flipPiece,
     resetLevel,
     nextChallenge,
+    previousChallenge,
     isPieceHit,
     checkSolutionWithMirrors,
     loadCustomChallenges,

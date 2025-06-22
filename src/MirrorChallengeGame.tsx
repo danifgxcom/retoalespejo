@@ -34,6 +34,7 @@ const MirrorChallengeGame: React.FC = () => {
     flipPiece,
     resetLevel,
     nextChallenge,
+    previousChallenge,
     isPieceHit,
     checkSolutionWithMirrors,
     loadCustomChallenges,
@@ -117,6 +118,7 @@ const MirrorChallengeGame: React.FC = () => {
               onToggleInstructions={() => setShowInstructions(!showInstructions)}
               onResetLevel={resetLevel}
               onNextChallenge={nextChallenge}
+              onPreviousChallenge={previousChallenge}
               onRotatePiece={rotatePiece}
               onRotatePieceCounterClockwise={rotatePieceCounterClockwise}
               onFlipPiece={flipPiece}
