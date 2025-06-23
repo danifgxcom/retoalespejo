@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
-import { Piece, drawPiece } from './GamePiece';
+import { Piece, drawPiece, drawPieceDebugInfo } from './GamePiece';
 import { GameGeometry } from '../utils/geometry/GameGeometry';
 
 interface EditorCanvasProps {
@@ -176,6 +176,9 @@ const EditorCanvas = forwardRef<EditorCanvasRef, EditorCanvasProps>(
         
         // Dibujar pieza original
         drawPiece(ctx, piece, piece.x, piece.y, PIECE_SIZE);
+        
+        // Dibujar info de debug encima de cada pieza
+        drawPieceDebugInfo(ctx, piece, piece.x, piece.y, PIECE_SIZE, debugMode);
 
         // Si la pieza está en el área de juego, dibujar su reflejo
         if (piece.placed && piece.y < GAME_AREA_HEIGHT) {
@@ -187,8 +190,13 @@ const EditorCanvas = forwardRef<EditorCanvasRef, EditorCanvasProps>(
           ctx.translate(-PIECE_SIZE/2, -PIECE_SIZE/2);
           drawPiece(ctx, piece, 0, 0, PIECE_SIZE);
           ctx.restore();
+          
+          // Dibujar info de debug también en el reflejo
+          const reflectedPiece = { ...piece, id: piece.id + 100 }; // ID diferente para reflejo
+          drawPieceDebugInfo(ctx, reflectedPiece, reflectedX, piece.y, PIECE_SIZE, debugMode);
         }
       });
+
     };
 
     // Función principal de dibujo

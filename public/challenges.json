@@ -117,7 +117,7 @@
   },
   {
     "id": 4,
-    "name": "Tarjeta 4: Cara Posterior",
+    "name": "Tarjeta 4: Seta del Mario Bros",
     "description": "Forma un patrón con una pieza A cara posterior tocando el espejo",
     "piecesNeeded": 3,
     "difficulty": "Intermedio",
@@ -198,14 +198,14 @@
         {
           "type": "A",
           "face": "front",
-          "x": 650,
+          "x": 649.97,
           "y": 221.53,
           "rotation": 225
         },
         {
           "type": "B",
           "face": "front",
-          "x": 559.42,
+          "x": 558.99,
           "y": 221.53,
           "rotation": 315
         }
@@ -230,15 +230,142 @@
       {
         "type": "A",
         "face": "front",
-        "x": 650,
+        "x": 649.97,
         "y": 221.53,
         "rotation": 225
       },
       {
         "type": "B",
         "face": "front",
-        "x": 559.42,
+        "x": 558.99,
         "y": 221.53,
+        "rotation": 315
+      }
+    ]
+  },
+  {
+    "id": 6,
+    "name": "Suelo del salón",
+    "description": "El suelo de mi nuevo palacio",
+    "piecesNeeded": 8,
+    "difficulty": "Difícil",
+    "targetPattern": "custom",
+    "objective": {
+      "playerPieces": [
+        {
+          "type": "A",
+          "face": "front",
+          "x": 198.41,
+          "y": -8.57,
+          "rotation": 45
+        },
+        {
+          "type": "A",
+          "face": "front",
+          "x": 378.72,
+          "y": 173.16,
+          "rotation": 225
+        },
+        {
+          "type": "A",
+          "face": "front",
+          "x": 378.47,
+          "y": 354.18,
+          "rotation": 45
+        },
+        {
+          "type": "A",
+          "face": "front",
+          "x": 650,
+          "y": 83.27,
+          "rotation": 135
+        },
+        {
+          "type": "A",
+          "face": "front",
+          "x": 560.93,
+          "y": 534.93,
+          "rotation": 225
+        },
+        {
+          "type": "A",
+          "face": "front",
+          "x": 468.98,
+          "y": 263.42,
+          "rotation": 315
+        },
+        {
+          "type": "B",
+          "face": "front",
+          "x": 197.94,
+          "y": 354.18,
+          "rotation": 135
+        },
+        {
+          "type": "B",
+          "face": "front",
+          "x": 380.94,
+          "y": 173.16,
+          "rotation": 315
+        }
+      ],
+      "symmetricPattern": []
+    },
+    "targetPieces": [
+      {
+        "type": "A",
+        "face": "front",
+        "x": 198.41,
+        "y": -8.57,
+        "rotation": 45
+      },
+      {
+        "type": "A",
+        "face": "front",
+        "x": 378.72,
+        "y": 173.16,
+        "rotation": 225
+      },
+      {
+        "type": "A",
+        "face": "front",
+        "x": 378.47,
+        "y": 354.18,
+        "rotation": 45
+      },
+      {
+        "type": "A",
+        "face": "front",
+        "x": 650,
+        "y": 83.27,
+        "rotation": 135
+      },
+      {
+        "type": "A",
+        "face": "front",
+        "x": 560.93,
+        "y": 534.93,
+        "rotation": 225
+      },
+      {
+        "type": "A",
+        "face": "front",
+        "x": 468.98,
+        "y": 263.42,
+        "rotation": 315
+      },
+      {
+        "type": "B",
+        "face": "front",
+        "x": 197.94,
+        "y": 354.18,
+        "rotation": 135
+      },
+      {
+        "type": "B",
+        "face": "front",
+        "x": 380.94,
+        "y": 173.16,
         "rotation": 315
       }
     ]

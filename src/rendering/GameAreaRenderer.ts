@@ -322,6 +322,7 @@ export class GameAreaRenderer {
         drawPieceLabel(ctx, piece.id, piece.x, piece.y, this.config.pieceSize);
       }
     });
+
   }
 
   /**
@@ -433,6 +434,7 @@ export class GameAreaRenderer {
         ctx.restore();
       }
     });
+
 
     // Add mirror distortion effect
     const distortionGradient = ctx.createLinearGradient(mirrorLine, 0, mirrorLine + gameAreaWidth, 0);

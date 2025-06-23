@@ -171,6 +171,26 @@ export const ChallengeEditorApp: React.FC<ChallengeEditorAppProps> = ({ onClose 
               >
                 ✨ Nuevo Reto
               </button>
+              <button
+                onClick={() => {
+                  // Take screenshot of current view for debugging
+                  const element = document.querySelector('.max-w-6xl');
+                  if (element) {
+                    // Create a simple debug log with visible challenges
+                    const visibleChallenges = challenges.map(c => `Challenge ${c.id}: ${c.name} (${c.difficulty})`).join('\n');
+                    console.log('📸 SNAPSHOT - Editor de Retos:\n' + visibleChallenges);
+                    console.log('🎯 Total challenges visible:', challenges.length);
+                    
+                    // Also log each challenge's thumbnail debug info
+                    challenges.forEach(challenge => {
+                      console.log(`🖼️ Challenge ${challenge.id} thumbnail should be visible with debug overlay`);
+                    });
+                  }
+                }}
+                className="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-xl transition-all transform hover:scale-105 shadow-lg"
+              >
+                📸 Debug Snapshot
+              </button>
               {onClose && (
                 <button
                   onClick={onClose}
@@ -186,44 +206,43 @@ export const ChallengeEditorApp: React.FC<ChallengeEditorAppProps> = ({ onClose 
             {challenges.map(challenge => (
               <div
                 key={challenge.id}
-                className="bg-gradient-to-br from-white to-gray-50 rounded-2xl p-6 border border-gray-200 hover:border-gray-300 transition-all transform hover:scale-102 shadow-lg hover:shadow-xl h-80 flex flex-col"
+                className="bg-gradient-to-br from-white to-gray-50 rounded-2xl p-4 border border-gray-200 hover:border-gray-300 transition-all transform hover:scale-102 shadow-lg hover:shadow-xl h-80 flex flex-col"
               >
-                {/* Header with ID and Title */}
-                <div className="flex justify-between items-start mb-4">
+                {/* Compact Header with everything inline */}
+                <div className="flex justify-between items-center mb-3">
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-md">
+                    <div className="w-7 h-7 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full flex items-center justify-center text-xs font-bold">
                       {challenge.id}
                     </div>
-                    <h3 className="text-lg font-bold text-gray-800 truncate">
+                    <h3 className="text-base font-bold text-gray-800 truncate">
                       {challenge.name}
                     </h3>
                   </div>
-                </div>
-                
-                {/* Challenge Thumbnail - Mini Canvas Preview */}
-                <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-3 mb-4 flex-1 flex items-center justify-center border border-blue-100">
-                  <ChallengeThumbnail challenge={challenge} width={140} height={100} />
-                </div>
-                
-                {/* Description */}
-                <div className="text-gray-600 text-sm mb-4 flex-shrink-0 h-12 overflow-hidden">
-                  <p className="line-clamp-3">
-                    {challenge.description}
-                  </p>
-                </div>
-                
-                {/* Stats */}
-                <div className="flex justify-between items-center mb-4 flex-shrink-0">
-                  <div className="text-xs">
-                    <span className="bg-gradient-to-r from-orange-400 to-red-500 text-white px-2 py-1 rounded-full font-medium">
+                  <div className="flex gap-1">
+                    <span className="bg-gradient-to-r from-orange-400 to-red-500 text-white px-2 py-1 rounded-full text-xs">
                       {challenge.difficulty}
                     </span>
-                  </div>
-                  <div className="text-xs">
-                    <span className="bg-gradient-to-r from-emerald-400 to-green-500 text-white px-2 py-1 rounded-full font-medium">
-                      {challenge.piecesNeeded} 🧩
+                    <span className="bg-gradient-to-r from-emerald-400 to-green-500 text-white px-2 py-1 rounded-full text-xs">
+                      {challenge.piecesNeeded}p
                     </span>
                   </div>
+                </div>
+                
+                {/* Large Challenge Thumbnail with Difficulty Background */}
+                <div className="mb-3 flex-1 flex items-center justify-center rounded-xl overflow-hidden min-h-0">
+                  <ChallengeThumbnail 
+                    challenge={challenge} 
+                    width={300} 
+                    height={230} 
+                    backgroundColor="blue"
+                  />
+                </div>
+                
+                {/* Compact Description */}
+                <div className="text-gray-600 text-xs mb-3 flex-shrink-0 h-8 overflow-hidden">
+                  <p className="line-clamp-2">
+                    {challenge.description}
+                  </p>
                 </div>
 
                 {/* Action Buttons */}

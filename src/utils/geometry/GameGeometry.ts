@@ -712,6 +712,7 @@ export class GameGeometry {
     }
     
     console.log(`🧲 FINAL POSITION: (${snappedPiece.x.toFixed(1)}, ${snappedPiece.y.toFixed(1)})`);
+    
     return snappedPiece;
   }
 
