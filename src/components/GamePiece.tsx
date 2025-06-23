@@ -85,6 +85,10 @@ export const drawPiece = (ctx: CanvasRenderingContext2D, piece: Piece, x: number
   if (size < 50) {
     ctx.imageSmoothingEnabled = false;
     ctx.imageSmoothingQuality = 'low';
+    // Para miniaturas extremas: usar composición que fusione overlaps
+    if (size < 25) {
+      ctx.globalCompositeOperation = 'source-over';
+    }
   } else {
     ctx.imageSmoothingEnabled = false; // Mantener OFF para consistencia
     ctx.imageSmoothingQuality = 'medium';
@@ -95,8 +99,16 @@ export const drawPiece = (ctx: CanvasRenderingContext2D, piece: Piece, x: number
   ctx.shadowOffsetX = 0;
   ctx.shadowOffsetY = 0;
 
-  // Micro-solapamiento ultra-sutil solo en conexiones internas (0.005 unidades = imperceptible)
-  const microOverlap = 0.005;
+  // Micro-solapamiento escalado según tamaño de pieza para garantizar mínimo 1px de overlap
+  // Para piezas pequeñas: overlap más grande para sobrevivir al scaling
+  // Para piezas normales: overlap sutil para preservar geometría
+  const baseOverlap = size < 30 ? 0.05 : (size < 60 ? 0.02 : 0.01);
+  const microOverlap = baseOverlap;
+  
+  // Debug logging para verificar cálculos en miniaturas
+  if (size < 25) {
+    console.log(`🔍 MINIATURE OVERLAP: size=${size}px, overlap=${microOverlap} units, actual=${(microOverlap * unit).toFixed(2)}px`);
+  }
   
   // Triángulo rectángulo izquierdo - expandir solo hacia las conexiones internas
   drawShape(ctx, [
