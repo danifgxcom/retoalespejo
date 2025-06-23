@@ -29,13 +29,19 @@ export const canPieceShowReflection = (piece: Piece, gameAreaHeight: number): bo
 };
 
 // Helper para dibujar un path sin gradientes para figuras continuas
-const drawShape = (ctx: CanvasRenderingContext2D, coordinates: [number, number][], fillColor: string, shouldStroke: boolean = false) => {
+const drawShape = (ctx: CanvasRenderingContext2D, coordinates: [number, number][], fillColor: string, shouldStroke: boolean = false, pieceSize: number = 80) => {
   ctx.fillStyle = fillColor;
   
   // Para líneas diagonales, aplicar stroke del mismo color para eliminar gaps de anti-aliasing
   if (shouldStroke) {
     ctx.strokeStyle = fillColor;
-    ctx.lineWidth = 0.25; // Stroke ultra-fino para no deformar
+    
+    // Ajustar grosor del stroke según el tamaño de la pieza
+    // Para piezas muy pequeñas (miniaturas): stroke más fino
+    // Para piezas normales: stroke estándar
+    const strokeWidth = pieceSize < 40 ? 0.1 : (pieceSize < 60 ? 0.15 : 0.25);
+    
+    ctx.lineWidth = strokeWidth;
     ctx.lineJoin = 'miter'; // Conexiones precisas
     ctx.lineCap = 'butt'; // Extremos exactos
   }
@@ -71,28 +77,37 @@ export const drawPiece = (ctx: CanvasRenderingContext2D, piece: Piece, x: number
   // Transformar coordenadas para centrar correctamente
   const coord = (x: number, y: number): [number, number] => [x * unit, -y * unit];
 
-  // Configuración optimizada para renderizado limpio con mínimo anti-aliasing en diagonales
+  // Configuración optimizada según tamaño de pieza
   ctx.lineWidth = 0;
-  ctx.imageSmoothingEnabled = false; // Deshabilitar para eliminar bordes en diagonales
-  ctx.imageSmoothingQuality = 'low'; // Calidad baja para menos artefactos
+  
+  // Para piezas muy pequeñas (miniaturas): anti-aliasing completamente OFF
+  // Para piezas normales: configuración balanceada
+  if (size < 50) {
+    ctx.imageSmoothingEnabled = false;
+    ctx.imageSmoothingQuality = 'low';
+  } else {
+    ctx.imageSmoothingEnabled = false; // Mantener OFF para consistencia
+    ctx.imageSmoothingQuality = 'medium';
+  }
+  
   ctx.shadowColor = 'transparent';
   ctx.shadowBlur = 0;
   ctx.shadowOffsetX = 0;
   ctx.shadowOffsetY = 0;
 
-  // Dibujar con coordenadas EXACTAS originales + stroke muy sutil solo para diagonales
+  // Dibujar con coordenadas EXACTAS originales + stroke adaptativo según tamaño
   
-  // Triángulo rectángulo izquierdo (diagonal - stroke sutil)
-  drawShape(ctx, [coord(0, 0), coord(1, 0), coord(1, 1)], piece.triangleColor, true);
+  // Triángulo rectángulo izquierdo (diagonal - stroke adaptativo)
+  drawShape(ctx, [coord(0, 0), coord(1, 0), coord(1, 1)], piece.triangleColor, true, size);
 
-  // Triángulo superior (diagonales - stroke sutil)
-  drawShape(ctx, [coord(1, 1), coord(2, 1), coord(1.5, 1.5)], piece.triangleColor, true);
+  // Triángulo superior (diagonales - stroke adaptativo)
+  drawShape(ctx, [coord(1, 1), coord(2, 1), coord(1.5, 1.5)], piece.triangleColor, true, size);
 
-  // Triángulo derecho (diagonales - stroke sutil)
-  drawShape(ctx, [coord(2, 0), coord(2, 1), coord(2.5, 0.5)], piece.triangleColor, true);
+  // Triángulo derecho (diagonales - stroke adaptativo)
+  drawShape(ctx, [coord(2, 0), coord(2, 1), coord(2.5, 0.5)], piece.triangleColor, true, size);
 
   // Cuadrado central (sin diagonales - sin stroke)
-  drawShape(ctx, [coord(1, 0), coord(2, 0), coord(2, 1), coord(1, 1)], piece.centerColor, false);
+  drawShape(ctx, [coord(1, 0), coord(2, 0), coord(2, 1), coord(1, 1)], piece.centerColor, false, size);
 
   ctx.restore();
 };
