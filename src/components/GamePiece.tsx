@@ -29,8 +29,17 @@ export const canPieceShowReflection = (piece: Piece, gameAreaHeight: number): bo
 };
 
 // Helper para dibujar un path sin gradientes para figuras continuas
-const drawShape = (ctx: CanvasRenderingContext2D, coordinates: [number, number][], fillColor: string) => {
+const drawShape = (ctx: CanvasRenderingContext2D, coordinates: [number, number][], fillColor: string, shouldStroke: boolean = false) => {
   ctx.fillStyle = fillColor;
+  
+  // Para líneas diagonales, aplicar stroke del mismo color para eliminar gaps de anti-aliasing
+  if (shouldStroke) {
+    ctx.strokeStyle = fillColor;
+    ctx.lineWidth = 0.5; // Stroke muy fino
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+  }
+  
   ctx.beginPath();
   const [startX, startY] = coordinates[0];
   ctx.moveTo(startX, startY);
@@ -42,7 +51,10 @@ const drawShape = (ctx: CanvasRenderingContext2D, coordinates: [number, number][
 
   ctx.closePath();
   ctx.fill();
-  // No stroke needed - gaps eliminated by precision autosnap
+  
+  if (shouldStroke) {
+    ctx.stroke();
+  }
 };
 
 export const drawPiece = (ctx: CanvasRenderingContext2D, piece: Piece, x: number, y: number, size = 80) => {
@@ -59,26 +71,47 @@ export const drawPiece = (ctx: CanvasRenderingContext2D, piece: Piece, x: number
   // Transformar coordenadas para centrar correctamente
   const coord = (x: number, y: number): [number, number] => [x * unit, -y * unit];
 
-  // Configuración optimizada para renderizado limpio
+  // Configuración optimizada para renderizado limpio con mínimo anti-aliasing en diagonales
   ctx.lineWidth = 0;
-  ctx.imageSmoothingEnabled = true; // Volver a habilitar para mejor calidad
+  ctx.imageSmoothingEnabled = false; // Deshabilitar para eliminar bordes en diagonales
+  ctx.imageSmoothingQuality = 'low'; // Calidad baja para menos artefactos
   ctx.shadowColor = 'transparent';
   ctx.shadowBlur = 0;
   ctx.shadowOffsetX = 0;
   ctx.shadowOffsetY = 0;
 
+  // Micro-solapamiento para eliminar gaps en diagonales (0.02 unidades)
+  const overlap = 0.02;
+  
   // Dibujar PRIMERO los triángulos para que queden debajo
-  // Triángulo rectángulo izquierdo
-  drawShape(ctx, [coord(0, 0), coord(1, 0), coord(1, 1)], piece.triangleColor);
+  // Triángulo rectángulo izquierdo (con línea diagonal - expandir ligeramente)
+  drawShape(ctx, [
+    coord(-overlap, -overlap), 
+    coord(1 + overlap, -overlap), 
+    coord(1 + overlap, 1 + overlap)
+  ], piece.triangleColor, true);
 
-  // Triángulo superior  
-  drawShape(ctx, [coord(1, 1), coord(2, 1), coord(1.5, 1.5)], piece.triangleColor);
+  // Triángulo superior (con líneas diagonales - expandir hacia conexiones)
+  drawShape(ctx, [
+    coord(1 - overlap, 1 - overlap), 
+    coord(2 + overlap, 1 - overlap), 
+    coord(1.5, 1.5 + overlap)
+  ], piece.triangleColor, true);
 
-  // Triángulo derecho
-  drawShape(ctx, [coord(2, 0), coord(2, 1), coord(2.5, 0.5)], piece.triangleColor);
+  // Triángulo derecho (con líneas diagonales - expandir hacia conexiones)
+  drawShape(ctx, [
+    coord(2 - overlap, -overlap), 
+    coord(2 + overlap, 1 + overlap), 
+    coord(2.5 + overlap, 0.5)
+  ], piece.triangleColor, true);
 
-  // Dibujar DESPUÉS el cuadrado central - exactamente entre los triángulos
-  drawShape(ctx, [coord(1, 0), coord(2, 0), coord(2, 1), coord(1, 1)], piece.centerColor);
+  // Dibujar DESPUÉS el cuadrado central - expandir para cubrir micro-gaps
+  drawShape(ctx, [
+    coord(1 - overlap, -overlap), 
+    coord(2 + overlap, -overlap), 
+    coord(2 + overlap, 1 + overlap), 
+    coord(1 - overlap, 1 + overlap)
+  ], piece.centerColor, false);
 
   ctx.restore();
 };
