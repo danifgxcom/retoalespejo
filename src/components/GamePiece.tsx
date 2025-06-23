@@ -35,9 +35,9 @@ const drawShape = (ctx: CanvasRenderingContext2D, coordinates: [number, number][
   // Para líneas diagonales, aplicar stroke del mismo color para eliminar gaps de anti-aliasing
   if (shouldStroke) {
     ctx.strokeStyle = fillColor;
-    ctx.lineWidth = 0.5; // Stroke muy fino
-    ctx.lineJoin = 'round';
-    ctx.lineCap = 'round';
+    ctx.lineWidth = 0.25; // Stroke ultra-fino para no deformar
+    ctx.lineJoin = 'miter'; // Conexiones precisas
+    ctx.lineCap = 'butt'; // Extremos exactos
   }
   
   ctx.beginPath();
@@ -80,38 +80,19 @@ export const drawPiece = (ctx: CanvasRenderingContext2D, piece: Piece, x: number
   ctx.shadowOffsetX = 0;
   ctx.shadowOffsetY = 0;
 
-  // Micro-solapamiento para eliminar gaps en diagonales (0.02 unidades)
-  const overlap = 0.02;
+  // Dibujar con coordenadas EXACTAS originales + stroke muy sutil solo para diagonales
   
-  // Dibujar PRIMERO los triángulos para que queden debajo
-  // Triángulo rectángulo izquierdo (con línea diagonal - expandir ligeramente)
-  drawShape(ctx, [
-    coord(-overlap, -overlap), 
-    coord(1 + overlap, -overlap), 
-    coord(1 + overlap, 1 + overlap)
-  ], piece.triangleColor, true);
+  // Triángulo rectángulo izquierdo (diagonal - stroke sutil)
+  drawShape(ctx, [coord(0, 0), coord(1, 0), coord(1, 1)], piece.triangleColor, true);
 
-  // Triángulo superior (con líneas diagonales - expandir hacia conexiones)
-  drawShape(ctx, [
-    coord(1 - overlap, 1 - overlap), 
-    coord(2 + overlap, 1 - overlap), 
-    coord(1.5, 1.5 + overlap)
-  ], piece.triangleColor, true);
+  // Triángulo superior (diagonales - stroke sutil)
+  drawShape(ctx, [coord(1, 1), coord(2, 1), coord(1.5, 1.5)], piece.triangleColor, true);
 
-  // Triángulo derecho (con líneas diagonales - expandir hacia conexiones)
-  drawShape(ctx, [
-    coord(2 - overlap, -overlap), 
-    coord(2 + overlap, 1 + overlap), 
-    coord(2.5 + overlap, 0.5)
-  ], piece.triangleColor, true);
+  // Triángulo derecho (diagonales - stroke sutil)
+  drawShape(ctx, [coord(2, 0), coord(2, 1), coord(2.5, 0.5)], piece.triangleColor, true);
 
-  // Dibujar DESPUÉS el cuadrado central - expandir para cubrir micro-gaps
-  drawShape(ctx, [
-    coord(1 - overlap, -overlap), 
-    coord(2 + overlap, -overlap), 
-    coord(2 + overlap, 1 + overlap), 
-    coord(1 - overlap, 1 + overlap)
-  ], piece.centerColor, false);
+  // Cuadrado central (sin diagonales - sin stroke)
+  drawShape(ctx, [coord(1, 0), coord(2, 0), coord(2, 1), coord(1, 1)], piece.centerColor, false);
 
   ctx.restore();
 };
