@@ -95,19 +95,37 @@ export const drawPiece = (ctx: CanvasRenderingContext2D, piece: Piece, x: number
   ctx.shadowOffsetX = 0;
   ctx.shadowOffsetY = 0;
 
-  // Dibujar con coordenadas EXACTAS originales + stroke adaptativo según tamaño
+  // Micro-solapamiento ultra-sutil solo en conexiones internas (0.005 unidades = imperceptible)
+  const microOverlap = 0.005;
   
-  // Triángulo rectángulo izquierdo (diagonal - stroke adaptativo)
-  drawShape(ctx, [coord(0, 0), coord(1, 0), coord(1, 1)], piece.triangleColor, true, size);
+  // Triángulo rectángulo izquierdo - expandir solo hacia las conexiones internas
+  drawShape(ctx, [
+    coord(0, 0), 
+    coord(1 + microOverlap, 0), // Ligera expansión hacia el cuadrado
+    coord(1 + microOverlap, 1 + microOverlap) // Ligera expansión hacia cuadrado y triángulo superior
+  ], piece.triangleColor, true, size);
 
-  // Triángulo superior (diagonales - stroke adaptativo)
-  drawShape(ctx, [coord(1, 1), coord(2, 1), coord(1.5, 1.5)], piece.triangleColor, true, size);
+  // Triángulo superior - expandir hacia conexiones internas
+  drawShape(ctx, [
+    coord(1 - microOverlap, 1 + microOverlap), // Expandir hacia triángulo izquierdo
+    coord(2 + microOverlap, 1 + microOverlap), // Expandir hacia triángulo derecho
+    coord(1.5, 1.5)
+  ], piece.triangleColor, true, size);
 
-  // Triángulo derecho (diagonales - stroke adaptativo)
-  drawShape(ctx, [coord(2, 0), coord(2, 1), coord(2.5, 0.5)], piece.triangleColor, true, size);
+  // Triángulo derecho - expandir hacia conexiones internas
+  drawShape(ctx, [
+    coord(2 - microOverlap, 0), // Expandir hacia cuadrado
+    coord(2 - microOverlap, 1 + microOverlap), // Expandir hacia cuadrado y triángulo superior
+    coord(2.5, 0.5)
+  ], piece.triangleColor, true, size);
 
-  // Cuadrado central (sin diagonales - sin stroke)
-  drawShape(ctx, [coord(1, 0), coord(2, 0), coord(2, 1), coord(1, 1)], piece.centerColor, false, size);
+  // Cuadrado central - expandir para cubrir gaps internos con todos los triángulos
+  drawShape(ctx, [
+    coord(1 - microOverlap, 0), 
+    coord(2 + microOverlap, 0), 
+    coord(2 + microOverlap, 1 + microOverlap), 
+    coord(1 - microOverlap, 1 + microOverlap)
+  ], piece.centerColor, false, size);
 
   ctx.restore();
 };
