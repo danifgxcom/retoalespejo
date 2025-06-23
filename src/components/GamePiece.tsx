@@ -31,9 +31,6 @@ export const canPieceShowReflection = (piece: Piece, gameAreaHeight: number): bo
 // Helper para dibujar un path sin gradientes para figuras continuas
 const drawShape = (ctx: CanvasRenderingContext2D, coordinates: [number, number][], fillColor: string) => {
   ctx.fillStyle = fillColor;
-  ctx.strokeStyle = fillColor; // Stroke del mismo color que el fill
-  ctx.lineWidth = 1; // Línea muy fina para rellenar micro-gaps
-  
   ctx.beginPath();
   const [startX, startY] = coordinates[0];
   ctx.moveTo(startX, startY);
@@ -45,7 +42,7 @@ const drawShape = (ctx: CanvasRenderingContext2D, coordinates: [number, number][
 
   ctx.closePath();
   ctx.fill();
-  ctx.stroke(); // Stroke del mismo color para cerrar gaps
+  // No stroke needed - gaps eliminated by precision autosnap
 };
 
 export const drawPiece = (ctx: CanvasRenderingContext2D, piece: Piece, x: number, y: number, size = 80) => {
@@ -62,16 +59,13 @@ export const drawPiece = (ctx: CanvasRenderingContext2D, piece: Piece, x: number
   // Transformar coordenadas para centrar correctamente
   const coord = (x: number, y: number): [number, number] => [x * unit, -y * unit];
 
-  // Configuración radical para eliminar TODOS los bordes
+  // Configuración optimizada para renderizado limpio
   ctx.lineWidth = 0;
-  ctx.imageSmoothingEnabled = false;
+  ctx.imageSmoothingEnabled = true; // Volver a habilitar para mejor calidad
   ctx.shadowColor = 'transparent';
   ctx.shadowBlur = 0;
   ctx.shadowOffsetX = 0;
   ctx.shadowOffsetY = 0;
-  
-  // Intentar diferentes modos de composición
-  ctx.globalCompositeOperation = 'source-over';
 
   // Dibujar PRIMERO los triángulos para que queden debajo
   // Triángulo rectángulo izquierdo

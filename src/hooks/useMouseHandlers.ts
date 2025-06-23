@@ -122,7 +122,7 @@ export const useMouseHandlers = ({
               const snappedPosition = geometry.snapPieceToNearbyTargets(
                 pieceToPosition(updatedPiece),
                 otherPiecesInGameArea,
-                40 // Distancia de snap más agresiva para mejor conexión
+                60 // Distancia de snap ultra-agresiva para capturar piezas del mismo color
               );
               
               updatedPiece.x = snappedPosition.x;

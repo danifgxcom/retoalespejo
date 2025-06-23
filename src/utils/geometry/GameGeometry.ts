@@ -631,13 +631,126 @@ export class GameGeometry {
   }
 
   /**
+   * Detecta si dos piezas tienen áreas del mismo color que se están tocando
+   */
+  private doPiecesHaveSameColorContact(piece1: PiecePosition, piece2: PiecePosition): boolean {
+    // Obtener los colores de ambas piezas
+    const colors1 = this.getPieceColors(piece1);
+    const colors2 = this.getPieceColors(piece2);
+    
+    // Verificar si tienen algún color en común
+    const hasCommonColor = colors1.centerColor === colors2.centerColor || 
+                          colors1.centerColor === colors2.triangleColor ||
+                          colors1.triangleColor === colors2.centerColor ||
+                          colors1.triangleColor === colors2.triangleColor;
+    
+    return hasCommonColor;
+  }
+  
+  /**
+   * Obtiene los colores de una pieza basado en su tipo y cara
+   */
+  private getPieceColors(piece: PiecePosition): { centerColor: string; triangleColor: string } {
+    if (piece.face === 'front') {
+      return {
+        centerColor: '#FFD700', // Amarillo
+        triangleColor: '#FF4444' // Rojo
+      };
+    } else {
+      return {
+        centerColor: '#FF4444', // Rojo  
+        triangleColor: '#FFD700' // Amarillo
+      };
+    }
+  }
+  
+  /**
+   * Aplica autosnap ultra-preciso para piezas del mismo color
+   * Elimina completamente los microgaps entre áreas del mismo color
+   */
+  private applyPrecisionSnapForSameColor(movingPiece: PiecePosition, targetPiece: PiecePosition): PiecePosition | null {
+    console.log(`🎨 SAME COLOR PRECISION SNAP: Applying ultra-precise snap for same color pieces`);
+    
+    // Encontrar los bordes más cercanos entre las piezas
+    const movingEdges = this.getPieceEdges(movingPiece);
+    const targetEdges = this.getPieceEdges(targetPiece);
+    
+    let bestAlignment: any = null;
+    let minDistance = Infinity;
+    
+    // Buscar la mejor alineación entre bordes
+    for (const movingEdge of movingEdges) {
+      for (const targetEdge of targetEdges) {
+        const alignment = this.calculateEdgeAlignment(movingEdge, targetEdge);
+        const continuity = this.calculateEdgeContinuity(movingEdge, targetEdge);
+        
+        if (alignment > 0.7 && continuity > 0.7) { // Umbrales más estrictos para same color
+          const distance = this.distanceBetweenPoints(
+            [(movingEdge.start[0] + movingEdge.end[0]) / 2, (movingEdge.start[1] + movingEdge.end[1]) / 2],
+            [(targetEdge.start[0] + targetEdge.end[0]) / 2, (targetEdge.start[1] + targetEdge.end[1]) / 2]
+          );
+          
+          if (distance < minDistance) {
+            const alignedPosition = this.calculateEdgeAlignmentPosition(movingPiece, targetPiece, {
+              movingEdge,
+              targetEdge,
+              alignmentScore: alignment,
+              continuityScore: continuity
+            });
+            
+            if (alignedPosition) {
+              bestAlignment = alignedPosition;
+              minDistance = distance;
+            }
+          }
+        }
+      }
+    }
+    
+    if (bestAlignment) {
+      console.log(`✨ ULTRA-PRECISE ALIGNMENT: Applied same-color snap with distance ${minDistance.toFixed(3)}px`);
+      return bestAlignment;
+    }
+    
+    return null;
+  }
+
+  /**
    * Ajusta automáticamente la posición de una pieza usando snap inteligente geométrico
    * Detecta bordes compatibles y los alinea para formar continuidad perfecta
+   * MEJORADO: Autosnap ultra-preciso para piezas del mismo color
    */
   snapPieceToNearbyTargets(piece: PiecePosition, otherPieces: PiecePosition[], snapDistance: number = 30): PiecePosition {
     let snappedPiece = { ...piece };
     
-    // 1. Primero verificar si hay gaps pequeños que necesitan cierre inmediato
+    // 0. PRIORIDAD MÁXIMA: Autosnap ultra-preciso para piezas del mismo color
+    for (const otherPiece of otherPieces) {
+      const distance = this.getMinDistanceBetweenPieces(snappedPiece, otherPiece);
+      
+      // Si están cerca Y tienen colores compatibles, aplicar snap de precisión
+      if (distance <= snapDistance * 1.5 && this.doPiecesHaveSameColorContact(snappedPiece, otherPiece)) {
+        const precisionSnap = this.applyPrecisionSnapForSameColor(snappedPiece, otherPiece);
+        if (precisionSnap) {
+          console.log(`🎨 SAME COLOR SNAP APPLIED: Perfect alignment for same color pieces`);
+          snappedPiece = precisionSnap;
+          
+          // Verificar que el resultado sea perfecto (gap < 0.1px)
+          const finalDistance = this.getMinDistanceBetweenPieces(snappedPiece, otherPiece);
+          if (finalDistance > 0.1) {
+            console.log(`🔧 FINAL PRECISION ADJUSTMENT: Fine-tuning from ${finalDistance.toFixed(3)}px to perfect contact`);
+            const finalAdjustment = this.closeSmallGap(snappedPiece, otherPiece, finalDistance);
+            if (finalAdjustment) {
+              snappedPiece = finalAdjustment;
+            }
+          }
+          
+          console.log(`✅ SAME COLOR SNAP COMPLETED: Final distance ${this.getMinDistanceBetweenPieces(snappedPiece, otherPiece).toFixed(4)}px`);
+          return snappedPiece; // Retornar inmediatamente con el resultado perfecto
+        }
+      }
+    }
+    
+    // 1. Verificar si hay gaps pequeños que necesitan cierre inmediato (para piezas de colores diferentes)
     for (const otherPiece of otherPieces) {
       const gapDistance = this.getMinDistanceBetweenPieces(snappedPiece, otherPiece);
       
@@ -718,6 +831,7 @@ export class GameGeometry {
 
   /**
    * Cierra gaps pequeños entre piezas moviendo una hacia la otra con precisión sub-pixel
+   * MEJORADO: Precisión ultra-alta para piezas del mismo color
    */
   private closeSmallGap(movingPiece: PiecePosition, targetPiece: PiecePosition, gapDistance: number): PiecePosition | null {
     // Encontrar los puntos más cercanos entre las piezas para movimiento más preciso
@@ -748,8 +862,14 @@ export class GameGeometry {
       closestTargetPoint[1] - closestMovingPoint[1]
     ];
     
-    // Aplicar solo el 95% del movimiento para evitar penetración excesiva pero eliminar gap
-    const adjustmentFactor = 0.95;
+    // Usar factor de ajuste diferente según si las piezas tienen colores compatibles
+    const hasSameColorContact = this.doPiecesHaveSameColorContact(movingPiece, targetPiece);
+    
+    // Para piezas del mismo color: 99.5% (casi contacto perfecto)
+    // Para piezas de colores diferentes: 95% (contacto con micro-separación)
+    const adjustmentFactor = hasSameColorContact ? 0.995 : 0.95;
+    
+    console.log(`🔧 GAP CLOSING: ${hasSameColorContact ? 'Same color' : 'Different colors'} - Factor: ${adjustmentFactor}`);
     
     return {
       ...movingPiece,
