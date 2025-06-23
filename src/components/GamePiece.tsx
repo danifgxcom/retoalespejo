@@ -105,9 +105,24 @@ export const drawPiece = (ctx: CanvasRenderingContext2D, piece: Piece, x: number
   const baseOverlap = size < 30 ? 0.05 : (size < 60 ? 0.02 : 0.01);
   const microOverlap = baseOverlap;
   
-  // Debug logging para verificar cálculos en miniaturas
-  if (size < 25) {
-    console.log(`🔍 MINIATURE OVERLAP: size=${size}px, overlap=${microOverlap} units, actual=${(microOverlap * unit).toFixed(2)}px`);
+  // Debug logging solo cuando se solicite snapshot (controlado externamente)
+  const shouldDebug = (window as any).debugPieceRendering === true;
+  
+  if (shouldDebug) {
+    console.log(`
+🎯 PIECE DEBUG INFO:
+  📏 Size: ${size}px (unit=${unit.toFixed(2)})
+  🔄 Rotation: ${piece.rotation}°, Type: ${piece.type}, Face: ${piece.face}
+  🎨 Colors: center=${piece.centerColor}, triangles=${piece.triangleColor}
+  📐 Overlap: ${microOverlap} units = ${(microOverlap * unit).toFixed(3)}px
+  🖼️ Context: ${ctx.imageSmoothingEnabled ? 'smoothed' : 'pixelated'}
+  
+  📍 Calculated Coordinates:
+    Triangle Left: [${coord(0, 0)[0].toFixed(1)}, ${coord(0, 0)[1].toFixed(1)}] → [${coord(1 + microOverlap, 0)[0].toFixed(1)}, ${coord(1 + microOverlap, 1 + microOverlap)[1].toFixed(1)}]
+    Triangle Top: [${coord(1 - microOverlap, 1 + microOverlap)[0].toFixed(1)}, ${coord(1 - microOverlap, 1 + microOverlap)[1].toFixed(1)}] → [${coord(1.5, 1.5)[0].toFixed(1)}, ${coord(1.5, 1.5)[1].toFixed(1)}]
+    Triangle Right: [${coord(2 - microOverlap, 0)[0].toFixed(1)}, ${coord(2 - microOverlap, 0)[1].toFixed(1)}] → [${coord(2.5, 0.5)[0].toFixed(1)}, ${coord(2.5, 0.5)[1].toFixed(1)}]
+    Square: [${coord(1 - microOverlap, 0)[0].toFixed(1)}, ${coord(1 - microOverlap, 0)[1].toFixed(1)}] → [${coord(2 + microOverlap, 1 + microOverlap)[0].toFixed(1)}, ${coord(2 + microOverlap, 1 + microOverlap)[1].toFixed(1)}]
+    `);
   }
   
   // Triángulo rectángulo izquierdo - expandir solo hacia las conexiones internas

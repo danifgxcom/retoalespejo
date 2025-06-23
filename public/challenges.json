@@ -128,21 +128,21 @@
           "type": "A",
           "face": "back",
           "x": 468.98,
-          "y": 265.18,
+          "y": 265.17,
           "rotation": 315
         },
         {
           "type": "A",
           "face": "back",
           "x": 468.98,
-          "y": -6.32,
+          "y": -6.35,
           "rotation": 135
         },
         {
           "type": "A",
           "face": "front",
           "x": 650,
-          "y": 83.05,
+          "y": 84.24,
           "rotation": 135
         }
       ],
@@ -153,21 +153,21 @@
         "type": "A",
         "face": "back",
         "x": 468.98,
-        "y": 265.18,
+        "y": 265.17,
         "rotation": 315
       },
       {
         "type": "A",
         "face": "back",
         "x": 468.98,
-        "y": -6.32,
+        "y": -6.35,
         "rotation": 135
       },
       {
         "type": "A",
         "face": "front",
         "x": 650,
-        "y": 83.05,
+        "y": 84.24,
         "rotation": 135
       }
     ]

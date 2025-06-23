@@ -69,7 +69,28 @@ const ChallengeThumbnail: React.FC<ChallengeThumbnailProps> = ({
     const offsetX = (width - scaledWidth) / 2;
     const offsetY = (height - scaledHeight) / 2;
     
-    console.log(`🔍 FIXED Challenge ${challenge.id}: Scale=${scale.toFixed(3)} Offset=(${offsetX.toFixed(1)}, ${offsetY.toFixed(1)})`);
+    // Debug logging solo cuando se solicite
+    const shouldDebug = (window as any).debugPieceRendering === true;
+    
+    if (shouldDebug) {
+      console.log(`
+🖼️ THUMBNAIL ${challenge.id} RENDERING:
+  📏 Canvas: ${width}x${height}px
+  📐 Scale: ${scale.toFixed(4)} (total area: ${totalWidth}x${standardHeight})
+  📍 Offset: (${offsetX.toFixed(1)}, ${offsetY.toFixed(1)})
+  🧩 Pieces: ${playerPieces.length}
+  
+  🎯 Piece render info:
+${playerPieces.map((p, i) => {
+  const x = p.x * scale + offsetX;
+  const y = p.y * scale + offsetY;
+  const size = 100 * scale;
+  return `    ${i+1}. ${p.type}-${p.face} at (${x.toFixed(1)}, ${y.toFixed(1)}) size=${size.toFixed(1)}px rot=${p.rotation}°`;
+}).join('\n')}
+      `);
+    } else {
+      console.log(`🔍 FIXED Challenge ${challenge.id}: Scale=${scale.toFixed(3)} Offset=(${offsetX.toFixed(1)}, ${offsetY.toFixed(1)})`);
+    }
     
     // Draw original pieces
     playerPieces.forEach((piecePos, index) => {

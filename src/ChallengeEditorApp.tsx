@@ -173,23 +173,54 @@ export const ChallengeEditorApp: React.FC<ChallengeEditorAppProps> = ({ onClose 
               </button>
               <button
                 onClick={() => {
-                  // Take screenshot of current view for debugging
-                  const element = document.querySelector('.max-w-6xl');
-                  if (element) {
-                    // Create a simple debug log with visible challenges
-                    const visibleChallenges = challenges.map(c => `Challenge ${c.id}: ${c.name} (${c.difficulty})`).join('\n');
-                    console.log('📸 SNAPSHOT - Editor de Retos:\n' + visibleChallenges);
-                    console.log('🎯 Total challenges visible:', challenges.length);
+                  console.log('🔥 DEBUG SNAPSHOT ACTIVATED - Starting comprehensive gap analysis...');
+                  
+                  // Activar debug para renderizado de piezas
+                  (window as any).debugPieceRendering = true;
+                  
+                  // Información del editor
+                  const visibleChallenges = challenges.map(c => `Challenge ${c.id}: ${c.name} (${c.difficulty}) - ${c.piecesNeeded} pieces`);
+                  console.log(`
+📸 EDITOR SNAPSHOT:
+🎯 Total challenges: ${challenges.length}
+📋 Challenges list:
+${visibleChallenges.map(c => `  ${c}`).join('\n')}
+
+🔍 GAP ANALYSIS MODE ENABLED
+⚠️  All piece rendering will now log detailed coordinate and overlap information
+⚠️  Look for patterns in gap areas and overlap effectiveness
+⚠️  Check if overlaps are sufficient at different scales
+                  `);
+                  
+                  // Analizar cada challenge individualmente
+                  challenges.forEach(challenge => {
+                    const pieces = challenge.objective.playerPieces;
+                    console.log(`
+🎮 CHALLENGE ${challenge.id} ANALYSIS:
+  📏 Scale factor: 0.191 (fixed)
+  🧩 Pieces: ${pieces.length}
+  📊 Piece details:
+${pieces.map((p, i) => `    ${i+1}. Type ${p.type}, Face ${p.face}, Rot ${p.rotation}°, Pos (${p.x.toFixed(1)}, ${p.y.toFixed(1)})`).join('\n')}
+                    `);
+                  });
+                  
+                  // Forzar re-render de thumbnails para capturar debug info
+                  setTimeout(() => {
+                    console.log('🔄 Forcing thumbnail re-render to capture debug data...');
+                    // Trigger re-render artificially
+                    const thumbnails = document.querySelectorAll('canvas');
+                    console.log(`📊 Found ${thumbnails.length} canvas elements for debug analysis`);
                     
-                    // Also log each challenge's thumbnail debug info
-                    challenges.forEach(challenge => {
-                      console.log(`🖼️ Challenge ${challenge.id} thumbnail should be visible with debug overlay`);
-                    });
-                  }
+                    // Desactivar debug después de análisis
+                    setTimeout(() => {
+                      (window as any).debugPieceRendering = false;
+                      console.log('✅ DEBUG SNAPSHOT COMPLETE - Analysis finished, debug mode disabled');
+                    }, 2000);
+                  }, 100);
                 }}
-                className="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-xl transition-all transform hover:scale-105 shadow-lg"
+                className="px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-xl transition-all transform hover:scale-105 shadow-lg"
               >
-                📸 Debug Snapshot
+                🔥 DEBUG SNAPSHOT
               </button>
               {onClose && (
                 <button
