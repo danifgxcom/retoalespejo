@@ -669,50 +669,88 @@ export class GameGeometry {
    * Elimina completamente los microgaps entre áreas del mismo color
    */
   private applyPrecisionSnapForSameColor(movingPiece: PiecePosition, targetPiece: PiecePosition): PiecePosition | null {
-    console.log(`🎨 SAME COLOR PRECISION SNAP: Applying ultra-precise snap for same color pieces`);
-    
-    // Encontrar los bordes más cercanos entre las piezas
-    const movingEdges = this.getPieceEdges(movingPiece);
-    const targetEdges = this.getPieceEdges(targetPiece);
-    
-    let bestAlignment: any = null;
-    let minDistance = Infinity;
-    
-    // Buscar la mejor alineación entre bordes
-    for (const movingEdge of movingEdges) {
-      for (const targetEdge of targetEdges) {
-        const alignment = this.calculateEdgeAlignment(movingEdge, targetEdge);
-        const continuity = this.calculateEdgeContinuity(movingEdge, targetEdge);
-        
-        if (alignment > 0.7 && continuity > 0.7) { // Umbrales más estrictos para same color
-          const distance = this.distanceBetweenPoints(
-            [(movingEdge.start[0] + movingEdge.end[0]) / 2, (movingEdge.start[1] + movingEdge.end[1]) / 2],
-            [(targetEdge.start[0] + targetEdge.end[0]) / 2, (targetEdge.start[1] + targetEdge.end[1]) / 2]
-          );
-          
-          if (distance < minDistance) {
-            const alignedPosition = this.calculateEdgeAlignmentPosition(movingPiece, targetPiece, {
-              movingEdge,
-              targetEdge,
-              alignmentScore: alignment,
-              continuityScore: continuity
-            });
+    try {
+      console.log(`🎨 SAME COLOR PRECISION SNAP: Applying ultra-precise snap for same color pieces`);
+      
+      // Validar entrada
+      if (!movingPiece || !targetPiece) {
+        console.error(`❌ Invalid pieces for same color snap`);
+        return null;
+      }
+      
+      // Encontrar los bordes más cercanos entre las piezas
+      const movingEdges = this.getPieceEdges(movingPiece);
+      const targetEdges = this.getPieceEdges(targetPiece);
+      
+      if (!movingEdges || !targetEdges || movingEdges.length === 0 || targetEdges.length === 0) {
+        console.error(`❌ Could not get edges for pieces`);
+        return null;
+      }
+      
+      let bestAlignment: any = null;
+      let minDistance = Infinity;
+      
+      // Buscar la mejor alineación entre bordes
+      for (const movingEdge of movingEdges) {
+        for (const targetEdge of targetEdges) {
+          try {
+            const alignment = this.calculateEdgeAlignment(movingEdge, targetEdge);
+            const continuity = this.calculateEdgeContinuity(movingEdge, targetEdge);
             
-            if (alignedPosition) {
-              bestAlignment = alignedPosition;
-              minDistance = distance;
+            if (alignment > 0.7 && continuity > 0.7) { // Umbrales más estrictos para same color
+              const distance = this.distanceBetweenPoints(
+                [(movingEdge.start[0] + movingEdge.end[0]) / 2, (movingEdge.start[1] + movingEdge.end[1]) / 2],
+                [(targetEdge.start[0] + targetEdge.end[0]) / 2, (targetEdge.start[1] + targetEdge.end[1]) / 2]
+              );
+              
+              if (distance < minDistance && distance > 0) {
+                const alignedPosition = this.calculateEdgeAlignmentPosition(movingPiece, targetPiece, {
+                  movingEdge,
+                  targetEdge,
+                  alignmentScore: alignment,
+                  continuityScore: continuity
+                });
+                
+                if (alignedPosition && this.isValidPosition(alignedPosition)) {
+                  bestAlignment = alignedPosition;
+                  minDistance = distance;
+                }
+              }
             }
+          } catch (error) {
+            console.error(`❌ Error in edge calculation:`, error);
+            continue;
           }
         }
       }
+      
+      if (bestAlignment) {
+        console.log(`✨ ULTRA-PRECISE ALIGNMENT: Applied same-color snap with distance ${minDistance.toFixed(3)}px`);
+        return bestAlignment;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error(`❌ CRITICAL ERROR in applyPrecisionSnapForSameColor:`, error);
+      return null;
     }
-    
-    if (bestAlignment) {
-      console.log(`✨ ULTRA-PRECISE ALIGNMENT: Applied same-color snap with distance ${minDistance.toFixed(3)}px`);
-      return bestAlignment;
-    }
-    
-    return null;
+  }
+
+  /**
+   * Valida que una posición sea válida (no NaN, no infinita, dentro de rangos razonables)
+   */
+  private isValidPosition(position: PiecePosition): boolean {
+    return position &&
+           typeof position.x === 'number' && 
+           typeof position.y === 'number' &&
+           !isNaN(position.x) && 
+           !isNaN(position.y) && 
+           isFinite(position.x) && 
+           isFinite(position.y) &&
+           position.x > -1000 && 
+           position.x < 2000 && 
+           position.y > -1000 && 
+           position.y < 2000;
   }
 
   /**
@@ -721,34 +759,49 @@ export class GameGeometry {
    * MEJORADO: Autosnap ultra-preciso para piezas del mismo color
    */
   snapPieceToNearbyTargets(piece: PiecePosition, otherPieces: PiecePosition[], snapDistance: number = 30): PiecePosition {
-    let snappedPiece = { ...piece };
-    
-    // 0. PRIORIDAD MÁXIMA: Autosnap ultra-preciso para piezas del mismo color
-    for (const otherPiece of otherPieces) {
-      const distance = this.getMinDistanceBetweenPieces(snappedPiece, otherPiece);
+    try {
+      // Validar entrada
+      if (!piece || !this.isValidPosition(piece)) {
+        console.error(`❌ Invalid piece for snap:`, piece);
+        return piece;
+      }
       
-      // Si están cerca Y tienen colores compatibles, aplicar snap de precisión
-      if (distance <= snapDistance * 1.5 && this.doPiecesHaveSameColorContact(snappedPiece, otherPiece)) {
-        const precisionSnap = this.applyPrecisionSnapForSameColor(snappedPiece, otherPiece);
-        if (precisionSnap) {
-          console.log(`🎨 SAME COLOR SNAP APPLIED: Perfect alignment for same color pieces`);
-          snappedPiece = precisionSnap;
+      let snappedPiece = { ...piece };
+      
+      // 0. PRIORIDAD MÁXIMA: Autosnap ultra-preciso para piezas del mismo color (TEMPORALMENTE DESACTIVADO)
+      // Desactivar temporalmente para evitar el problema de pantalla negra
+      /*
+      for (const otherPiece of otherPieces) {
+        try {
+          const distance = this.getMinDistanceBetweenPieces(snappedPiece, otherPiece);
           
-          // Verificar que el resultado sea perfecto (gap < 0.1px)
-          const finalDistance = this.getMinDistanceBetweenPieces(snappedPiece, otherPiece);
-          if (finalDistance > 0.1) {
-            console.log(`🔧 FINAL PRECISION ADJUSTMENT: Fine-tuning from ${finalDistance.toFixed(3)}px to perfect contact`);
-            const finalAdjustment = this.closeSmallGap(snappedPiece, otherPiece, finalDistance);
-            if (finalAdjustment) {
-              snappedPiece = finalAdjustment;
+          // Si están cerca Y tienen colores compatibles, aplicar snap de precisión
+          if (distance <= snapDistance * 1.5 && this.doPiecesHaveSameColorContact(snappedPiece, otherPiece)) {
+            const precisionSnap = this.applyPrecisionSnapForSameColor(snappedPiece, otherPiece);
+            if (precisionSnap && this.isValidPosition(precisionSnap)) {
+              console.log(`🎨 SAME COLOR SNAP APPLIED: Perfect alignment for same color pieces`);
+              snappedPiece = precisionSnap;
+              
+              // Verificar que el resultado sea perfecto (gap < 0.1px)
+              const finalDistance = this.getMinDistanceBetweenPieces(snappedPiece, otherPiece);
+              if (finalDistance > 0.1) {
+                console.log(`🔧 FINAL PRECISION ADJUSTMENT: Fine-tuning from ${finalDistance.toFixed(3)}px to perfect contact`);
+                const finalAdjustment = this.closeSmallGap(snappedPiece, otherPiece, finalDistance);
+                if (finalAdjustment && this.isValidPosition(finalAdjustment)) {
+                  snappedPiece = finalAdjustment;
+                }
+              }
+              
+              console.log(`✅ SAME COLOR SNAP COMPLETED: Final distance ${this.getMinDistanceBetweenPieces(snappedPiece, otherPiece).toFixed(4)}px`);
+              return snappedPiece; // Retornar inmediatamente con el resultado perfecto
             }
           }
-          
-          console.log(`✅ SAME COLOR SNAP COMPLETED: Final distance ${this.getMinDistanceBetweenPieces(snappedPiece, otherPiece).toFixed(4)}px`);
-          return snappedPiece; // Retornar inmediatamente con el resultado perfecto
+        } catch (error) {
+          console.error(`❌ Error in same color snap for piece:`, error);
+          continue;
         }
       }
-    }
+      */
     
     // 1. Verificar si hay gaps pequeños que necesitan cierre inmediato (para piezas de colores diferentes)
     for (const otherPiece of otherPieces) {
@@ -824,9 +877,19 @@ export class GameGeometry {
       console.log(`🪞 MIRROR SNAP: Perfect contact, adjusted by ${adjustment.toFixed(2)} pixels`);
     }
     
-    console.log(`🧲 FINAL POSITION: (${snappedPiece.x.toFixed(1)}, ${snappedPiece.y.toFixed(1)})`);
-    
-    return snappedPiece;
+      console.log(`🧲 FINAL POSITION: (${snappedPiece.x.toFixed(1)}, ${snappedPiece.y.toFixed(1)})`);
+      
+      // Validar posición final
+      if (!this.isValidPosition(snappedPiece)) {
+        console.error(`❌ Final position is invalid, returning original piece`);
+        return piece;
+      }
+      
+      return snappedPiece;
+    } catch (error) {
+      console.error(`❌ CRITICAL ERROR in snapPieceToNearbyTargets:`, error);
+      return piece; // Retornar pieza original en caso de error
+    }
   }
 
   /**
