@@ -1,12 +1,60 @@
-# Reto al Espejo (Mirror Challenge)
+# Reto al Espejo (Mirror Challenge) - Mono-repo
 
-> Digital implementation of the "Reto al Espejo" puzzle game, originally by Educa. A React-based interactive web application that simulates a physical geometric puzzle game involving symmetry and mirror reflection.
+> Digital implementation of the "Reto al Espejo" puzzle game, originally by Educa. A React-based interactive web application that simulates a physical geometric puzzle game involving symmetry and mirror reflection, now with multiplayer support through a Node.js backend.
 
 ## 🎮 Game Overview
 
 **Mirror Challenge** is a puzzle game where players place geometric pieces on one side of a mirror line, and the pieces are automatically reflected on the other side. The goal is to recreate specific challenge patterns by strategically positioning, rotating, and flipping pieces to match the target configuration.
 
-### Core Mechanics
+## 📂 Mono-repo Structure
+
+This project is now organized as a mono-repo with separate directories for frontend and backend:
+
+- `frontend/` - Contains the React application for the game interface
+- `backend/` - Contains the Node.js server for multiplayer functionality
+
+### Multiplayer Features
+
+The backend adds the following multiplayer capabilities:
+- Real-time multiplayer gameplay with Socket.io
+- Chat functionality between players in the same room
+- Synchronized game timer for all players
+- Player elimination on wrong answers
+- Winner notification when a player solves the challenge
+
+### Getting Started
+
+#### Prerequisites
+- Node.js (v14 or higher)
+- npm (v6 or higher)
+
+#### Installation
+1. Install dependencies for both frontend and backend:
+   ```
+   npm install
+   ```
+
+#### Running the Application
+Start both frontend and backend in development mode:
+```
+npm run dev
+```
+
+Start only the frontend:
+```
+npm run frontend:dev
+```
+
+Start only the backend:
+```
+npm run backend:dev
+```
+
+For more detailed information about each part of the application:
+- [Frontend Documentation](./frontend/README.md)
+- [Backend Documentation](./backend/README.md)
+
+## 🎮 Game Mechanics
 
 - **Two piece types**: Type A and Type B (with different geometric shapes)
 - **Color combinations**: Yellow center with red triangles, or inverted
@@ -20,27 +68,22 @@
 ### Project Structure
 
 ```
-src/
-├── components/           # React components
-│   ├── GameCanvas.tsx   # Main canvas rendering component
-│   ├── GamePiece.tsx    # Piece types and drawing logic
-│   ├── ChallengeCard.tsx # Challenge display component
-│   └── GameControls.tsx # Game controls UI
-├── hooks/               # Custom React hooks
-│   ├── useGameLogic.ts  # Game state management
-│   └── useMouseHandlers.ts # Mouse interaction logic
-├── services/            # Business logic services (SOLID architecture)
-│   ├── ValidationService.ts   # Game rule validation
-│   ├── ChallengeService.ts    # Challenge loading & management
-│   └── RenderingService.ts    # Canvas rendering abstraction
-├── utils/               # Utility libraries
-│   ├── GameGeometry.ts        # Geometric calculations & collision detection
-│   ├── ViewportManager.ts     # Coordinate transformation library
-│   ├── ChallengeGenerator.ts  # Challenge generation & embedded challenges
-│   └── *.test.ts             # Comprehensive test suites
-├── main.tsx             # React entry point
-├── index.css           # Global styles (Tailwind CSS)
-└── MirrorChallengeGame.tsx # Root game component
+/
+├── frontend/           # Frontend React application
+│   ├── src/            # Frontend source code
+│   │   ├── components/ # React components
+│   │   ├── hooks/      # Custom React hooks
+│   │   ├── services/   # Business logic services
+│   │   ├── utils/      # Utility libraries
+│   │   ├── main.tsx    # React entry point
+│   │   └── MirrorChallengeGame.tsx # Root game component
+│   ├── public/         # Static assets
+│   └── package.json    # Frontend dependencies
+├── backend/            # Backend Node.js application
+│   ├── src/            # Backend source code
+│   │   └── index.js    # Express and Socket.io server
+│   └── package.json    # Backend dependencies
+└── package.json        # Root package.json for mono-repo
 ```
 
 ### Architecture Principles
@@ -245,7 +288,8 @@ npm test                   # Run test suite
 
 ### Planned Enhancements
 - **Custom Challenge Editor**: Visual challenge creation interface
-- **Multiplayer Support**: Real-time collaborative puzzle solving
+- **Multiplayer Support**: ✓ Implemented with real-time collaborative puzzle solving
+- **Chat System**: ✓ Implemented for player communication
 - **Progressive Difficulty**: Adaptive challenge generation
 - **Animation System**: Smooth piece transitions and feedback
 - **Accessibility**: Screen reader support and keyboard navigation
@@ -274,10 +318,12 @@ npm test                   # Run test suite
 
 ## 🏆 Project Status
 
-**Current Version**: 1.0.0  
+**Current Version**: 2.0.0  
 **Status**: Production Ready  
-**Test Coverage**: 95%+  
+**Frontend Test Coverage**: 95%+  
 **Architecture**: SOLID Compliant  
 **Code Quality**: TypeScript Strict + ESLint  
+**Mono-repo Structure**: ✓ Implemented  
+**Multiplayer Support**: ✓ Implemented  
 
-This implementation represents a complete, professional-grade puzzle game with robust architecture, comprehensive testing, and clean code principles suitable for production deployment and future enhancement.
+This implementation represents a complete, professional-grade puzzle game with robust architecture, comprehensive testing, and clean code principles suitable for production deployment and future enhancement. The addition of multiplayer functionality through a Node.js backend allows for real-time collaborative gameplay and chat functionality.

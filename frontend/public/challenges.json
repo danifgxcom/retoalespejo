@@ -1,0 +1,373 @@
+[
+  {
+    "id": 1,
+    "name": "Tarjeta 1: Corazón Simple",
+    "description": "Forma un corazón con una pieza A tocando el espejo",
+    "piecesNeeded": 1,
+    "difficulty": "Principiante",
+    "targetPattern": "heart_simple",
+    "objective": {
+      "playerPieces": [
+        {
+          "type": "A",
+          "face": "front",
+          "x": 650,
+          "y": 387.74,
+          "rotation": 270,
+          "comment": "Converted from relative coordinates: x=0 (touching mirror), y=0 (centered) - CORRECTED"
+        }
+      ],
+      "symmetricPattern": []
+    },
+    "targetPieces": [
+      {
+        "type": "A",
+        "face": "front",
+        "x": 330,
+        "y": 300,
+        "rotation": 0
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "name": "Tarjeta 2: Bloque Horizontal",
+    "description": "Forma un bloque horizontal con dos piezas A tocándose",
+    "piecesNeeded": 2,
+    "difficulty": "Fácil",
+    "targetPattern": "custom",
+    "objective": {
+      "playerPieces": [
+        {
+          "type": "A",
+          "face": "back",
+          "x": 650,
+          "y": 407.84,
+          "rotation": 270
+        },
+        {
+          "type": "A",
+          "face": "back",
+          "x": 330,
+          "y": 464.76,
+          "rotation": 0
+        }
+      ],
+      "symmetricPattern": []
+    },
+    "targetPieces": [
+      {
+        "type": "A",
+        "face": "back",
+        "x": 650,
+        "y": 407.84,
+        "rotation": 270
+      },
+      {
+        "type": "A",
+        "face": "back",
+        "x": 330,
+        "y": 464.76,
+        "rotation": 0
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "name": "Tarjeta 3: Pieza Rotada",
+    "description": "Forma un patrón con una pieza A rotada 270° tocando el espejo",
+    "piecesNeeded": 2,
+    "difficulty": "Fácil",
+    "targetPattern": "custom",
+    "objective": {
+      "playerPieces": [
+        {
+          "type": "A",
+          "face": "front",
+          "x": 650,
+          "y": 366.04,
+          "rotation": 270
+        },
+        {
+          "type": "B",
+          "face": "front",
+          "x": 650,
+          "y": 364.27,
+          "rotation": 0
+        }
+      ],
+      "symmetricPattern": []
+    },
+    "targetPieces": [
+      {
+        "type": "A",
+        "face": "front",
+        "x": 650,
+        "y": 366.04,
+        "rotation": 270
+      },
+      {
+        "type": "B",
+        "face": "front",
+        "x": 650,
+        "y": 364.27,
+        "rotation": 0
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "name": "Tarjeta 4: Seta del Mario Bros",
+    "description": "Forma un patrón con una pieza A cara posterior tocando el espejo",
+    "piecesNeeded": 3,
+    "difficulty": "Intermedio",
+    "targetPattern": "custom",
+    "objective": {
+      "playerPieces": [
+        {
+          "type": "A",
+          "face": "back",
+          "x": 468.98,
+          "y": 258.09,
+          "rotation": 315
+        },
+        {
+          "type": "A",
+          "face": "front",
+          "x": 650,
+          "y": 77.07,
+          "rotation": 135
+        },
+        {
+          "type": "A",
+          "face": "front",
+          "x": 469.98,
+          "y": 77.07,
+          "rotation": 135
+        }
+      ],
+      "symmetricPattern": []
+    },
+    "targetPieces": [
+      {
+        "type": "A",
+        "face": "back",
+        "x": 468.98,
+        "y": 258.09,
+        "rotation": 315
+      },
+      {
+        "type": "A",
+        "face": "front",
+        "x": 650,
+        "y": 77.07,
+        "rotation": 135
+      },
+      {
+        "type": "A",
+        "face": "front",
+        "x": 469.98,
+        "y": 77.07,
+        "rotation": 135
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "name": "Scary Pumpkin",
+    "description": "This is Halloween",
+    "piecesNeeded": 4,
+    "difficulty": "Intermedio",
+    "targetPattern": "custom",
+    "objective": {
+      "playerPieces": [
+        {
+          "type": "B",
+          "face": "front",
+          "x": 650,
+          "y": 255.15,
+          "rotation": 45
+        },
+        {
+          "type": "B",
+          "face": "front",
+          "x": 378.47,
+          "y": 436.17,
+          "rotation": 135
+        },
+        {
+          "type": "A",
+          "face": "front",
+          "x": 650,
+          "y": 255.15,
+          "rotation": 225
+        },
+        {
+          "type": "B",
+          "face": "front",
+          "x": 559.49,
+          "y": 255.15,
+          "rotation": 315
+        }
+      ],
+      "symmetricPattern": []
+    },
+    "targetPieces": [
+      {
+        "type": "B",
+        "face": "front",
+        "x": 650,
+        "y": 255.15,
+        "rotation": 45
+      },
+      {
+        "type": "B",
+        "face": "front",
+        "x": 378.47,
+        "y": 436.17,
+        "rotation": 135
+      },
+      {
+        "type": "A",
+        "face": "front",
+        "x": 650,
+        "y": 255.15,
+        "rotation": 225
+      },
+      {
+        "type": "B",
+        "face": "front",
+        "x": 559.49,
+        "y": 255.15,
+        "rotation": 315
+      }
+    ]
+  },
+  {
+    "id": 6,
+    "name": "Suelo del salón",
+    "description": "El suelo de mi nuevo palacio",
+    "piecesNeeded": 8,
+    "difficulty": "Difícil",
+    "targetPattern": "custom",
+    "objective": {
+      "playerPieces": [
+        {
+          "type": "A",
+          "face": "front",
+          "x": 198.16,
+          "y": -32.43,
+          "rotation": 45
+        },
+        {
+          "type": "A",
+          "face": "front",
+          "x": 378.47,
+          "y": 149.29,
+          "rotation": 225
+        },
+        {
+          "type": "A",
+          "face": "front",
+          "x": 560.2,
+          "y": 509.62,
+          "rotation": 225
+        },
+        {
+          "type": "A",
+          "face": "front",
+          "x": 649.98,
+          "y": 58.78,
+          "rotation": 135
+        },
+        {
+          "type": "A",
+          "face": "front",
+          "x": 378.47,
+          "y": 329.31,
+          "rotation": 45
+        },
+        {
+          "type": "A",
+          "face": "front",
+          "x": 468.98,
+          "y": 239.8,
+          "rotation": 315
+        },
+        {
+          "type": "B",
+          "face": "front",
+          "x": 198.16,
+          "y": 329.61,
+          "rotation": 135
+        },
+        {
+          "type": "B",
+          "face": "front",
+          "x": 377.45,
+          "y": 149.29,
+          "rotation": 315
+        }
+      ],
+      "symmetricPattern": []
+    },
+    "targetPieces": [
+      {
+        "type": "A",
+        "face": "front",
+        "x": 198.16,
+        "y": -32.43,
+        "rotation": 45
+      },
+      {
+        "type": "A",
+        "face": "front",
+        "x": 378.47,
+        "y": 149.29,
+        "rotation": 225
+      },
+      {
+        "type": "A",
+        "face": "front",
+        "x": 560.2,
+        "y": 509.62,
+        "rotation": 225
+      },
+      {
+        "type": "A",
+        "face": "front",
+        "x": 649.98,
+        "y": 58.78,
+        "rotation": 135
+      },
+      {
+        "type": "A",
+        "face": "front",
+        "x": 378.47,
+        "y": 329.31,
+        "rotation": 45
+      },
+      {
+        "type": "A",
+        "face": "front",
+        "x": 468.98,
+        "y": 239.8,
+        "rotation": 315
+      },
+      {
+        "type": "B",
+        "face": "front",
+        "x": 198.16,
+        "y": 329.61,
+        "rotation": 135
+      },
+      {
+        "type": "B",
+        "face": "front",
+        "x": 377.45,
+        "y": 149.29,
+        "rotation": 315
+      }
+    ]
+  }
+]

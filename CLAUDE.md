@@ -60,21 +60,33 @@ This is a digital implementation of the "Reto al Espejo" (Mirror Challenge) puzz
 - `src/index.css` - Global styles with Tailwind CSS
 - `index.html` - HTML template
 
-## Development Notes
+## Clean Architecture & Multiplayer
+
+### Frontend Services
+- **MultiplayerManager**: Centralized multiplayer logic, state management
+- **ValidationService**: Pure functions for solution validation with relative positioning  
+- **SocketService**: Low-level socket communication wrapper
+
+### Backend Structure
+- **gameUtils.js**: Shared utilities (game state, statistics, notifications)
+- **index.js**: Main server with clean event handlers
+
+### Multiplayer Features
+- **Real-time Synchronization**: Timers, overlays, player elimination
+- **Game Statistics**: Completion times, winners, challenge progression
+- **Anti-cheat**: Full-screen overlays prevent interaction during pause
+- **Relative Validation**: Ignores absolute canvas position, checks piece relationships
 
 ### Geometric Rendering
-The game uses custom canvas drawing functions for complex geometric shapes:
-- `drawPiece()`: Renders square + 3 triangles with rotation support
-- `drawHeart1Pattern()` / `drawHeart2Pattern()`: Target pattern renderers
-- Mirror reflection is calculated using coordinate transformation: `reflectedX = mirrorLine + (mirrorLine - pieceCenter)`
+- Custom canvas drawing with rotation support
+- Mirror reflection: `reflectedX = mirrorLine + (mirrorLine - pieceCenter)`
+- Validation uses piece relationships, not absolute positions
 
-### State Dependencies
-- Piece positions and rotations affect mirror reflections automatically
-- Challenge progression resets piece positions and configurations
-- Face toggling switches between front/back color schemes
-
-### File Structure
-Single-file architecture with all game logic, rendering, and UI in one component. No external dependencies beyond React and Lucide React icons.
+### Multiplayer Rules
+- Timer sync via server commands (pause/resume/reset)
+- Personalized elimination messages ("Has perdido" vs "X eliminado")
+- Winner overlay with "Next Challenge" button
+- Statistics tracking for game summary
 
 ## Interactive Piece Numbering System
 
