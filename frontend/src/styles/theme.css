@@ -1,0 +1,751 @@
+/* Accessible Color Theme System
+ * This file defines a comprehensive color system that meets WCAG AA standards
+ * for contrast ratios (4.5:1 for normal text, 3:1 for large text).
+ */
+
+:root {
+  /* Primary colors - Blue spectrum */
+  --color-primary-50: #eff6ff;
+  --color-primary-100: #dbeafe;
+  --color-primary-200: #bfdbfe;
+  --color-primary-300: #93c5fd;
+  --color-primary-400: #60a5fa;
+  --color-primary-500: #3b82f6;
+  --color-primary-600: #2563eb;
+  --color-primary-700: #1d4ed8;
+  --color-primary-800: #1e40af;
+  --color-primary-900: #1e3a8a;
+  --color-primary-950: #172554;
+
+  /* Secondary colors - Purple spectrum */
+  --color-secondary-50: #f5f3ff;
+  --color-secondary-100: #ede9fe;
+  --color-secondary-200: #ddd6fe;
+  --color-secondary-300: #c4b5fd;
+  --color-secondary-400: #a78bfa;
+  --color-secondary-500: #8b5cf6;
+  --color-secondary-600: #7c3aed;
+  --color-secondary-700: #6d28d9;
+  --color-secondary-800: #5b21b6;
+  --color-secondary-900: #4c1d95;
+  --color-secondary-950: #2e1065;
+
+  /* Success colors - Green spectrum */
+  --color-success-50: #f0fdf4;
+  --color-success-100: #dcfce7;
+  --color-success-200: #bbf7d0;
+  --color-success-300: #86efac;
+  --color-success-400: #4ade80;
+  --color-success-500: #22c55e;
+  --color-success-600: #16a34a;
+  --color-success-700: #15803d;
+  --color-success-800: #166534;
+  --color-success-900: #14532d;
+  --color-success-950: #052e16;
+
+  /* Warning colors - Amber spectrum with enhanced contrast */
+  --color-warning-50: #fffbeb;
+  --color-warning-100: #fef3c7;
+  --color-warning-200: #fde68a;
+  --color-warning-300: #fcd34d;
+  --color-warning-400: #fbbf24;
+  --color-warning-500: #f59e0b;
+  --color-warning-600: #d97706;
+  --color-warning-700: #b45309;
+  --color-warning-800: #92400e;
+  --color-warning-900: #78350f;
+  --color-warning-950: #451a03;
+
+  /* Danger colors - Red spectrum */
+  --color-danger-50: #fef2f2;
+  --color-danger-100: #fee2e2;
+  --color-danger-200: #fecaca;
+  --color-danger-300: #fca5a5;
+  --color-danger-400: #f87171;
+  --color-danger-500: #ef4444;
+  --color-danger-600: #dc2626;
+  --color-danger-700: #b91c1c;
+  --color-danger-800: #991b1b;
+  --color-danger-900: #7f1d1d;
+  --color-danger-950: #450a0a;
+
+  /* Info colors - Cyan spectrum with enhanced contrast */
+  --color-info-50: #ecfeff;
+  --color-info-100: #cffafe;
+  --color-info-200: #a5f3fc;
+  --color-info-300: #67e8f9;
+  --color-info-400: #22d3ee;
+  --color-info-500: #06b6d4;
+  --color-info-600: #0891b2;
+  --color-info-700: #0e7490;
+  --color-info-800: #155e75;
+  --color-info-900: #164e63;
+  --color-info-950: #083344;
+
+  /* Neutral colors - Gray spectrum */
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
+  --color-gray-950: #030712;
+
+  /* Text colors with guaranteed contrast */
+  --text-primary: var(--color-gray-900);
+  --text-secondary: var(--color-gray-700);
+  --text-tertiary: var(--color-gray-600);
+  --text-disabled: var(--color-gray-500);
+  --text-on-primary: white;
+  --text-on-secondary: white;
+  --text-on-success: white;
+  --text-on-warning: var(--color-gray-900);
+  --text-on-danger: white;
+  --text-on-info: white;
+  --text-on-dark: white;
+  --text-on-light: var(--color-gray-900);
+
+  /* Background colors */
+  --bg-primary: white;
+  --bg-secondary: var(--color-gray-50);
+  --bg-tertiary: var(--color-gray-100);
+  --bg-disabled: var(--color-gray-200);
+
+  /* Border colors */
+  --border-light: var(--color-gray-200);
+  --border-medium: var(--color-gray-300);
+  --border-dark: var(--color-gray-400);
+
+  /* Focus ring colors */
+  --focus-ring: var(--color-primary-500);
+  --focus-ring-offset: white;
+
+  /* Shadow colors */
+  --shadow-color: rgba(0, 0, 0, 0.1);
+  --shadow-color-darker: rgba(0, 0, 0, 0.2);
+/**
+ * Sistema de temas con variables CSS para accesibilidad
+ * Proporciona colores con contraste adecuado según WCAG AA (4.5:1 para texto normal, 3:1 para texto grande)
+ */
+
+:root {
+  /* Colores base */
+  --color-white: #ffffff;
+  --color-black: #000000;
+
+  /* Paleta primaria */
+  --color-primary-50: #eff6ff;
+  --color-primary-100: #dbeafe;
+  --color-primary-200: #bfdbfe;
+  --color-primary-300: #93c5fd;
+  --color-primary-400: #60a5fa;
+  --color-primary-500: #3b82f6;
+  --color-primary-600: #2563eb;
+  --color-primary-700: #1d4ed8;
+  --color-primary-800: #1e40af;
+  --color-primary-900: #1e3a8a;
+  --color-primary-950: #172554;
+
+  /* Paleta secundaria */
+  --color-secondary-50: #f5f3ff;
+  --color-secondary-100: #ede9fe;
+  --color-secondary-200: #ddd6fe;
+  --color-secondary-300: #c4b5fd;
+  --color-secondary-400: #a78bfa;
+  --color-secondary-500: #8b5cf6;
+  --color-secondary-600: #7c3aed;
+  --color-secondary-700: #6d28d9;
+  --color-secondary-800: #5b21b6;
+  --color-secondary-900: #4c1d95;
+  --color-secondary-950: #2e1065;
+
+  /* Paleta de éxito */
+  --color-success-50: #f0fdf4;
+  --color-success-100: #dcfce7;
+  --color-success-200: #bbf7d0;
+  --color-success-300: #86efac;
+  --color-success-400: #4ade80;
+  --color-success-500: #22c55e;
+  --color-success-600: #16a34a;
+  --color-success-700: #15803d;
+  --color-success-800: #166534;
+  --color-success-900: #14532d;
+  --color-success-950: #052e16;
+
+  /* Paleta de peligro */
+  --color-danger-50: #fef2f2;
+  --color-danger-100: #fee2e2;
+  --color-danger-200: #fecaca;
+  --color-danger-300: #fca5a5;
+  --color-danger-400: #f87171;
+  --color-danger-500: #ef4444;
+  --color-danger-600: #dc2626;
+  --color-danger-700: #b91c1c;
+  --color-danger-800: #991b1b;
+  --color-danger-900: #7f1d1d;
+  --color-danger-950: #450a0a;
+
+  /* Paleta de advertencia */
+  --color-warning-50: #fffbeb;
+  --color-warning-100: #fef3c7;
+  --color-warning-200: #fde68a;
+  --color-warning-300: #fcd34d;
+  --color-warning-400: #fbbf24;
+  --color-warning-500: #f59e0b;
+  --color-warning-600: #d97706;
+  --color-warning-700: #b45309;
+  --color-warning-800: #92400e;
+  --color-warning-900: #78350f;
+  --color-warning-950: #451a03;
+
+  /* Paleta de información */
+  --color-info-50: #ecfeff;
+  --color-info-100: #cffafe;
+  --color-info-200: #a5f3fc;
+  --color-info-300: #67e8f9;
+  --color-info-400: #22d3ee;
+  --color-info-500: #06b6d4;
+  --color-info-600: #0891b2;
+  --color-info-700: #0e7490;
+  --color-info-800: #155e75;
+  --color-info-900: #164e63;
+  --color-info-950: #083344;
+
+  /* Paleta de grises */
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
+  --color-gray-950: #030712;
+
+  /* Variables funcionales */
+  --color-text: var(--color-gray-900);
+  --color-text-secondary: var(--color-gray-700);
+  --color-text-tertiary: var(--color-gray-500);
+  --color-text-inverted: var(--color-white);
+
+  --color-background: var(--color-white);
+  --color-background-alt: var(--color-gray-50);
+  --color-surface: var(--color-white);
+  --color-surface-alt: var(--color-gray-100);
+
+  --color-border: var(--color-gray-200);
+  --color-border-hover: var(--color-gray-300);
+
+  --color-focus: var(--color-primary-500);
+  --color-placeholder: var(--color-gray-500);
+
+  /* Gradientes con mayor contraste */
+  --primary-gradient: linear-gradient(to bottom right, var(--color-primary-600), var(--color-primary-800));
+  --primary-gradient-hover: linear-gradient(to bottom right, var(--color-primary-700), var(--color-primary-900));
+
+  --secondary-gradient: linear-gradient(to bottom right, var(--color-secondary-600), var(--color-secondary-800));
+  --secondary-gradient-hover: linear-gradient(to bottom right, var(--color-secondary-700), var(--color-secondary-900));
+
+  --success-gradient: linear-gradient(to bottom right, var(--color-success-600), var(--color-success-800));
+  --success-gradient-hover: linear-gradient(to bottom right, var(--color-success-700), var(--color-success-900));
+
+  --danger-gradient: linear-gradient(to bottom right, var(--color-danger-600), var(--color-danger-800));
+  --danger-gradient-hover: linear-gradient(to bottom right, var(--color-danger-700), var(--color-danger-900));
+
+  --warning-gradient: linear-gradient(to bottom right, var(--color-warning-500), var(--color-warning-700));
+  --warning-gradient-hover: linear-gradient(to bottom right, var(--color-warning-600), var(--color-warning-800));
+
+  --info-gradient: linear-gradient(to bottom right, var(--color-info-600), var(--color-info-800));
+  --info-gradient-hover: linear-gradient(to bottom right, var(--color-info-700), var(--color-info-900));
+
+  --gray-gradient: linear-gradient(to bottom right, var(--color-gray-600), var(--color-gray-800));
+  --gray-gradient-hover: linear-gradient(to bottom right, var(--color-gray-700), var(--color-gray-900));
+
+  /* Espaciado */
+  --spacing-1: 0.25rem;
+  --spacing-2: 0.5rem;
+  --spacing-3: 0.75rem;
+  --spacing-4: 1rem;
+  --spacing-6: 1.5rem;
+  --spacing-8: 2rem;
+
+  /* Radios de borde */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+
+  /* Sombras */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+
+  /* Tipografía */
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+
+  /* Fuentes */
+  --font-family-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+
+  /* Líneas de texto */
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+
+  /* Opacidad de superposición */
+  --overlay-opacity: 0.75;
+
+  /* Transiciones */
+  --transition-fast: 150ms;
+  --transition-normal: 300ms;
+  --transition-slow: 500ms;
+}
+
+/* Modo oscuro */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-text: var(--color-white);
+    --color-text-secondary: var(--color-gray-300);
+    --color-text-tertiary: var(--color-gray-400);
+    --color-text-inverted: var(--color-gray-900);
+
+    --color-background: var(--color-gray-900);
+    --color-background-alt: var(--color-gray-800);
+    --color-surface: var(--color-gray-800);
+    --color-surface-alt: var(--color-gray-700);
+
+    --color-border: var(--color-gray-700);
+    --color-border-hover: var(--color-gray-600);
+
+    --color-placeholder: var(--color-gray-500);
+
+    /* Gradientes con mayor contraste para modo oscuro */
+    --primary-gradient: linear-gradient(to bottom right, var(--color-primary-500), var(--color-primary-700));
+    --primary-gradient-hover: linear-gradient(to bottom right, var(--color-primary-400), var(--color-primary-600));
+
+    --secondary-gradient: linear-gradient(to bottom right, var(--color-secondary-500), var(--color-secondary-700));
+    --secondary-gradient-hover: linear-gradient(to bottom right, var(--color-secondary-400), var(--color-secondary-600));
+
+    --success-gradient: linear-gradient(to bottom right, var(--color-success-500), var(--color-success-700));
+    --success-gradient-hover: linear-gradient(to bottom right, var(--color-success-400), var(--color-success-600));
+
+    --danger-gradient: linear-gradient(to bottom right, var(--color-danger-500), var(--color-danger-700));
+    --danger-gradient-hover: linear-gradient(to bottom right, var(--color-danger-400), var(--color-danger-600));
+
+    --warning-gradient: linear-gradient(to bottom right, var(--color-warning-400), var(--color-warning-600));
+    --warning-gradient-hover: linear-gradient(to bottom right, var(--color-warning-300), var(--color-warning-500));
+
+    --info-gradient: linear-gradient(to bottom right, var(--color-info-500), var(--color-info-700));
+    --info-gradient-hover: linear-gradient(to bottom right, var(--color-info-400), var(--color-info-600));
+
+    --gray-gradient: linear-gradient(to bottom right, var(--color-gray-500), var(--color-gray-700));
+    --gray-gradient-hover: linear-gradient(to bottom right, var(--color-gray-400), var(--color-gray-600));
+  }
+}
+
+/* Clases utilitarias para fondos */
+.bg-primary-gradient { background: var(--primary-gradient); }
+.bg-primary-gradient-hover { background: var(--primary-gradient-hover); }
+.bg-secondary-gradient { background: var(--secondary-gradient); }
+.bg-secondary-gradient-hover { background: var(--secondary-gradient-hover); }
+.bg-success-gradient { background: var(--success-gradient); }
+.bg-success-gradient-hover { background: var(--success-gradient-hover); }
+.bg-danger-gradient { background: var(--danger-gradient); }
+.bg-danger-gradient-hover { background: var(--danger-gradient-hover); }
+.bg-warning-gradient { background: var(--warning-gradient); }
+.bg-warning-gradient-hover { background: var(--warning-gradient-hover); }
+.bg-info-gradient { background: var(--info-gradient); }
+.bg-info-gradient-hover { background: var(--info-gradient-hover); }
+.bg-gray-gradient { background: var(--gray-gradient); }
+.bg-gray-gradient-hover { background: var(--gray-gradient-hover); }
+  /* Component-specific colors - Simplified for better accessibility (solid colors instead of gradients) */
+  --button-primary-bg: var(--color-primary-600);
+  --button-primary-hover: var(--color-primary-700);
+  --button-secondary-bg: var(--color-secondary-600);
+  --button-secondary-hover: var(--color-secondary-700);
+  --button-success-bg: var(--color-success-600);
+  --button-success-hover: var(--color-success-700);
+  --button-warning-bg: var(--color-warning-600);
+  --button-warning-hover: var(--color-warning-700);
+  --button-danger-bg: var(--color-danger-600);
+  --button-danger-hover: var(--color-danger-700);
+  --button-info-bg: var(--color-info-600);
+  --button-info-hover: var(--color-info-700);
+  --button-gray-bg: var(--color-gray-600);
+  --button-gray-hover: var(--color-gray-700);
+
+  /* Card colors - Simplified for better accessibility (solid colors instead of gradients) */
+  --card-bg: white;
+  --card-border: var(--border-light);
+  --card-elevated-bg: var(--color-gray-50);
+  --card-flat-bg: white;
+
+  /* Modal colors - Simplified for better accessibility (solid colors instead of gradients) */
+  --modal-overlay: rgba(0, 0, 0, 0.7);
+  --modal-bg: white;
+  --modal-header-bg: var(--color-primary-600);
+  --modal-border: var(--border-light);
+  --modal-text: var(--text-primary);
+  --modal-header-text: white;
+  --modal-subtitle-text: var(--color-primary-100);
+
+  /* Canvas colors for ChallengeThumbnail - Using theme colors for consistency */
+  --canvas-bg-light: var(--color-gray-100);
+  --canvas-piece-front-center: var(--color-warning-500); /* Gold/Yellow */
+  --canvas-piece-front-triangle: var(--color-danger-600); /* Red */
+  --canvas-piece-back-center: var(--color-danger-600); /* Red */
+  --canvas-piece-back-triangle: var(--color-warning-500); /* Gold/Yellow */
+}
+
+/* Dark mode theme */
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Text colors with guaranteed contrast in dark mode */
+    --text-primary: var(--color-gray-100);
+    --text-secondary: var(--color-gray-300);
+    --text-tertiary: var(--color-gray-400);
+    --text-disabled: var(--color-gray-500);
+    --text-on-primary: white;
+    --text-on-secondary: white;
+    --text-on-success: white;
+    --text-on-warning: var(--color-gray-900);
+    --text-on-danger: white;
+    --text-on-info: white;
+    --text-on-dark: white;
+    --text-on-light: var(--color-gray-900);
+
+    /* Background colors */
+    --bg-primary: var(--color-gray-900);
+    --bg-secondary: var(--color-gray-800);
+    --bg-tertiary: var(--color-gray-700);
+    --bg-disabled: var(--color-gray-600);
+
+    /* Border colors */
+    --border-light: var(--color-gray-700);
+    --border-medium: var(--color-gray-600);
+    --border-dark: var(--color-gray-500);
+
+    /* Focus ring colors */
+    --focus-ring: var(--color-primary-400);
+    --focus-ring-offset: var(--color-gray-900);
+
+    /* Shadow colors */
+    --shadow-color: rgba(0, 0, 0, 0.3);
+    --shadow-color-darker: rgba(0, 0, 0, 0.5);
+
+    /* Component-specific colors - Simplified for better accessibility (solid colors instead of gradients) */
+    --button-primary-bg: var(--color-primary-500);
+    --button-primary-hover: var(--color-primary-600);
+    --button-secondary-bg: var(--color-secondary-500);
+    --button-secondary-hover: var(--color-secondary-600);
+    --button-success-bg: var(--color-success-500);
+    --button-success-hover: var(--color-success-600);
+    --button-warning-bg: var(--color-warning-500);
+    --button-warning-hover: var(--color-warning-600);
+    --button-danger-bg: var(--color-danger-500);
+    --button-danger-hover: var(--color-danger-600);
+    --button-info-bg: var(--color-info-500);
+    --button-info-hover: var(--color-info-600);
+    --button-gray-bg: var(--color-gray-500);
+    --button-gray-hover: var(--color-gray-600);
+
+    /* Card colors - Simplified for better accessibility (solid colors instead of gradients) */
+    --card-bg: var(--color-gray-800);
+    --card-border: var(--border-light);
+    --card-elevated-bg: var(--color-gray-800);
+    --card-flat-bg: var(--color-gray-800);
+
+    /* Modal colors - Simplified for better accessibility (solid colors instead of gradients) */
+    --modal-overlay: rgba(0, 0, 0, 0.8);
+    --modal-bg: var(--color-gray-800);
+    --modal-header-bg: var(--color-primary-700);
+    --modal-border: var(--border-light);
+    --modal-text: var(--text-primary);
+    --modal-header-text: white;
+    --modal-subtitle-text: var(--color-primary-200);
+
+    /* Canvas colors for ChallengeThumbnail */
+    --canvas-bg-light: var(--color-gray-800);
+    --canvas-piece-front-center: #FFD700; /* Gold */
+    --canvas-piece-front-triangle: #D32F2F; /* Darker red for better contrast */
+    --canvas-piece-back-center: #D32F2F; /* Darker red */
+    --canvas-piece-back-triangle: #FFD700; /* Gold */
+  }
+}
+
+/* High contrast mode */
+@media (forced-colors: active) {
+  :root {
+    --button-primary-bg: ButtonFace;
+    --button-primary-hover: Highlight;
+    --button-secondary-bg: ButtonFace;
+    --button-secondary-hover: Highlight;
+    --button-success-bg: ButtonFace;
+    --button-success-hover: Highlight;
+    --button-warning-bg: ButtonFace;
+    --button-warning-hover: Highlight;
+    --button-danger-bg: ButtonFace;
+    --button-danger-hover: Highlight;
+    --button-info-bg: ButtonFace;
+    --button-info-hover: Highlight;
+    --button-gray-bg: ButtonFace;
+    --button-gray-hover: Highlight;
+
+    --text-primary: CanvasText;
+    --text-secondary: CanvasText;
+    --text-tertiary: GrayText;
+    --text-disabled: GrayText;
+    --text-on-primary: ButtonText;
+    --text-on-secondary: ButtonText;
+    --text-on-success: ButtonText;
+    --text-on-warning: ButtonText;
+    --text-on-danger: ButtonText;
+    --text-on-info: ButtonText;
+    --text-on-dark: ButtonText;
+    --text-on-light: CanvasText;
+
+    --bg-primary: Canvas;
+    --bg-secondary: Canvas;
+    --bg-tertiary: Canvas;
+    --bg-disabled: Canvas;
+
+    --border-light: CanvasText;
+    --border-medium: CanvasText;
+    --border-dark: CanvasText;
+
+    --focus-ring: Highlight;
+    --focus-ring-offset: Canvas;
+
+    --card-bg: Canvas;
+    --card-border: CanvasText;
+    --card-elevated-bg: Canvas;
+    --card-flat-bg: Canvas;
+
+    --modal-overlay: Canvas;
+    --modal-bg: Canvas;
+    --modal-header-bg: Canvas;
+    --modal-border: CanvasText;
+    --modal-text: CanvasText;
+    --modal-header-text: CanvasText;
+    --modal-subtitle-text: CanvasText;
+
+    --canvas-bg-light: Canvas;
+    --canvas-piece-front-center: Highlight;
+    --canvas-piece-front-triangle: CanvasText;
+    --canvas-piece-back-center: CanvasText;
+    --canvas-piece-back-triangle: Highlight;
+  }
+
+  /* Add borders to all interactive elements for better visibility */
+  button,
+  a,
+  input,
+  select,
+  textarea,
+  [role="button"],
+  [role="link"] {
+    border: 1px solid CanvasText !important;
+  }
+
+  /* Ensure focus states are highly visible */
+  :focus {
+    outline: 2px solid Highlight !important;
+    outline-offset: 2px !important;
+  }
+}
+
+/* Apply base styles using the theme variables */
+body {
+  color: var(--text-primary);
+  background-color: var(--bg-primary);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+/* Ensure text is readable */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--text-primary);
+  margin-bottom: 0.5em;
+  font-weight: 600;
+}
+
+h1 { font-size: 2.25rem; line-height: 1.2; }
+h2 { font-size: 1.875rem; line-height: 1.2; }
+h3 { font-size: 1.5rem; line-height: 1.3; }
+h4 { font-size: 1.25rem; line-height: 1.4; }
+h5 { font-size: 1.125rem; line-height: 1.4; }
+h6 { font-size: 1rem; line-height: 1.5; }
+
+p, li, blockquote {
+  font-size: 1rem;
+  line-height: 1.6;
+  margin-bottom: 1em;
+}
+
+/* Improved link styles */
+a {
+  color: var(--color-primary-600);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+a:hover {
+  color: var(--color-primary-700);
+  text-decoration: none;
+}
+
+a:focus {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  text-decoration: none;
+}
+
+/* Improved form element styles */
+input, select, textarea {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-medium);
+  border-radius: 0.375rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--color-primary-500);
+  box-shadow: 0 0 0 2px var(--color-primary-200);
+}
+
+/* Placeholder text */
+::placeholder {
+  color: var(--text-tertiary);
+  opacity: 1;
+}
+
+/* Disabled form elements */
+input:disabled, select:disabled, textarea:disabled {
+  background-color: var(--bg-disabled);
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}
+
+/* Button backgrounds - Simplified for better accessibility (solid colors instead of gradients) */
+.bg-primary-gradient {
+  background-color: var(--button-primary-bg);
+  color: var(--text-on-primary);
+}
+.bg-primary-gradient-hover {
+  background-color: var(--button-primary-hover);
+}
+
+.bg-secondary-gradient {
+  background-color: var(--button-secondary-bg);
+  color: var(--text-on-secondary);
+}
+.bg-secondary-gradient-hover {
+  background-color: var(--button-secondary-hover);
+}
+
+.bg-success-gradient {
+  background-color: var(--button-success-bg);
+  color: var(--text-on-success);
+}
+.bg-success-gradient-hover {
+  background-color: var(--button-success-hover);
+}
+
+.bg-warning-gradient {
+  background-color: var(--button-warning-bg);
+  color: var(--text-on-warning);
+}
+.bg-warning-gradient-hover {
+  background-color: var(--button-warning-hover);
+}
+
+.bg-danger-gradient {
+  background-color: var(--button-danger-bg);
+  color: var(--text-on-danger);
+}
+.bg-danger-gradient-hover {
+  background-color: var(--button-danger-hover);
+}
+
+.bg-info-gradient {
+  background-color: var(--button-info-bg);
+  color: var(--text-on-info);
+}
+.bg-info-gradient-hover {
+  background-color: var(--button-info-hover);
+}
+
+.bg-gray-gradient {
+  background-color: var(--button-gray-bg);
+  color: var(--text-on-dark);
+}
+.bg-gray-gradient-hover {
+  background-color: var(--button-gray-hover);
+}
+
+/* Card backgrounds and borders */
+.bg-card {
+  background-color: var(--card-bg);
+  color: var(--text-primary);
+}
+
+.bg-card-elevated {
+  background-color: var(--card-elevated-bg);
+  color: var(--text-primary);
+}
+
+.bg-card-flat {
+  background-color: var(--card-flat-bg);
+  color: var(--text-primary);
+}
+
+.border-card {
+  border-color: var(--card-border);
+}
+
+.border-card-light {
+  border-color: var(--border-light);
+}
+
+/* Focus ring styles */
+.ring-focus {
+  --tw-ring-color: var(--focus-ring);
+  --tw-ring-offset-color: var(--focus-ring-offset);
+}
+
+/* Modal styles */
+.bg-modal-overlay {
+  background-color: var(--modal-overlay);
+}
+
+.bg-modal {
+  background-color: var(--modal-bg);
+  color: var(--modal-text);
+}
+
+.bg-modal-header {
+  background-color: var(--modal-header-bg);
+  color: var(--modal-header-text);
+}
+
+.text-modal-subtitle {
+  color: var(--modal-subtitle-text);
+}
+
+.border-modal {
+  border-color: var(--modal-border);
+}

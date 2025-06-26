@@ -303,43 +303,50 @@ io.on('connection', (socket) => {
     });
   });
 
-  // Handle next challenge request
-  socket.on('nextChallenge', ({ roomId }) => {
+  // Handle player ready for next challenge
+  socket.on('playerReady', ({ roomId }) => {
     const room = gameRooms.get(roomId);
     if (!room || !room.gameState.isActive) return;
 
     const player = room.players.get(socket.id);
     if (!player) return;
 
-    // Reset timer and continue the game
-    room.gameState.timer = 0;
-    room.gameState.isPaused = false;
+    // Initialize readyPlayers set if it doesn't exist
+    if (!room.gameState.readyPlayers) {
+      room.gameState.readyPlayers = new Set();
+    }
 
-    // Send timer reset and resume commands
-    io.to(roomId).emit('timerCommand', {
-      command: 'reset',
-      resetBy: 'SYSTEM'
+    // Add player to ready list
+    room.gameState.readyPlayers.add(socket.id);
+    
+    const totalPlayers = room.players.size;
+    const readyCount = room.gameState.readyPlayers.size;
+
+    // Notify all players about ready status
+    io.to(roomId).emit('playersReadyUpdate', {
+      readyCount,
+      totalPlayers,
+      readyPlayers: Array.from(room.gameState.readyPlayers),
+      playerUsername: player.username
     });
 
-    setTimeout(() => {
-      io.to(roomId).emit('timerCommand', {
-        command: 'resume',
-        pausedBy: null
+    // If all players are ready, start next challenge
+    if (readyCount >= totalPlayers) {
+      // Clear ready status
+      room.gameState.readyPlayers.clear();
+      
+      // Start countdown for next challenge
+      setTimeout(() => {
+        startCountdown(roomId);
+      }, 1000);
+
+      // Send notification
+      io.to(roomId).emit('gameNotification', {
+        type: 'nextChallenge',
+        message: '¡Todos listos! Comenzando siguiente reto...',
+        isCorrect: true
       });
-    }, 100);
-
-    // Notify all players to go to next challenge
-    io.to(roomId).emit('nextChallengeReady', {
-      requestedBy: player.username,
-      newTimer: 0
-    });
-
-    // Send notification
-    io.to(roomId).emit('gameNotification', {
-      type: 'nextChallenge',
-      message: `${player.username} ha iniciado el siguiente reto`,
-      isCorrect: true
-    });
+    }
   });
 
   // Handle score updates

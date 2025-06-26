@@ -1,0 +1,272 @@
+/* Accessibility-focused styles */
+/**
+ * Estilos de accesibilidad globales
+ * Implementa mejoras de accesibilidad para toda la aplicación
+ */
+
+/* Skip Link - Oculto visualmente hasta que reciba foco */
+.skip-link {
+  position: absolute;
+  top: -50px;
+  left: 0;
+  background: var(--color-primary);
+  color: white;
+  padding: 8px 16px;
+  z-index: 9999;
+  transform: translateY(-100%);
+  transition: transform 0.3s;
+  font-weight: 600;
+}
+
+.skip-link:focus {
+  top: 0;
+  transform: translateY(0);
+}
+
+/* Utilidades para lectores de pantalla */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+.not-sr-only {
+  position: static;
+  width: auto;
+  height: auto;
+  padding: 0;
+  margin: 0;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+}
+
+/* Mejoras para foco */
+:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5);
+}
+
+/* Evitar animaciones para personas que prefieren reducir el movimiento */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .transition-all,
+  .transition,
+  .transition-transform,
+  .transition-opacity {
+    transition: none !important;
+  }
+}
+
+/* Mejorar contraste de texto placeholder */
+::placeholder {
+  color: var(--color-placeholder);
+  opacity: 1;
+}
+
+/* Asegurar que todos los elementos interactivos tengan un cursor apropiado */
+a,
+button,
+[role="button"],
+input[type="button"],
+input[type="reset"],
+input[type="submit"] {
+  cursor: pointer;
+}
+
+[disabled] {
+  cursor: not-allowed;
+}
+
+/* Tamaños de toque adecuados para elementos interactivos en dispositivos móviles */
+@media (max-width: 768px) {
+  button,
+  [role="button"],
+  input[type="button"],
+  input[type="reset"],
+  input[type="submit"],
+  a {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Soporte para modo de alto contraste en Windows */
+@media (forced-colors: active) {
+  * {
+    border-color: ButtonText;
+  }
+
+  button,
+  [role="button"] {
+    border: 1px solid ButtonText;
+    background-color: ButtonFace;
+    color: ButtonText;
+  }
+
+  a {
+    color: LinkText;
+  }
+
+  :focus {
+    outline: 2px solid Highlight;
+  }
+
+  img {
+    background-color: Canvas;
+  }
+}
+
+/* Controles de formulario accesibles */
+input,
+select,
+textarea {
+  font-size: 16px; /* Evita el zoom en iOS en campos de formulario */
+}
+
+label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+[role="status"],
+[role="alert"],
+[aria-live] {
+  border: 0;
+  clip: rect(0 0 0 0);
+  height: auto;
+  margin: 0;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  width: 1px;
+  white-space: nowrap;
+}
+/* Skip link - allows keyboard users to bypass navigation */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: #0284c7;
+  color: white;
+  padding: 8px;
+  z-index: 100;
+  transition: top 0.2s;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
+/* Focus styles that don't rely solely on outline */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 2px solid #0284c7;
+  outline-offset: 2px;
+}
+
+/* Ensure text is readable */
+body {
+  line-height: 1.5;
+  font-size: 16px;
+}
+
+/* Improved contrast for placeholder text */
+::placeholder {
+  color: #6b7280;
+  opacity: 0.8;
+}
+
+/* Make sure disabled elements have sufficient contrast */
+button:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Visually hidden elements that are still accessible to screen readers */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Ensure links are underlined for better visibility */
+a {
+  text-decoration: underline;
+}
+
+a:hover {
+  text-decoration: none;
+}
+
+/* Ensure form elements have sufficient padding for touch targets */
+input,
+select,
+textarea,
+button {
+  padding: 0.5rem;
+  min-height: 44px; /* Minimum touch target size */
+}
+
+/* Ensure error messages are clearly visible */
+.error-message {
+  color: #b91c1c;
+  font-weight: 500;
+  margin-top: 0.25rem;
+}
+
+/* High contrast mode support */
+@media (forced-colors: active) {
+  /* Ensure elements are visible in high contrast mode */
+  button,
+  input,
+  select,
+  textarea {
+    border: 1px solid currentColor;
+  }
+  
+  /* Ensure focus states are visible */
+  :focus {
+    outline: 2px solid currentColor;
+  }
+}
+
+/* Reduced motion for users who prefer less animation */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
