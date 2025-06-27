@@ -237,7 +237,7 @@ export const useGameLogic = () => {
 
     // Posiciones fijas que funcionan sin solapamiento
     const getPositionsForPieceCount = (count: number) => {
-      console.log(`📏 Using FIXED positions for ${count} pieces`);
+      // Debug logging disabled to prevent console spam
 
       switch (count) {
         case 1:
@@ -279,8 +279,7 @@ export const useGameLogic = () => {
     const positions = getPositionsForPieceCount(challenge.piecesNeeded);
 
     // Crear piezas exactamente como las especifica el reto
-    console.log(`🎯 Creating pieces for challenge ${challenge.id}: "${challenge.name}"`);
-    console.log(`📋 Required pieces from objective:`, challenge.objective.playerPieces);
+    // Debug logging disabled to prevent console spam
 
     for (let i = 0; i < challenge.piecesNeeded; i++) {
       const targetPiece = challenge.objective.playerPieces[i];
@@ -298,7 +297,7 @@ export const useGameLogic = () => {
         placed: false // Las piezas empiezan sin colocar, en el área de piezas disponibles
       };
 
-      console.log(`🧩 GAME: Created piece ${piece.id} (${piece.type}, ${piece.face}) - center: ${piece.centerColor}, triangle: ${piece.triangleColor} - Target: (${targetPiece.type}, ${targetPiece.face})`);
+      // Debug logging disabled to prevent console spam
 
       // Validar y ajustar la posición para que esté completamente en el área de almacenamiento
       const piecePosition = {

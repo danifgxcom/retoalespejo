@@ -93,9 +93,9 @@ const MirrorChallengeGame: React.FC = () => {
     const canvas = canvasRef.current?.getCanvas();
     if (canvas) {
       const rect = canvas.getBoundingClientRect();
-      console.log(`🎯 Canvas dimensions: actual=${canvas.width}x${canvas.height}, displayed=${Math.round(rect.width)}x${Math.round(rect.height)}`);
+      // Debug logging disabled to prevent console spam
       initializeResponsiveSystem(rect.width, rect.height);
-      console.log(`🎯 Responsive system initialized: ${Math.round(rect.width)}x${Math.round(rect.height)}`);
+      // Debug logging disabled to prevent console spam
     }
   }, [canvasRef, initializeResponsiveSystem]);
 
@@ -641,7 +641,7 @@ const MirrorChallengeGame: React.FC = () => {
           completionTime={challengeWinner.completionTime}
           isCurrentPlayer={challengeWinner.id === socketService.socketInstance?.id}
           onNextChallenge={() => {
-            console.log('🎯 Player ready for next challenge...');
+            // Debug logging disabled to prevent console spam
             socketService.playerReady();
           }}
           onClose={() => setChallengeWinner(null)}

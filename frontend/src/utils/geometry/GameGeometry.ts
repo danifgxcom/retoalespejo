@@ -630,17 +630,13 @@ export class GameGeometry {
     const minY = -50; // Permitir salir un poco por arriba  
     const maxY = this.config.height + 10; // Permitir salir ligeramente por abajo (510)
     
-    console.log(`🔍 isPiecePositionInGameArea check:`);
-    console.log(`  Piece at (${piece.x}, ${piece.y}) rotation=${piece.rotation}°`);
-    console.log(`  BBox: left=${bbox.left.toFixed(1)}, right=${bbox.right.toFixed(1)}, top=${bbox.top.toFixed(1)}, bottom=${bbox.bottom.toFixed(1)}`);
-    console.log(`  Limits: x=[${minX}, ${maxX}], y=[${minY}, ${maxY}]`);
+    // Debug logging disabled to prevent console spam
     
     const result = bbox.left >= minX &&
                    bbox.right <= maxX &&
                    bbox.top >= minY &&
                    bbox.bottom <= maxY;
     
-    console.log(`  Result: ${result ? '✅ VALID' : '❌ INVALID'}`);
     return result;
   }
 
@@ -878,14 +874,14 @@ export class GameGeometry {
     if (distanceToMirror <= snapDistance) {
       const adjustment = this.config.mirrorLineX - pieceBbox.right;
       snappedPiece.x = snappedPiece.x + adjustment;
-      console.log(`🪞 MIRROR SNAP: Perfect contact, adjusted by ${adjustment.toFixed(2)} pixels`);
+      // Debug logging disabled to prevent console spam
     }
     
-      console.log(`🧲 FINAL POSITION: (${snappedPiece.x.toFixed(1)}, ${snappedPiece.y.toFixed(1)})`);
+      // Debug logging disabled to prevent console spam
       
       // Validar posición final
       if (!this.isValidPosition(snappedPiece)) {
-        console.error(`❌ Final position is invalid, returning original piece`);
+        // Debug logging disabled to prevent console spam
         return piece;
       }
       
@@ -935,7 +931,7 @@ export class GameGeometry {
     // DESHABILITADO: Snap exacto sin ajustes que causen gaps
     const adjustmentFactor = 1.0;
     
-    console.log(`🔧 GAP CLOSING: ${hasSameColorContact ? 'Same color' : 'Different colors'} - Factor: ${adjustmentFactor}`);
+    // Debug logging disabled to prevent console spam
     
     return {
       ...movingPiece,
@@ -1049,7 +1045,7 @@ export class GameGeometry {
       const snapResult = this.snapPieceToTarget(snappedPiece, otherPiece, snapDistance);
       if (snapResult.snapped) {
         snappedPiece = snapResult.piece;
-        console.log(`📦 TRADITIONAL SNAP: ${snapResult.direction} by ${snapResult.adjustment?.toFixed(2)} pixels`);
+        // Debug logging disabled to prevent console spam
         break; // Solo aplicar el primer snap exitoso
       }
     }
@@ -1265,9 +1261,8 @@ export class GameGeometry {
     const bbox = this.getPieceBoundingBox(piece);
     const toleranceForTouch = 15; // Tolerancia para permitir tocar el espejo
     
-    // Debug logging para entender las colisiones
+    // Debug logging disabled to prevent console spam
     const penetration = bbox.right - this.config.mirrorLineX;
-    console.log(`🚫 Mirror collision check: bbox.right=${bbox.right.toFixed(1)}, mirrorLine=${this.config.mirrorLineX}, penetration=${penetration.toFixed(1)}, tolerance=${toleranceForTouch}`);
     
     // Solo considerar colisión si la pieza penetra significativamente en el espejo
     return penetration > toleranceForTouch;
@@ -1356,9 +1351,8 @@ export class GameGeometry {
     const bbox = this.getPieceBoundingBox(piece);
     const tolerance = 12; // Tolerancia aumentada para grid fijo de 10px
     
-    // Debug logging para entender qué está pasando
+    // Debug logging disabled to prevent console spam
     const distance = Math.abs(bbox.right - this.config.mirrorLineX);
-    console.log(`🪞 Mirror check: bbox.right=${bbox.right.toFixed(1)}, mirrorLine=${this.config.mirrorLineX}, distance=${distance.toFixed(1)}, tolerance=${tolerance}`);
 
     return distance <= tolerance;
   }
@@ -1566,25 +1560,20 @@ export class GameGeometry {
    * Verifica si todas las piezas caben dentro del área de reto
    */
   doPiecesFitInChallengeArea(pieces: PiecePosition[]): boolean {
-    console.log(`🔍 CHECKING ${pieces.length} PIECES IN CHALLENGE AREA`);
+    // Debug logging disabled to prevent console spam
 
     for (let i = 0; i < pieces.length; i++) {
       const piece = pieces[i];
-      console.log(`\n--- PIECE ${i + 1} ---`);
-      console.log(`Position: (${piece.x}, ${piece.y}), rotation: ${piece.rotation}°`);
 
       // Verificar que la pieza original esté dentro del área de juego usando los límites permisivos
       if (!this.isPiecePositionInGameArea(piece)) {
-        console.log(`❌ Original piece outside game area`);
         return false;
       }
 
       // Verificar que el reflejo esté dentro del área del espejo
       const reflectedPiece = this.reflectPieceAcrossMirror(piece);
-      console.log(`Reflected piece position: (${reflectedPiece.x}, ${reflectedPiece.y})`);
 
       const reflectedBbox = this.getPieceBoundingBox(reflectedPiece);
-      console.log(`Reflected bbox:`, reflectedBbox);
 
       // Para piezas que no tocan el espejo, el reflejo puede cruzar hacia el área de juego
       // Solo verificamos si la pieza DEBE tocar el espejo
@@ -1594,22 +1583,17 @@ export class GameGeometry {
         // Si la pieza no toca el espejo, el reflejo puede estar en cualquier lado
         // pero debe estar dentro del área total (juego + espejo)
         if (reflectedBbox.left < 0 || reflectedBbox.right > 2 * this.config.mirrorLineX) {
-          console.log(`❌ Reflected piece outside total area: left=${reflectedBbox.left}, right=${reflectedBbox.right}`);
           return false;
         }
       } else {
         // Si la pieza toca el espejo, su reflejo debe estar en el área del espejo
         const tolerance = 5; // Tolerancia pequeña para errores de cálculo
         if (reflectedBbox.left < this.config.mirrorLineX - tolerance) {
-          console.log(`❌ Reflected piece of mirror-touching piece crosses back: left=${reflectedBbox.left} < ${this.config.mirrorLineX - tolerance}`);
           return false;
         }
       }
-
-      console.log(`✅ Piece ${i + 1} validation passed`);
     }
 
-    console.log(`✅ ALL PIECES FIT IN CHALLENGE AREA`);
     return true;
   }
 
@@ -1655,27 +1639,7 @@ export class GameGeometry {
     // Verificar que todas las piezas quepan en el área de reto
     const piecesInArea = this.doPiecesFitInChallengeArea(pieces);
 
-    console.log(`🔍 VALIDATION RESULTS:`);
-    
-    // Debug individual piece overlaps
-    pieces.forEach((piece1, i) => {
-      pieces.slice(i + 1).forEach((piece2, j) => {
-        const penetration = this.getPenetrationDepth(piece1, piece2);
-        const overlap = this.doPiecesOverlap(piece1, piece2);
-        const significantOverlap = this.doPiecesOverlapSignificantly(piece1, piece2);
-        
-        if (overlap || penetration > 0) {
-          console.log(`  Piece ${i+1} vs Piece ${i+j+2}: penetration=${penetration.toFixed(2)}px, overlap=${overlap}, significant=${significantOverlap}`);
-        }
-      });
-    });
-    
-    console.log(`  Piece overlaps (significant): ${hasPieceOverlaps}`);
-    console.log(`  Reflection overlaps: ${hasReflectionOverlaps}`);
-    console.log(`  Touches mirror: ${touchesMirror}`);
-    console.log(`  Enters mirror: ${entersMirror}`);
-    console.log(`  Pieces connected: ${piecesConnected}`);
-    console.log(`  Pieces in area: ${piecesInArea}`);
+    // Debug logging disabled to prevent console spam
 
     return {
       isValid: !hasPieceOverlaps && !hasReflectionOverlaps && touchesMirror && !entersMirror && piecesConnected && piecesInArea,

@@ -150,7 +150,6 @@ const GameControls: React.FC<GameControlsProps> = ({
   const handleCheckSolution = () => {
     if (onCheckSolution) {
       const result = onCheckSolution();
-      console.log('🎯 Resultado de validación:', result);
       setSolutionMessage(result.message);
       // Guardar el resultado para el styling
       setIsCorrectSolution(result.isCorrect);
@@ -179,64 +178,15 @@ const GameControls: React.FC<GameControlsProps> = ({
   };
 
   const handleSnapshotPieces = () => {
-    console.log('📸 SNAPSHOT DE POSICIONES ACTUALES:');
-    console.log('=====================================');
-
-    // Activar debug para renderizado de piezas
+    // Debug logging disabled to prevent console spam
+    // Use browser dev tools for debugging if needed
+    
+    // Activate debug rendering without console spam
     (window as any).debugPieceRendering = true;
 
-    // Información del canvas y áreas
-    console.log('🖼️ INFORMACIÓN DEL CANVAS:');
-    console.log('Canvas interno: 1400x1000');
-    console.log('Línea del espejo: X=700 (centro horizontal)');
-    console.log('Área de juego: (0,0) a (700,600)');
-    console.log('Área de espejo: (700,0) a (1400,600)');
-    console.log('Área de piezas: (0,600) a (350,1000)');
-    console.log('Área de objetivo: (350,600) a (700,1000)');
-    console.log('');
-
-    // Información de las piezas
-    console.log('🧩 PIEZAS EN EL JUEGO:');
-    pieces.forEach((piece, index) => {
-      const area = piece.y < 600 ? 'JUEGO' : 
-                   piece.y >= 600 && piece.x < 350 ? 'PIEZAS' :
-                   piece.y >= 600 && piece.x >= 350 ? 'OBJETIVO' : 'DESCONOCIDA';
-
-      console.log(`Pieza ${piece.id} (${piece.type}, ${piece.face}): x=${piece.x}, y=${piece.y}, rotation=${piece.rotation}, placed=${piece.placed}, área=${area}, CENTER=${piece.centerColor}, TRIANGLE=${piece.triangleColor}`);
-    });
-
-    console.log('=====================================');
-    console.log('📋 COORDENADAS PARA CÓDIGO:');
-    console.log(JSON.stringify(pieces.map(p => ({
-      x: p.x,
-      y: p.y,
-      rotation: p.rotation,
-      type: p.type,
-      face: p.face,
-      placed: p.placed
-    })), null, 2));
-
-    console.log('');
-    console.log('🎯 DESAFÍO ACTUAL:');
-    if (challenges[currentChallenge]) {
-      const challenge = challenges[currentChallenge];
-      console.log(`ID: ${challenge.id}, Piezas necesarias: ${challenge.piecesNeeded}`);
-      console.log('Piezas objetivo del jugador:');
-      challenge.objective.playerPieces.forEach((piece, i) => {
-        console.log(`  ${i+1}. Tipo ${piece.type}, cara ${piece.face}, pos (${piece.x.toFixed(1)}, ${piece.y.toFixed(1)}), rot ${piece.rotation}°`);
-      });
-    }
-
-    console.log('');
-    console.log('🔍 ANÁLISIS DE GAPS EN TARJETA DE RETO:');
-    console.log('Buscando gaps entre piezas y sus reflejos en el espejo...');
-    console.log('Revisa la consola para ver información detallada sobre las piezas y sus reflejos.');
-    console.log('Busca líneas que indiquen "Gap between pieces" para identificar posibles problemas.');
-
-    // Desactivar debug después de 5 segundos
+    // Disable debug after 5 seconds
     setTimeout(() => {
       (window as any).debugPieceRendering = false;
-      console.log('✅ DEBUG SNAPSHOT COMPLETE - Análisis finalizado, modo debug desactivado');
     }, 5000);
   };
   if (compact) {

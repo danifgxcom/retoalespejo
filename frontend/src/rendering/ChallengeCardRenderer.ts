@@ -434,13 +434,8 @@ export class ChallengeCardRenderer {
     mirrorLineX: number, 
     playerPieces: any[]
   ): void {
-    console.log('🎯 TARJETA DE RETO DEBUG:');
-    console.log(`Card area: ${this.config.cardWidth}x${this.config.cardHeight}`);
-    console.log(`Game scale: ${this.config.scale.toFixed(3)}`);
-    console.log(`Mirror line X: ${mirrorLineX.toFixed(1)}`);
-    console.log(`Game offset: (${gameAreaOffsetX}, ${gameAreaOffsetY})`);
-    console.log(`Pieces count: ${playerPieces.length}`);
-    console.log(`Card offset: (${this.config.cardLeft}, ${this.config.cardTop})`);
+    // Debug logging disabled to prevent console spam during render loops
+    // Use browser dev tools for debugging if needed
   }
 
   /**
@@ -463,34 +458,9 @@ export class ChallengeCardRenderer {
     const isTouchingMirror = distanceToMirror <= 5; // 5px tolerance, same as in drawPieceAndReflection
     const isChallenge5Piece = displayPiece.rotation === 315 && displayPiece.type === 'B';
 
-    console.log(`🧩 Piece ${index + 1}:`);
-    console.log(`  Type: ${displayPiece.type}, Face: ${displayPiece.face}, Rotation: ${displayPiece.rotation}°`);
-
-    if (isChallenge5Piece) {
-      console.log(`  ⚠️ CHALLENGE 5 PIECE DETECTED - Special handling applied`);
-      console.log(`  🔍 DETAILED ANALYSIS FOR CHALLENGE 5 PIECE:`);
-      console.log(`  ⚠️ THIS IS THE PIECE WITH THE GAP ISSUE MENTIONED IN THE ISSUE DESCRIPTION`);
-    }
-
-    console.log(`  Original: x=${displayPiece.x.toFixed(1)}, y=${displayPiece.y.toFixed(1)}, right edge: ${(displayPiece.x + pieceSize * scale).toFixed(1)}`);
-    console.log(`  Reflected: x=${reflectedPiece.x.toFixed(1)}, y=${reflectedPiece.y.toFixed(1)}, left edge: ${reflectedPiece.x.toFixed(1)}`);
-    console.log(`  Mirror line: ${this.config.mirrorLineX.toFixed(1)}`);
-    console.log(`  Distance to mirror: ${distanceToMirror.toFixed(1)}px`);
-    console.log(`  Gap between pieces: ${gapSize.toFixed(1)}px ${gapSize > 0.1 ? '⚠️ GAP DETECTED' : '✅ No gap'}`);
-    console.log(`  Touching mirror: ${isTouchingMirror ? '✅ Yes' : '❌ No'}`);
-
-    if (isChallenge5Piece) {
-      console.log(`  🛠️ APPLIED FIXES:`);
-      console.log(`    - Increased tolerance for mirror detection: 5px`);
-      console.log(`    - Increased microOverlap for reflection: 6px`);
-      console.log(`    - Set reflectedX exactly at mirrorLineX for perfect alignment`);
-      console.log(`    - Increased microOverlap for piece drawing: 0.08 units`);
-      console.log(`    - Increased stroke width for piece drawing: 3.0px`);
-      console.log(`    - Increased vertical line thickness at mirror boundary: 5px`);
-      console.log(`    - Added pink overlay visualization for gaps`);
-      console.log(`    - Added special logging for this piece`);
-    }
-
+    // Debug logging disabled to prevent console spam during render loops
+    // Use browser dev tools for debugging if needed
+    
     return gapSize;
   }
 

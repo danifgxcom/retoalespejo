@@ -1,6 +1,7 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { Piece } from '../components/GamePiece';
 import { GameGeometry } from '../utils/geometry/GameGeometry';
+import { RotationAwareGrid, createRotationAwareGrid } from '../utils/grid/RotationAwareGrid';
 
 interface UseMouseHandlersProps {
   pieces: Piece[];
@@ -54,6 +55,16 @@ export const useMouseHandlers = ({
                                    geometry,
                                    setInteractingPieceId
                                  }: UseMouseHandlersProps) => {
+
+  // Create rotation-aware grid instance
+  const rotationAwareGrid = useMemo(() => {
+    return createRotationAwareGrid(geometry, {
+      baseGridSize: 10,
+      snapDistance: 60, // Increased for better handling of rotated pieces
+      mirrorSnapDistance: 20, // Increased for mirror snapping
+      enableIntelligentSnap: true
+    });
+  }, [geometry]);
 
   // Helper para obtener coordenadas del mouse en el canvas
   const getCanvasCoordinates = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -120,56 +131,39 @@ export const useMouseHandlers = ({
 
   const handleMouseUp = useCallback(() => {
     if (draggedPiece) {
-      // Al soltar la pieza, aplicar snap a grid fijo
+      // Al soltar la pieza, aplicar nuevo sistema de snap inteligente
       setPieces((prevPieces) => {
         const updatedPieces = prevPieces.map((p) => {
           if (p.id === draggedPiece.id) {
             const updatedPiece = { ...p };
             
-            // SISTEMA GRID FIJO: Aplicar snap a grid inteligente según rotación
+            // NUEVO SISTEMA: Usar rotation-aware grid
             if (geometry.isPieceInGameArea(updatedPiece)) {
-              // VALIDACIÓN PERMISIVA: Permitir tocar el espejo
-              const gameAreaWidth = 700; // Línea del espejo
-              const gameAreaHeight = 500;
+              // Obtener otras piezas colocadas para snapping inteligente
+              const otherPlacedPieces = prevPieces
+                .filter(piece => piece.id !== draggedPiece.id && piece.placed)
+                .map(pieceToPosition);
               
-              // Límites muy permisivos - las piezas pueden tocar el espejo perfectamente
-              const minX = -50; // Permitir salir un poco por la izquierda
-              const maxX = gameAreaWidth + 10; // Permitir cruzar ligeramente el espejo (710)
-              const minY = -50; // Permitir salir un poco por arriba  
-              const maxY = gameAreaHeight + 10; // Permitir salir ligeramente por abajo (510)
+              // Aplicar snap inteligente considerando rotación
+              const snapResult = rotationAwareGrid.calculateSnapPosition(
+                pieceToPosition(updatedPiece),
+                otherPlacedPieces
+              );
               
-              // APLICAR SNAP A GRID según la rotación de la pieza
-              const snappedPosition = snapToFixedGrid(updatedPiece.x, updatedPiece.y, updatedPiece.rotation);
-              let finalX = Math.max(minX, Math.min(maxX, snappedPosition.x));
-              let finalY = Math.max(minY, Math.min(maxY, snappedPosition.y));
-              
-              // VALIDACIÓN DE OVERLAP BÁSICA - evitar solapamiento con otras piezas
-              const otherPieces = prevPieces.filter(p => p.id !== draggedPiece.id && p.placed);
-              const pieceSize = 100;
-              
-              for (const otherPiece of otherPieces) {
-                const dx = Math.abs(finalX - otherPiece.x);
-                const dy = Math.abs(finalY - otherPiece.y);
-                
-                // Si hay overlap significativo, ajustar posición
-                if (dx < pieceSize - 20 && dy < pieceSize - 20) {
-                  // Mover la pieza lo suficiente para evitar overlap
-                  if (dx < dy) {
-                    // Mover horizontalmente
-                    finalX = finalX > otherPiece.x ? otherPiece.x + pieceSize : otherPiece.x - pieceSize;
-                  } else {
-                    // Mover verticalmente  
-                    finalY = finalY > otherPiece.y ? otherPiece.y + pieceSize : otherPiece.y - pieceSize;
-                  }
-                  
-                  // Re-aplicar límites después del ajuste
-                  finalX = Math.max(minX, Math.min(maxX, finalX));
-                  finalY = Math.max(minY, Math.min(maxY, finalY));
-                }
+              if (snapResult.snapped) {
+                updatedPiece.x = snapResult.x;
+                updatedPiece.y = snapResult.y;
               }
               
-              updatedPiece.x = finalX;
-              updatedPiece.y = finalY;
+              // Validar que la posición final sea válida
+              const finalPiecePosition = pieceToPosition(updatedPiece);
+              if (!geometry.isPiecePositionInGameArea(finalPiecePosition)) {
+                // Si la posición no es válida, usar fallback a grid simple
+                const fallbackSnap = snapToFixedGrid(updatedPiece.x, updatedPiece.y);
+                updatedPiece.x = fallbackSnap.x;
+                updatedPiece.y = fallbackSnap.y;
+              }
+              
               updatedPiece.placed = true;
             } else {
               // Si no está en área de juego, solo marcar placed como false
@@ -185,7 +179,7 @@ export const useMouseHandlers = ({
       });
     }
     setDraggedPiece(null);
-  }, [draggedPiece, setDraggedPiece, setPieces, geometry]);
+  }, [draggedPiece, setDraggedPiece, setPieces, geometry, rotationAwareGrid]);
 
   const handleMouseLeave = useCallback(() => {
     // Limpiar interacción cuando el mouse sale del canvas
