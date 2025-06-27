@@ -28,8 +28,104 @@ export const canPieceShowReflection = (piece: Piece, gameAreaHeight: number): bo
   return piece.placed && piece.y < gameAreaHeight;
 };
 
+// Helper para dibujar texturas accesibles
+const drawAccessibleTexture = (ctx: CanvasRenderingContext2D, coordinates: [number, number][], shapeType: 'center' | 'triangle', pieceSize: number = 80) => {
+  const isAccessibleTheme = localStorage.getItem('theme') === 'accessible';
+  if (!isAccessibleTheme) return;
+
+  ctx.save();
+  
+  // Create clipping path for the shape
+  ctx.beginPath();
+  const [startX, startY] = coordinates[0];
+  ctx.moveTo(startX, startY);
+  for (let i = 1; i < coordinates.length; i++) {
+    const [x, y] = coordinates[i];
+    ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+  ctx.clip();
+
+  // Apply different symbols based on shape type
+  if (shapeType === 'center') {
+    // White square symbol for center pieces (squares)
+    drawSquareSymbol(ctx, coordinates, pieceSize);
+  } else {
+    // White circle symbol for triangles
+    drawCircleSymbol(ctx, coordinates, pieceSize);
+  }
+  
+  ctx.restore();
+};
+
+// Global grid-aligned dots pattern for center pieces (squares)
+const drawSquareSymbol = (ctx: CanvasRenderingContext2D, coordinates: [number, number][], pieceSize: number) => {
+  const dotRadius = Math.max(1.5, pieceSize * 0.03); // Same size dots for both
+  const spacing = Math.max(8, pieceSize * 0.10); // Same spacing for both
+  
+  // Find bounding box of shape
+  const xs = coordinates.map(([x, y]) => x);
+  const ys = coordinates.map(([x, y]) => y);
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+  
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.5)'; // Semi-transparent white dots
+  
+  // Use global grid instead of piece-relative grid
+  // Calculate the global grid origin (always at 0,0 with fixed spacing)
+  const gridOriginX = 0;
+  const gridOriginY = 0;
+  
+  // Find the first grid point that's visible in this shape
+  const startGridX = Math.ceil((minX - gridOriginX) / spacing) * spacing + gridOriginX;
+  const startGridY = Math.ceil((minY - gridOriginY) / spacing) * spacing + gridOriginY;
+  
+  for (let x = startGridX; x < maxX; x += spacing) {
+    for (let y = startGridY; y < maxY; y += spacing) {
+      ctx.beginPath();
+      ctx.arc(x, y, dotRadius, 0, 2 * Math.PI);
+      ctx.fill();
+    }
+  }
+};
+
+// Global grid-aligned dots pattern for triangles - same as squares to avoid giving hints
+const drawCircleSymbol = (ctx: CanvasRenderingContext2D, coordinates: [number, number][], pieceSize: number) => {
+  const dotRadius = Math.max(1.5, pieceSize * 0.03); // Same size dots for both
+  const spacing = Math.max(8, pieceSize * 0.10); // Same spacing for both
+  
+  // Find bounding box of shape
+  const xs = coordinates.map(([x, y]) => x);
+  const ys = coordinates.map(([x, y]) => y);
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+  
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.5)'; // Semi-transparent white dots
+  
+  // Use global grid instead of piece-relative grid
+  // Calculate the global grid origin (always at 0,0 with fixed spacing)
+  const gridOriginX = 0;
+  const gridOriginY = 0;
+  
+  // Find the first grid point that's visible in this shape
+  const startGridX = Math.ceil((minX - gridOriginX) / spacing) * spacing + gridOriginX;
+  const startGridY = Math.ceil((minY - gridOriginY) / spacing) * spacing + gridOriginY;
+  
+  for (let x = startGridX; x < maxX; x += spacing) {
+    for (let y = startGridY; y < maxY; y += spacing) {
+      ctx.beginPath();
+      ctx.arc(x, y, dotRadius, 0, 2 * Math.PI);
+      ctx.fill();
+    }
+  }
+};
+
 // Helper para dibujar un path sin gradientes para figuras continuas
-const drawShape = (ctx: CanvasRenderingContext2D, coordinates: [number, number][], fillColor: string, shouldStroke: boolean = false, pieceSize: number = 80) => {
+const drawShape = (ctx: CanvasRenderingContext2D, coordinates: [number, number][], fillColor: string, shouldStroke: boolean = false, pieceSize: number = 80, shapeType: 'center' | 'triangle' = 'triangle') => {
   ctx.fillStyle = fillColor;
 
   // Para líneas diagonales, aplicar stroke del mismo color para eliminar gaps de anti-aliasing
@@ -61,6 +157,9 @@ const drawShape = (ctx: CanvasRenderingContext2D, coordinates: [number, number][
   if (shouldStroke) {
     ctx.stroke();
   }
+  
+  // Add accessible texture pattern
+  drawAccessibleTexture(ctx, coordinates, shapeType, pieceSize);
 };
 
 export const drawPiece = (ctx: CanvasRenderingContext2D, piece: Piece, x: number, y: number, size = 80) => {
@@ -120,21 +219,21 @@ export const drawPiece = (ctx: CanvasRenderingContext2D, piece: Piece, x: number
     coord(0, 0),                    // Esquina inferior izquierda
     coord(1, 0),                    // Base del triángulo (alineada con cuadrado)
     coord(1, 1)                     // Esquina superior derecha del triángulo
-  ], piece.triangleColor, true, size);
+  ], piece.triangleColor, true, size, 'triangle');
 
   // Triángulo superior - simétrico y alineado
   drawShape(ctx, [
     coord(1, 1),                    // Esquina inferior izquierda (conecta con triángulo izq)
     coord(2, 1),                    // Esquina inferior derecha (conecta con triángulo der)
     coord(1.5, 1.5)                 // Punta superior centrada
-  ], piece.triangleColor, true, size);
+  ], piece.triangleColor, true, size, 'triangle');
 
   // Triángulo derecho - espejo del izquierdo
   drawShape(ctx, [
     coord(2, 0),                    // Esquina inferior derecha
     coord(2, 1),                    // Esquina superior izquierda del triángulo
     coord(2.5, 0.5)                 // Punta derecha centrada verticalmente
-  ], piece.triangleColor, true, size);
+  ], piece.triangleColor, true, size, 'triangle');
 
   // Cuadrado central - base perfecta del trapecio
   drawShape(ctx, [
@@ -142,7 +241,7 @@ export const drawPiece = (ctx: CanvasRenderingContext2D, piece: Piece, x: number
     coord(2, 0),                    // Esquina inferior derecha
     coord(2, 1),                    // Esquina superior derecha
     coord(1, 1)                     // Esquina superior izquierda
-  ], piece.centerColor, true, size);
+  ], piece.centerColor, true, size, 'center');
 
   ctx.restore();
 };

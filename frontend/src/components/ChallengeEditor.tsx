@@ -258,15 +258,18 @@ export const ChallengeEditor: React.FC<ChallengeEditorProps> = ({
       return;
     }
 
-    const updatedPieces = pieces.map(piece => {
+    const updatedPieces = pieces.map((piece, index) => {
       if (piece.placed && piece.y < 600) {
         console.log(`\n=== Auto-positioning piece ${piece.id} (type: ${piece.type}, rotation: ${piece.rotation}) ===`);
         console.log(`Original position: x=${piece.x}, y=${piece.y}`);
 
-        // Find a position that touches mirror but doesn't overlap with reflection
+        // Find a position that touches mirror but doesn't overlap with reflection OR other pieces
         let bestX = piece.x;
         const mirrorLine = 700;
         const pieceSize = 100;
+
+        // Get all other pieces to check for overlaps
+        const otherPieces = piecesInGameArea.filter(p => p.id !== piece.id);
 
         // Get the bounding box at current position to understand the piece size
         const currentBbox = geometry.getPieceBoundingBox({
@@ -284,7 +287,7 @@ export const ChallengeEditor: React.FC<ChallengeEditorProps> = ({
 
         let foundValidPosition = false;
 
-        for (let testX = startX; testX <= mirrorLine; testX += 0.1) { // Finer granularity and allow exact mirror position
+        for (let testX = startX; testX <= mirrorLine; testX += 5) { // Use grid size of 5 to match main game
           const testPiece = { 
             type: piece.type, 
             face: piece.face, 
@@ -298,61 +301,41 @@ export const ChallengeEditor: React.FC<ChallengeEditorProps> = ({
           const touchesMirror = geometry.isPieceTouchingMirror(testPiece);
           const distanceToMirror = Math.abs(testBbox.right - mirrorLine);
 
-          if (Math.abs(testX % 1) < 0.05) { // Log every 1 pixel for readability
-            console.log(`  Testing x=${testX.toFixed(1)}: bbox.right=${testBbox.right.toFixed(1)}, distance=${distanceToMirror.toFixed(1)}, touches=${touchesMirror}`);
-          }
-
           // Check if it touches mirror
           if (touchesMirror) {
             console.log(`  ✓ Piece touches mirror at x=${testX} (bbox.right=${testBbox.right})`);
 
-            const reflectedPiece = geometry.reflectPieceAcrossMirror(testPiece);
-            console.log(`  Reflected piece: x=${reflectedPiece.x}, y=${reflectedPiece.y}`);
-
-            const hasOverlap = geometry.detectPieceReflectionOverlap(testPiece);
+            const hasReflectionOverlap = geometry.detectPieceReflectionOverlap(testPiece);
             const isInGameArea = geometry.isPiecePositionInGameArea(testPiece);
-            console.log(`  Overlap check: ${hasOverlap}, In game area: ${isInGameArea}`);
+            
+            // NEW: Check for overlaps with other pieces using same logic as useMouseHandlers
+            let hasPieceOverlap = false;
+            for (const otherPiece of otherPieces) {
+              const dx = Math.abs(testX - otherPiece.x);
+              const dy = Math.abs(piece.y - otherPiece.y);
+              
+              // If pieces are too close (overlap threshold from useMouseHandlers)
+              if (dx < pieceSize - 20 && dy < pieceSize - 20) {
+                hasPieceOverlap = true;
+                console.log(`  ✗ Position overlaps with piece ${otherPiece.id} at x=${testX}`);
+                break;
+              }
+            }
 
-            if (!hasOverlap && isInGameArea) {
+            console.log(`  Overlap checks: reflection=${hasReflectionOverlap}, pieces=${hasPieceOverlap}, inArea=${isInGameArea}`);
+
+            if (!hasReflectionOverlap && !hasPieceOverlap && isInGameArea) {
               console.log(`  ✓ Found valid position: x=${testX}`);
               bestX = testX;
               foundValidPosition = true;
-              // Don't break, keep looking for the closest position to mirror
-            } else {
-              if (hasOverlap) console.log(`  ✗ Position has reflection overlap at x=${testX}`);
-              if (!isInGameArea) console.log(`  ✗ Position not in game area at x=${testX}`);
+              break; // Take first valid position to avoid crowding
             }
           }
         }
 
         if (!foundValidPosition) {
           console.log(`  ❌ No valid position found for piece ${piece.id}. Keeping original position.`);
-
-          // Try a different approach: position the piece so its right edge touches the mirror
-          // Calculate the X position needed to make the piece's right edge align with the mirror
-          const targetX = mirrorLine - (currentBbox.right - piece.x);
-          console.log(`  Alternative approach: Setting x=${targetX} to align right edge with mirror`);
-
-          const altTestPiece = {
-            type: piece.type,
-            face: piece.face,
-            x: targetX,
-            y: piece.y,
-            rotation: piece.rotation
-          };
-
-          const altBbox = geometry.getPieceBoundingBox(altTestPiece);
-          const altTouches = geometry.isPieceTouchingMirror(altTestPiece);
-          const altReflected = geometry.reflectPieceAcrossMirror(altTestPiece);
-          const altOverlap = geometry.detectPieceReflectionOverlap(altTestPiece);
-
-          console.log(`  Alternative result: bbox.right=${altBbox.right}, touches=${altTouches}, overlap=${altOverlap}`);
-
-          if (altTouches && !altOverlap) {
-            bestX = targetX;
-            foundValidPosition = true;
-            console.log(`  ✓ Alternative approach succeeded`);
-          }
+          // Don't use alternative approach - keep original position to avoid forced overlaps
         }
 
         console.log(`Final position for piece ${piece.id}: x=${bestX} (moved ${Math.abs(bestX - piece.x).toFixed(2)} pixels)`);

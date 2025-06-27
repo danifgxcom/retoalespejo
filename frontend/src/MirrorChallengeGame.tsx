@@ -20,7 +20,7 @@ const MirrorChallengeGame: React.FC = () => {
   const [gameMode, setGameMode] = useState<'offline' | 'multiplayer'>('offline');
   const [connectedPlayers, setConnectedPlayers] = useState<Player[]>([]);
   const [roomId, setRoomId] = useState<string | null>(null);
-  const [isGamePaused, setIsGamePaused] = useState(false); // Start unpaused for multiplayer
+  const [isGamePaused, setIsGamePaused] = useState(true); // Start paused by default
   const [showSolution, setShowSolution] = useState(false);
   const [isGameActive, setIsGameActive] = useState(false);
   const [pausedBy, setPausedBy] = useState<string | null>(null);
@@ -46,6 +46,7 @@ const MirrorChallengeGame: React.FC = () => {
     interactingPieceId,
     temporaryDraggedPieceId,
     animatingPieceId,
+    showGrid,
     setControlEffect,
     setPieces,
     setDraggedPiece,
@@ -61,6 +62,7 @@ const MirrorChallengeGame: React.FC = () => {
     isPieceHit,
     checkSolutionWithMirrors,
     loadCustomChallenges,
+    toggleGrid,
     geometry,
     initializeResponsiveSystem,
     responsiveCanvas
@@ -116,6 +118,7 @@ const MirrorChallengeGame: React.FC = () => {
   const handleStartOffline = () => {
     setGameMode('offline');
     setShowStartupMenu(false);
+    setIsGamePaused(true); // Start paused in offline mode
 
     // Disconnect from server if connected
     if (socketService.isConnected()) {
@@ -141,7 +144,7 @@ const MirrorChallengeGame: React.FC = () => {
     socketService.socketInstance?.off('countdown');
     socketService.socketInstance?.off('phaseChanged');
     socketService.socketInstance?.off('challengeSolved');
-    socketService.socketInstance?.off('nextChallengeReady');
+    socketService.socketInstance?.off('playersReadyUpdate');
 
     // Set up event listeners
     socketService.onPlayerJoined((data) => {
@@ -209,6 +212,7 @@ const MirrorChallengeGame: React.FC = () => {
     socketService.onCountdown((data) => {
       setGamePhase('countdown');
       setCountdownValue(data.value);
+      setChallengeWinner(null); // Clear winner overlay when countdown starts
     });
 
     // Listen for phase changed event
@@ -220,7 +224,7 @@ const MirrorChallengeGame: React.FC = () => {
         setIsGameActive(data.gameState.isActive || false);
         setIsGamePaused(data.gameState.isPaused || false);
       }
-      
+
       // Reset pieces when game starts playing
       if (data.phase === 'playing') {
         resetLevel();
@@ -237,11 +241,10 @@ const MirrorChallengeGame: React.FC = () => {
       });
     });
 
-    // Listen for next challenge ready event
-    socketService.onNextChallengeReady((data) => {
-      console.log('📥 Next challenge ready:', data);
-      setChallengeWinner(null); // Clear the winner overlay
-      nextChallenge(); // Go to next challenge
+    // Listen for players ready updates
+    socketService.onPlayersReadyUpdate((data) => {
+      console.log('📥 Players ready update:', data);
+      // Could show ready status in UI if needed
     });
   };
 
@@ -300,10 +303,16 @@ const MirrorChallengeGame: React.FC = () => {
   }
 
   return (
-    <div className="h-screen overflow-hidden bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 p-1">
+    <div 
+      className="h-screen overflow-hidden p-1"
+      style={{ 
+        background: 'var(--bg-primary)',
+        color: 'var(--text-primary)'
+      }}
+    >
       <div className="w-full h-full flex gap-1 sm:gap-2">
-        {/* Left Sidebar - Piece Controls - Responsive width */}
-        <div className="w-48 sm:w-56 md:w-64 lg:w-72 xl:w-80 flex-shrink-0">
+        {/* Left Sidebar - Wider for better usability */}
+        <div className="w-[25vw] min-w-[200px] max-w-[320px] flex-shrink-1">
           <LeftSidebar
             pieces={pieces}
             challenges={challenges}
@@ -315,8 +324,8 @@ const MirrorChallengeGame: React.FC = () => {
           />
         </div>
 
-        {/* Main Game Area - Takes all remaining width */}
-        <div className="flex-1 flex flex-col min-w-0 max-w-none relative">
+        {/* Main Game Area - Only shrinks after sidebars reach minimum */}
+        <div className="flex-1 flex flex-col min-w-[400px] max-w-none relative">
           {/* Top Navigation */}
           <div className="mb-1 sm:mb-2">
             <GameControls
@@ -326,8 +335,8 @@ const MirrorChallengeGame: React.FC = () => {
               showInstructions={showInstructions}
               onToggleInstructions={() => setShowInstructions(!showInstructions)}
               onResetLevel={resetLevel}
-              onNextChallenge={nextChallenge}
-              onPreviousChallenge={previousChallenge}
+              onNextChallenge={gameMode === 'multiplayer' ? undefined : nextChallenge}
+              onPreviousChallenge={gameMode === 'multiplayer' ? undefined : previousChallenge}
               onRotatePiece={rotatePiece}
               onRotatePieceCounterClockwise={rotatePieceCounterClockwise}
               onFlipPiece={flipPiece}
@@ -337,13 +346,16 @@ const MirrorChallengeGame: React.FC = () => {
               isLoading={isLoading}
               debugMode={debugMode}
               onToggleDebugMode={() => setDebugMode(!debugMode)}
+              showGrid={showGrid}
+              onToggleGrid={toggleGrid}
               setControlEffect={setControlEffect}
               compact={true}
+              gameMode={gameMode}
             />
           </div>
 
           {/* Game Canvas */}
-          <div className="bg-white rounded-lg shadow-lg p-1 sm:p-2 flex-1 flex flex-col min-h-0 relative">
+          <div className="bg-game-bg rounded-lg shadow-lg p-1 sm:p-2 flex-1 flex flex-col min-h-0 relative border border-game-border">
             <div className="flex justify-center items-start flex-1 overflow-hidden">
               <GameCanvas
                 ref={canvasRef}
@@ -357,6 +369,7 @@ const MirrorChallengeGame: React.FC = () => {
                 onContextMenu={handleContextMenu}
                 geometry={geometry}
                 debugMode={debugMode}
+                showGrid={showGrid}
                 draggedPiece={draggedPiece}
                 interactingPieceId={interactingPieceId}
                 temporaryDraggedPieceId={temporaryDraggedPieceId}
@@ -374,16 +387,55 @@ const MirrorChallengeGame: React.FC = () => {
           </div>
 
           {/* FULL SCREEN OVERLAYS - Cover entire main game area */}
-          
+
           {/* Countdown overlay for multiplayer mode */}
           {gameMode === 'multiplayer' && gamePhase === 'countdown' && (
-            <div className="absolute inset-0 bg-black flex flex-col items-center justify-center z-50">
-              <div className="text-center">
-                <div className="text-9xl font-bold text-white mb-4 animate-pulse">
+            <div 
+              className="absolute inset-0 bg-black flex flex-col items-center justify-center z-50"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="countdown-title"
+              aria-describedby="countdown-description"
+            >
+              {/* Challenge number background - decorative only */}
+              <div className="absolute inset-0 flex items-center justify-center opacity-10" aria-hidden="true">
+                <div className="text-[40vh] font-bold text-white select-none">
+                  {currentChallenge + 1}
+                </div>
+              </div>
+
+              {/* Multiple random positioned challenge numbers - decorative only */}
+              {[...Array(3)].map((_, i) => (
+                <div
+                  key={i}
+                  className="absolute text-6xl font-bold text-white opacity-20 select-none"
+                  style={{
+                    left: `${20 + (i * 30)}%`,
+                    top: `${15 + (i * 25)}%`,
+                    transform: `rotate(${-15 + (i * 15)}deg)`
+                  }}
+                  aria-hidden="true"
+                >
+                  RETO {currentChallenge + 1}
+                </div>
+              ))}
+
+              <div className="text-center relative z-10">
+                <div 
+                  id="countdown-title"
+                  className="text-9xl font-bold text-white mb-4 animate-pulse"
+                  aria-live="assertive"
+                >
                   {countdownValue}
                 </div>
                 <p className="text-2xl text-white">
                   {typeof countdownValue === 'string' ? '' : 'Preparándose...'}
+                </p>
+                <p 
+                  id="countdown-description"
+                  className="text-lg text-white/70 mt-2"
+                >
+                  Reto {currentChallenge + 1} de {challenges.length}
                 </p>
               </div>
             </div>
@@ -391,16 +443,26 @@ const MirrorChallengeGame: React.FC = () => {
 
           {/* Waiting room overlay for multiplayer mode */}
           {gameMode === 'multiplayer' && gamePhase === 'waiting' && isGameActive && (
-            <div className="absolute inset-0 bg-blue-600 flex flex-col items-center justify-center z-40">
+            <div 
+              className="absolute inset-0 bg-blue-600 flex flex-col items-center justify-center z-40"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="waiting-room-title"
+              aria-describedby="waiting-room-description"
+            >
               <div className="bg-white rounded-lg p-8 max-w-lg text-center shadow-xl">
-                <h2 className="text-3xl font-bold text-gray-800 mb-6">🎮 Sala de Espera</h2>
-                <p className="text-gray-600 mb-6 text-lg">
+                <h2 id="waiting-room-title" className="text-3xl font-bold text-gray-800 mb-6">🎮 Sala de Espera</h2>
+                <p id="waiting-room-description" className="text-gray-600 mb-6 text-lg">
                   Esperando a que todos los jugadores estén listos para comenzar el desafío.
                 </p>
-                <div className="space-y-2">
+                <div className="space-y-2" role="list" aria-label="Jugadores conectados">
                   {connectedPlayers.map((player) => (
-                    <div key={player.id} className="flex items-center justify-center gap-2 text-lg">
-                      <span className="w-3 h-3 rounded-full bg-green-500"></span>
+                    <div 
+                      key={player.id} 
+                      className="flex items-center justify-center gap-2 text-lg"
+                      role="listitem"
+                    >
+                      <span className="w-3 h-3 rounded-full bg-green-500" aria-hidden="true"></span>
                       <span className="text-gray-800">{player.username}</span>
                     </div>
                   ))}
@@ -412,30 +474,30 @@ const MirrorChallengeGame: React.FC = () => {
           {/* Canvas Cover when game is paused in multiplayer mode */}
           {(() => {
             const shouldShowPauseOverlay = gameMode === 'multiplayer' && isGameActive && gamePhase === 'playing' && isGamePaused;
-            console.log('🎭 Pause overlay check:', { 
-              gameMode, 
-              isGameActive, 
-              gamePhase, 
-              isGamePaused, 
-              pausedBy,
-              shouldShowPauseOverlay 
-            });
             return shouldShowPauseOverlay && (
-              <div className="absolute inset-0 bg-black flex flex-col items-center justify-center z-30">
+              <div 
+                className="absolute inset-0 bg-black flex flex-col items-center justify-center z-30"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="pause-title"
+                aria-describedby="pause-description"
+              >
                 <div className="bg-white rounded-lg p-6 max-w-md text-center shadow-xl">
-                  <h2 className="text-2xl font-bold text-gray-800 mb-4">⏸️ Juego en Pausa</h2>
-                  <p className="text-gray-600 mb-4">
+                  <h2 id="pause-title" className="text-2xl font-bold text-gray-800 mb-4">⏸️ Juego en Pausa</h2>
+                  <p id="pause-description" className="text-gray-600 mb-4">
                     {pausedBy 
                       ? `Partida pausada por ${pausedBy}`
                       : 'El juego está pausado. Espera a que se reanude para continuar jugando.'
                     }
                   </p>
-                  <p className="text-gray-500 text-sm mb-2">
-                    ⛔ Juego bloqueado para evitar trampas
-                  </p>
-                  <p className="text-gray-400 text-xs">
-                    Nadie puede ver ni interactuar con el juego hasta reanudar
-                  </p>
+                  <div role="region" aria-label="Información adicional">
+                    <p className="text-gray-500 text-sm mb-2">
+                      ⛔ Juego bloqueado para evitar trampas
+                    </p>
+                    <p className="text-gray-600 text-xs">
+                      Nadie puede ver ni interactuar con el juego hasta reanudar
+                    </p>
+                  </div>
                 </div>
               </div>
             );
@@ -443,26 +505,35 @@ const MirrorChallengeGame: React.FC = () => {
 
           {/* Solution Overlay when only one player remains */}
           {gameMode === 'multiplayer' && showSolution && (
-            <div className="absolute inset-0 bg-green-600 flex flex-col items-center justify-center z-30">
+            <div 
+              className="absolute inset-0 bg-green-600 flex flex-col items-center justify-center z-30"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="solution-title"
+              aria-describedby="solution-description"
+            >
               <div className="bg-white rounded-lg p-6 max-w-md text-center shadow-xl">
-                <h2 className="text-2xl font-bold text-green-600 mb-4">🏆 ¡Solución!</h2>
-                <p className="text-gray-600 mb-4">
-                  Eres el último jugador activo. ¡Has ganado un punto!
-                </p>
-                <p className="text-gray-600 mb-4">
-                  La solución del desafío se muestra en el tablero.
-                </p>
+                <h2 id="solution-title" className="text-2xl font-bold text-green-600 mb-4">🏆 ¡Solución!</h2>
+                <div id="solution-description">
+                  <p className="text-gray-600 mb-4">
+                    Eres el último jugador activo. ¡Has ganado un punto!
+                  </p>
+                  <p className="text-gray-600 mb-4">
+                    La solución del desafío se muestra en el tablero.
+                  </p>
+                </div>
               </div>
             </div>
           )}
 
         </div>
 
-        {/* Right Sidebar - Timer & Multiplayer - Responsive width */}
-        <div className="w-48 sm:w-56 md:w-64 lg:w-72 xl:w-80 flex-shrink-0">
+        {/* Right Sidebar - Wider for better usability */}
+        <div className="w-[30vw] min-w-[250px] max-w-[400px] flex-shrink-1">
           <RightSidebar
             currentChallenge={currentChallenge}
             totalChallenges={challenges.length}
+            challenges={challenges}
             onResetLevel={resetLevel}
             onCheckSolution={checkSolutionWithMirrors}
             isMultiplayerEnabled={MULTIPLAYER_ENABLED}
@@ -470,7 +541,7 @@ const MirrorChallengeGame: React.FC = () => {
             connectedPlayers={connectedPlayers}
             roomId={roomId}
             isGameActive={isGameActive}
-            isPaused={gameMode === 'multiplayer' ? isGamePaused : true}
+            isPaused={isGamePaused}
             onPauseChange={setIsGamePaused}
             onPausedByChange={setPausedBy}
           />
@@ -479,14 +550,21 @@ const MirrorChallengeGame: React.FC = () => {
 
       {/* Debug Tools (floating) */}
       {debugMode && (
-        <div className="absolute top-4 left-4 z-10">
+        <div 
+          className="absolute top-4 left-4 z-10"
+          role="region"
+          aria-labelledby="debug-tools-title"
+        >
           <div className="bg-yellow-100 border border-yellow-400 rounded-lg p-3 shadow-lg">
-            <div className="flex flex-wrap gap-2 mb-2">
+            <h3 id="debug-tools-title" className="sr-only">Herramientas de depuración</h3>
+            <div className="flex flex-wrap gap-2 mb-2" role="toolbar" aria-label="Herramientas principales">
               <button 
                 onClick={() => setShowResponsiveTest(true)}
                 className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded text-sm transition-colors"
+                aria-label="Probar diseño responsivo"
+                type="button"
               >
-                🧪 Test Responsive
+                <span aria-hidden="true">🧪</span> Test Responsive
               </button>
               <button 
                 onClick={() => {
@@ -497,11 +575,13 @@ const MirrorChallengeGame: React.FC = () => {
                   console.log('Room ID:', roomId);
                 }}
                 className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm transition-colors"
+                aria-label="Capturar estado global del juego en la consola"
+                type="button"
               >
-                📸 Global Snapshot
+                <span aria-hidden="true">📸</span> Global Snapshot
               </button>
             </div>
-            <div className="flex flex-wrap gap-2 mb-2">
+            <div className="flex flex-wrap gap-2 mb-2" role="toolbar" aria-label="Herramientas de áreas específicas">
               <button 
                 onClick={() => {
                   console.log('🎮 GAME AREA SNAPSHOT:');
@@ -515,8 +595,10 @@ const MirrorChallengeGame: React.FC = () => {
                   console.log('Geometry State:', geometry);
                 }}
                 className="bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs transition-colors"
+                aria-label="Capturar estado del área de juego en la consola"
+                type="button"
               >
-                🎯 Game Area
+                <span aria-hidden="true">🎯</span> Game Area
               </button>
               <button 
                 onClick={() => {
@@ -525,8 +607,10 @@ const MirrorChallengeGame: React.FC = () => {
                   console.log('Storage Pieces:', storagePieces);
                 }}
                 className="bg-purple-500 hover:bg-purple-600 text-white px-2 py-1 rounded text-xs transition-colors"
+                aria-label="Capturar estado del área de almacenamiento en la consola"
+                type="button"
               >
-                📦 Storage
+                <span aria-hidden="true">📦</span> Storage
               </button>
               <button 
                 onClick={() => {
@@ -536,8 +620,10 @@ const MirrorChallengeGame: React.FC = () => {
                   console.log('Total Challenges:', challenges.length);
                 }}
                 className="bg-orange-500 hover:bg-orange-600 text-white px-2 py-1 rounded text-xs transition-colors"
+                aria-label="Capturar información del reto actual en la consola"
+                type="button"
               >
-                🏆 Challenge
+                <span aria-hidden="true">🏆</span> Challenge
               </button>
             </div>
             <p className="text-xs text-yellow-700">Debug mode - Click buttons for console logs</p>
@@ -555,8 +641,8 @@ const MirrorChallengeGame: React.FC = () => {
           completionTime={challengeWinner.completionTime}
           isCurrentPlayer={challengeWinner.id === socketService.socketInstance?.id}
           onNextChallenge={() => {
-            console.log('🎯 Requesting next challenge...');
-            socketService.nextChallenge();
+            console.log('🎯 Player ready for next challenge...');
+            socketService.playerReady();
           }}
           onClose={() => setChallengeWinner(null)}
         />

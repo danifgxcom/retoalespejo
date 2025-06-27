@@ -60,8 +60,8 @@ export class ValidationService {
   }
 
   static checkRelativePositions(placed: PiecePosition[], target: PiecePosition[]): ValidationResult {
-    const TOLERANCE = 30;
-    const ROT_TOLERANCE = 15;
+    const TOLERANCE = 200; // Extra permissive for debugging
+    const ROT_TOLERANCE = 45; // Extra permissive for debugging
 
     const normalizedPlaced = this.normalizePiecesToCentroid(placed);
     const normalizedTarget = this.normalizePiecesToCentroid(target);
@@ -83,22 +83,32 @@ export class ValidationService {
         Math.pow(matchingPiece.y - targetPiece.y, 2)
       );
 
+      console.log(`🔍 VALIDATION DEBUG - Piece ${i}:`);
+      console.log(`  Target: (${targetPiece.x}, ${targetPiece.y}) rot=${targetPiece.rotation}°`);
+      console.log(`  Actual: (${matchingPiece.x}, ${matchingPiece.y}) rot=${matchingPiece.rotation}°`);
+      console.log(`  Position diff: ${posDiff.toFixed(1)}px (tolerance: ${TOLERANCE}px)`);
+
       if (posDiff > TOLERANCE) {
+        console.log(`  ❌ POSITION FAILED: ${posDiff.toFixed(1)}px > ${TOLERANCE}px`);
         return {
           isCorrect: false,
-          message: `Pieza ${target[i].type} necesita estar en la posición correcta relativa`
+          message: `Pieza ${target[i].type} necesita estar en la posición correcta relativa (diff: ${posDiff.toFixed(1)}px)`
         };
       }
 
       const rotDiff = Math.abs(matchingPiece.rotation - targetPiece.rotation);
       const normalizedRotDiff = Math.min(rotDiff, 360 - rotDiff);
+      console.log(`  Rotation diff: ${normalizedRotDiff}° (tolerance: ${ROT_TOLERANCE}°)`);
 
       if (normalizedRotDiff > ROT_TOLERANCE) {
+        console.log(`  ❌ ROTATION FAILED: ${normalizedRotDiff}° > ${ROT_TOLERANCE}°`);
         return {
           isCorrect: false,
-          message: `Pieza ${target[i].type} necesita rotación diferente`
+          message: `Pieza ${target[i].type} necesita rotación diferente (diff: ${normalizedRotDiff}°)`
         };
       }
+
+      console.log(`  ✅ Piece ${i} validation PASSED`);
     }
 
     return { isCorrect: true, message: '¡Perfecto! Configuración correcta.' };

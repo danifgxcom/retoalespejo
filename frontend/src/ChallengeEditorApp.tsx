@@ -125,27 +125,27 @@ export const ChallengeEditorApp: React.FC<ChallengeEditorAppProps> = ({ onClose 
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 flex items-center justify-center">
-        <div className="text-center bg-white rounded-2xl p-8 shadow-2xl">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-4 border-gradient-to-r from-blue-500 to-purple-600 mx-auto mb-4"></div>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--bg-primary)' }}>
+        <div className="text-center rounded-2xl p-8 shadow-2xl" style={{ backgroundColor: 'var(--card-bg)', color: 'var(--text-primary)' }}>
+          <div className="animate-spin rounded-full h-32 w-32 border-b-4 mx-auto mb-4" style={{ borderColor: 'var(--color-primary-600)' }}></div>
           <div className="text-4xl mb-4">🎯</div>
-          <h2 className="text-xl font-bold text-gray-800 mb-2">Cargando Editor de Retos</h2>
-          <p className="text-gray-600">Preparando la experiencia de edición...</p>
+          <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>Cargando Editor de Retos</h2>
+          <p style={{ color: 'var(--text-secondary)' }}>Preparando la experiencia de edición...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 p-4">
-      <div className="max-w-6xl mx-auto">
-        <div className="bg-white rounded-2xl shadow-2xl p-8">
+    <div className="min-h-screen p-2 sm:p-4" style={{ backgroundColor: 'var(--bg-primary)' }}>
+      <div className="w-full max-w-full mx-auto">
+        <div className="rounded-xl sm:rounded-2xl shadow-2xl p-4 sm:p-6 lg:p-8" style={{ backgroundColor: 'var(--card-bg)', color: 'var(--text-primary)' }}>
           <div className="flex justify-between items-center mb-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-800 mb-2">🎯 Editor de Retos</h1>
-              <p className="text-gray-600">Crea y edita desafíos para el Reto al Espejo</p>
+              <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>🎯 Editor de Retos</h1>
+              <p style={{ color: 'var(--text-secondary)' }}>Crea y edita desafíos para el Reto al Espejo</p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-1 sm:gap-2">
               <input
                 type="file"
                 accept=".json"
@@ -155,21 +155,56 @@ export const ChallengeEditorApp: React.FC<ChallengeEditorAppProps> = ({ onClose 
               />
               <label
                 htmlFor="import-file"
-                className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white rounded-xl transition-all transform hover:scale-105 shadow-lg cursor-pointer"
+                className="px-2 sm:px-3 lg:px-4 py-2 rounded-lg sm:rounded-xl transition-all transform hover:scale-105 shadow-lg cursor-pointer text-sm sm:text-base"
+                style={{
+                  backgroundColor: 'var(--button-success-bg)',
+                  color: 'var(--text-on-success)'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--button-success-hover)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--button-success-bg)';
+                }}
               >
-                📥 Importar
+                <span className="sm:hidden">📥</span>
+                <span className="hidden sm:inline">📥 Importar</span>
               </label>
               <button
                 onClick={handleExportChallenges}
-                className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-xl transition-all transform hover:scale-105 shadow-lg"
+                className="px-2 sm:px-3 lg:px-4 py-2 rounded-lg sm:rounded-xl transition-all transform hover:scale-105 shadow-lg text-sm sm:text-base"
+                style={{
+                  backgroundColor: 'var(--button-primary-bg)',
+                  color: 'var(--text-on-primary)'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--button-primary-hover)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--button-primary-bg)';
+                }}
+                type="button"
               >
-                📤 Exportar
+                <span className="sm:hidden">📤</span>
+                <span className="hidden sm:inline">📤 Exportar</span>
               </button>
               <button
                 onClick={handleNewChallenge}
-                className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white rounded-xl transition-all transform hover:scale-105 shadow-lg"
+                className="px-2 sm:px-3 lg:px-4 py-2 rounded-lg sm:rounded-xl transition-all transform hover:scale-105 shadow-lg text-sm sm:text-base"
+                style={{
+                  backgroundColor: 'var(--button-secondary-bg)',
+                  color: 'var(--text-on-secondary)'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--button-secondary-hover)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--button-secondary-bg)';
+                }}
+                type="button"
               >
-                ✨ Nuevo Reto
+                <span className="sm:hidden">✨</span>
+                <span className="hidden sm:inline">✨ Nuevo Reto</span>
               </button>
               <button
                 onClick={() => {
@@ -218,16 +253,40 @@ ${pieces.map((p, i) => `    ${i+1}. Type ${p.type}, Face ${p.face}, Rot ${p.rota
                     }, 2000);
                   }, 100);
                 }}
-                className="px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-xl transition-all transform hover:scale-105 shadow-lg"
+                className="px-2 sm:px-3 lg:px-4 py-2 rounded-lg sm:rounded-xl transition-all transform hover:scale-105 shadow-lg text-sm sm:text-base"
+                style={{
+                  backgroundColor: 'var(--button-danger-bg)',
+                  color: 'var(--text-on-danger)'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--button-danger-hover)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--button-danger-bg)';
+                }}
+                type="button"
               >
-                🔥 DEBUG SNAPSHOT
+                <span className="sm:hidden">🔥</span>
+                <span className="hidden sm:inline">🔥 DEBUG SNAPSHOT</span>
               </button>
               {onClose && (
                 <button
                   onClick={onClose}
-                  className="px-4 py-2 bg-gradient-to-r from-slate-500 to-gray-600 hover:from-slate-600 hover:to-gray-700 text-white rounded-xl transition-all transform hover:scale-105 shadow-lg"
+                  className="px-2 sm:px-3 lg:px-4 py-2 rounded-lg sm:rounded-xl transition-all transform hover:scale-105 shadow-lg text-sm sm:text-base"
+                  style={{
+                    backgroundColor: 'var(--button-gray-bg)',
+                    color: 'var(--text-on-dark)'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--button-gray-hover)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--button-gray-bg)';
+                  }}
+                  type="button"
                 >
-                  🔙 Volver al Juego
+                  <span className="sm:hidden">🔙</span>
+                  <span className="hidden sm:inline">🔙 Volver al Juego</span>
                 </button>
               )}
             </div>
@@ -237,23 +296,46 @@ ${pieces.map((p, i) => `    ${i+1}. Type ${p.type}, Face ${p.face}, Rot ${p.rota
             {challenges.map(challenge => (
               <div
                 key={challenge.id}
-                className="bg-gradient-to-br from-white to-gray-50 rounded-2xl p-4 border border-gray-200 hover:border-gray-300 transition-all transform hover:scale-102 shadow-lg hover:shadow-xl h-80 flex flex-col"
+                className="rounded-2xl p-4 transition-all transform hover:scale-102 shadow-lg hover:shadow-xl h-80 flex flex-col"
+                style={{
+                  backgroundColor: 'var(--card-elevated-bg)',
+                  border: '1px solid var(--border-light)',
+                  color: 'var(--text-primary)'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--border-medium)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--border-light)';
+                }}
               >
                 {/* Compact Header with everything inline */}
                 <div className="flex justify-between items-center mb-3">
                   <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full flex items-center justify-center text-xs font-bold">
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
+                         style={{
+                           backgroundColor: 'var(--button-primary-bg)',
+                           color: 'var(--text-on-primary)'
+                         }}>
                       {challenge.id}
                     </div>
-                    <h3 className="text-base font-bold text-gray-800 truncate">
+                    <h3 className="text-base font-bold truncate" style={{ color: 'var(--text-primary)' }}>
                       {challenge.name}
                     </h3>
                   </div>
                   <div className="flex gap-1">
-                    <span className="bg-gradient-to-r from-orange-400 to-red-500 text-white px-2 py-1 rounded-full text-xs">
+                    <span className="px-2 py-1 rounded-full text-xs"
+                          style={{
+                            backgroundColor: 'var(--button-warning-bg)',
+                            color: 'var(--text-on-warning)'
+                          }}>
                       {challenge.difficulty}
                     </span>
-                    <span className="bg-gradient-to-r from-emerald-400 to-green-500 text-white px-2 py-1 rounded-full text-xs">
+                    <span className="px-2 py-1 rounded-full text-xs"
+                          style={{
+                            backgroundColor: 'var(--button-success-bg)',
+                            color: 'var(--text-on-success)'
+                          }}>
                       {challenge.piecesNeeded}p
                     </span>
                   </div>
@@ -265,12 +347,12 @@ ${pieces.map((p, i) => `    ${i+1}. Type ${p.type}, Face ${p.face}, Rot ${p.rota
                     challenge={challenge} 
                     width={300} 
                     height={230} 
-                    backgroundColor="blue"
+                    backgroundColor="dark-blue"
                   />
                 </div>
                 
                 {/* Compact Description */}
-                <div className="text-gray-600 text-xs mb-3 flex-shrink-0 h-8 overflow-hidden">
+                <div className="text-xs mb-3 flex-shrink-0 h-8 overflow-hidden" style={{ color: 'var(--text-secondary)' }}>
                   <p className="line-clamp-2">
                     {challenge.description}
                   </p>
@@ -280,13 +362,35 @@ ${pieces.map((p, i) => `    ${i+1}. Type ${p.type}, Face ${p.face}, Rot ${p.rota
                 <div className="flex gap-2 flex-shrink-0">
                   <button
                     onClick={() => handleEditChallenge(challenge)}
-                    className="flex-1 px-3 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-lg transition-all transform hover:scale-105 text-sm font-medium shadow-md"
+                    className="flex-1 px-3 py-2 rounded-lg transition-all transform hover:scale-105 text-sm font-medium shadow-md"
+                    style={{
+                      backgroundColor: 'var(--button-primary-bg)',
+                      color: 'var(--text-on-primary)'
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.backgroundColor = 'var(--button-primary-hover)';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.backgroundColor = 'var(--button-primary-bg)';
+                    }}
+                    type="button"
                   >
                     ✏️ Editar
                   </button>
                   <button
                     onClick={() => handleDeleteChallenge(challenge.id)}
-                    className="px-3 py-2 bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white rounded-lg transition-all transform hover:scale-105 text-sm font-medium shadow-md"
+                    className="px-3 py-2 rounded-lg transition-all transform hover:scale-105 text-sm font-medium shadow-md"
+                    style={{
+                      backgroundColor: 'var(--button-danger-bg)',
+                      color: 'var(--text-on-danger)'
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.backgroundColor = 'var(--button-danger-hover)';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.backgroundColor = 'var(--button-danger-bg)';
+                    }}
+                    type="button"
                   >
                     🗑️
                   </button>
@@ -298,11 +402,22 @@ ${pieces.map((p, i) => `    ${i+1}. Type ${p.type}, Face ${p.face}, Rot ${p.rota
           {challenges.length === 0 && (
             <div className="text-center py-16">
               <div className="text-6xl mb-4">🎯</div>
-              <h3 className="text-xl font-bold text-gray-700 mb-2">No hay retos disponibles</h3>
-              <p className="text-gray-600 mb-6">Comienza creando tu primer desafío</p>
+              <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>No hay retos disponibles</h3>
+              <p className="mb-6" style={{ color: 'var(--text-secondary)' }}>Comienza creando tu primer desafío</p>
               <button
                 onClick={handleNewChallenge}
-                className="px-8 py-4 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white rounded-xl font-semibold transition-all transform hover:scale-105 shadow-lg"
+                className="px-8 py-4 rounded-xl font-semibold transition-all transform hover:scale-105 shadow-lg"
+                style={{
+                  backgroundColor: 'var(--button-secondary-bg)',
+                  color: 'var(--text-on-secondary)'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--button-secondary-hover)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--button-secondary-bg)';
+                }}
+                type="button"
               >
                 ✨ Crear tu primer reto
               </button>

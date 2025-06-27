@@ -5,20 +5,21 @@
  * 
  * Usage:
  * ```tsx
- * import { SkipLink } from '@/components/accessibility';
+ * import { SkipLink, ThemeSwitcher } from '@/components/accessibility';
  * ```
  */
 import SkipLink from './SkipLink';
 import VisuallyHidden from './VisuallyHidden';
 import { LiveRegion, useAnnounce } from './LiveAnnouncer';
+import ThemeSwitcher from './ThemeSwitcher';
 
 export {
   SkipLink,
   VisuallyHidden,
   LiveRegion,
-  useAnnounce
+  useAnnounce,
+  ThemeSwitcher
 };
-export { default as SkipLink } from './SkipLink';
 
 // Export additional accessibility components as they are created
 // export { default as ScreenReaderText } from './ScreenReaderText';

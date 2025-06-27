@@ -565,7 +565,10 @@ export class RenderingService {
     ctx.save();
     ctx.imageSmoothingEnabled = false;
 
-    scaledPlayerPieces.forEach((piecePos, index) => {
+    // MEJORADO: Aplicar gap closing a las piezas escaladas antes del renderizado
+    const optimizedPieces = this.applyGapClosingToPieces(scaledPlayerPieces, playerOffsetX, playerOffsetY, scale);
+
+    optimizedPieces.forEach((piecePos, index) => {
       // Crear pieza visual
       const displayPiece = {
         id: 1000 + index,
@@ -577,14 +580,14 @@ export class RenderingService {
         triangleColor: piecePos.type === 'A' ? 
           (piecePos.face === 'front' ? '#FF4444' : '#FFD700') : 
           (piecePos.face === 'front' ? '#FFD700' : '#FF4444'),
-        x: playerOffsetX + piecePos.x,
-        y: playerOffsetY + piecePos.y,
+        x: piecePos.x,
+        y: piecePos.y,
         rotation: piecePos.rotation,
         placed: true
       };
 
-      // Dibujar la pieza del jugador
-      this.drawPieceClean(ctx, displayPiece, displayPiece.x, displayPiece.y, this.config.pieceSize * scale);
+      // Dibujar la pieza del jugador con rendering gap-free
+      this.drawPieceGapFree(ctx, displayPiece, displayPiece.x, displayPiece.y, this.config.pieceSize * scale);
 
       // Calcular y dibujar la pieza reflejada
       const reflectedX = mirrorLineX + (mirrorLineX - displayPiece.x - this.config.pieceSize * scale);
@@ -594,9 +597,196 @@ export class RenderingService {
       ctx.translate(reflectedPiece.x + (this.config.pieceSize * scale)/2, reflectedPiece.y + (this.config.pieceSize * scale)/2);
       ctx.scale(-1, 1);
       ctx.translate(-(this.config.pieceSize * scale)/2, -(this.config.pieceSize * scale)/2);
-      this.drawPieceClean(ctx, reflectedPiece, 0, 0, this.config.pieceSize * scale);
+      this.drawPieceGapFree(ctx, reflectedPiece, 0, 0, this.config.pieceSize * scale);
       ctx.restore();
     });
+
+    ctx.restore();
+  }
+
+  /**
+   * Aplica el algoritmo de gap closing usado en GameGeometry a las piezas de challenge card
+   */
+  private applyGapClosingToPieces(scaledPieces: any[], offsetX: number, offsetY: number, scale: number): any[] {
+    // Crear instancia temporal de GameGeometry para usar sus algoritmos
+    const gameGeometry = new GameGeometry({
+      width: 600,
+      height: 600,
+      mirrorLineX: 350,
+      pieceSize: this.config.pieceSize * scale
+    });
+
+    // Convertir a formato de piezas con posiciones finales
+    const piecesWithPositions = scaledPieces.map(piece => ({
+      ...piece,
+      x: offsetX + piece.x,
+      y: offsetY + piece.y
+    }));
+
+    // Aplicar gap closing solo si hay múltiples piezas conectadas
+    if (piecesWithPositions.length > 1) {
+      return piecesWithPositions.map((piece, index) => {
+        const otherPieces = piecesWithPositions.filter((_, i) => i !== index);
+        
+        // Verificar si esta pieza está cerca de otras (potencialmente conectada)
+        const isNearOthers = otherPieces.some(otherPiece => {
+          const dx = Math.abs(piece.x - otherPiece.x);
+          const dy = Math.abs(piece.y - otherPiece.y);
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          return distance < this.config.pieceSize * scale * 1.5; // Rango de conexión
+        });
+
+        if (isNearOthers) {
+          // Aplicar micro-ajuste para eliminar gaps
+          return this.applyMicroGapClosing(piece, otherPieces, scale);
+        }
+
+        return piece;
+      });
+    }
+
+    return piecesWithPositions;
+  }
+
+  /**
+   * Aplica micro-ajuste para cerrar gaps pequeños entre piezas
+   */
+  private applyMicroGapClosing(piece: any, otherPieces: any[], scale: number): any {
+    for (const otherPiece of otherPieces) {
+      const dx = otherPiece.x - piece.x;
+      const dy = otherPiece.y - piece.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      const expectedConnectionDistance = this.config.pieceSize * scale;
+      
+      // Si están cerca de la distancia de conexión esperada
+      if (distance > expectedConnectionDistance * 0.8 && distance < expectedConnectionDistance * 1.2) {
+        // Verificar si tienen colores compatibles
+        const sameColors = this.haveSameColorContact(piece, otherPiece);
+        
+        if (sameColors) {
+          // Aplicar micro-ajuste para cerrar el gap
+          const adjustmentFactor = 0.02 * scale; // Micro-ajuste de 2% del tamaño escalado
+          const directionX = dx > 0 ? adjustmentFactor : -adjustmentFactor;
+          const directionY = dy > 0 ? adjustmentFactor : -adjustmentFactor;
+          
+          return {
+            ...piece,
+            x: piece.x + (Math.abs(dx) > Math.abs(dy) ? directionX : 0),
+            y: piece.y + (Math.abs(dy) > Math.abs(dx) ? directionY : 0)
+          };
+        }
+      }
+    }
+    
+    return piece;
+  }
+
+  /**
+   * Verifica si dos piezas tienen áreas del mismo color que se tocan
+   */
+  private haveSameColorContact(piece1: any, piece2: any): boolean {
+    const colors1 = this.getPieceColorsFromType(piece1);
+    const colors2 = this.getPieceColorsFromType(piece2);
+    
+    return colors1.centerColor === colors2.centerColor || 
+           colors1.centerColor === colors2.triangleColor ||
+           colors1.triangleColor === colors2.centerColor ||
+           colors1.triangleColor === colors2.triangleColor;
+  }
+
+  /**
+   * Obtiene los colores de una pieza basado en su tipo y cara
+   */
+  private getPieceColorsFromType(piece: any): { centerColor: string; triangleColor: string } {
+    if (piece.face === 'front') {
+      return {
+        centerColor: '#FFD700', // Amarillo
+        triangleColor: '#FF4444' // Rojo
+      };
+    } else {
+      return {
+        centerColor: '#FF4444', // Rojo  
+        triangleColor: '#FFD700' // Amarillo
+      };
+    }
+  }
+
+  /**
+   * Dibuja una pieza con técnicas anti-gap
+   */
+  drawPieceGapFree(
+    ctx: CanvasRenderingContext2D, 
+    piece: Piece & { isReflected?: boolean }, 
+    x: number, 
+    y: number, 
+    size: number = 100
+  ): void {
+    ctx.save();
+
+    // Configuraciones anti-gap
+    ctx.imageSmoothingEnabled = false;
+    ctx.lineCap = 'butt';
+    ctx.lineJoin = 'miter';
+    ctx.miterLimit = 10;
+
+    ctx.translate(x + size/2, y + size/2);
+    ctx.rotate((piece.rotation * Math.PI) / 180);
+
+    // Aplicar escala horizontal invertida para piezas tipo B
+    if (piece.type === 'B') {
+      ctx.scale(-1, 1);
+    }
+
+    const unit = size * 1.28;
+    // Micro-extensión para eliminar gaps completamente
+    const overlap = 0.5; // Overlap más agresivo
+    const coord = (coordX: number, coordY: number): [number, number] => [
+      (coordX * unit), 
+      (-coordY * unit)
+    ];
+
+    // Sin bordes para evitar líneas divisorias
+    ctx.lineWidth = 0;
+    ctx.strokeStyle = 'transparent';
+
+    // Dibujar cuadrado central con extensión anti-gap
+    ctx.fillStyle = piece.centerColor;
+    ctx.beginPath();
+    ctx.moveTo(...coord(1 - overlap/unit, 0 - overlap/unit));
+    ctx.lineTo(...coord(2 + overlap/unit, 0 - overlap/unit));
+    ctx.lineTo(...coord(2 + overlap/unit, 1 + overlap/unit));
+    ctx.lineTo(...coord(1 - overlap/unit, 1 + overlap/unit));
+    ctx.closePath();
+    ctx.fill();
+
+    // Dibujar triángulos con extensión anti-gap
+    ctx.fillStyle = piece.triangleColor;
+
+    // Triángulo izquierdo - extendido para solapar perfectamente
+    ctx.beginPath();
+    ctx.moveTo(...coord(0 - overlap/unit, 0 - overlap/unit));
+    ctx.lineTo(...coord(1 + overlap/unit, 0 - overlap/unit));
+    ctx.lineTo(...coord(1 + overlap/unit, 1 + overlap/unit));
+    ctx.lineTo(...coord(0 - overlap/unit, 1 + overlap/unit));
+    ctx.closePath();
+    ctx.fill();
+
+    // Triángulo superior - extendido para solapar perfectamente
+    ctx.beginPath();
+    ctx.moveTo(...coord(1 - overlap/unit, 1 - overlap/unit));
+    ctx.lineTo(...coord(2 + overlap/unit, 1 - overlap/unit));
+    ctx.lineTo(...coord(1.5, 1.5 + overlap/unit));
+    ctx.closePath();
+    ctx.fill();
+
+    // Triángulo derecho - extendido para solapar perfectamente
+    ctx.beginPath();
+    ctx.moveTo(...coord(2 - overlap/unit, 0 - overlap/unit));
+    ctx.lineTo(...coord(2 - overlap/unit, 1 + overlap/unit));
+    ctx.lineTo(...coord(2.5 + overlap/unit, 0.5));
+    ctx.closePath();
+    ctx.fill();
 
     ctx.restore();
   }

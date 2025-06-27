@@ -16,9 +16,15 @@ export class CanvasGradients {
       GAME_AREA_WIDTH / 2, GAME_AREA_HEIGHT / 2, GAME_AREA_WIDTH
     );
     
-    gradient.addColorStop(0, '#ffffff');
-    gradient.addColorStop(0.6, '#f8fafc');
-    gradient.addColorStop(1, '#e2e8f0');
+    // Get colors from theme variables
+    const styles = getComputedStyle(document.body);
+    const canvasBg = styles.getPropertyValue('--canvas-bg-light').trim() || '#f8fafc';
+    const cardBg = styles.getPropertyValue('--card-bg').trim() || '#ffffff';
+    const bgSecondary = styles.getPropertyValue('--bg-secondary').trim() || '#e2e8f0';
+    
+    gradient.addColorStop(0, cardBg);
+    gradient.addColorStop(0.6, canvasBg);
+    gradient.addColorStop(1, bgSecondary);
     
     return gradient;
   }
@@ -34,11 +40,18 @@ export class CanvasGradients {
       MIRROR_LINE + GAME_AREA_WIDTH, 0
     );
     
-    gradient.addColorStop(0, '#e8f4f8');
-    gradient.addColorStop(0.2, '#f1f8fc');
-    gradient.addColorStop(0.5, '#ffffff');
-    gradient.addColorStop(0.8, '#f1f8fc');
-    gradient.addColorStop(1, '#d6eaf8');
+    // Get colors from theme variables
+    const styles = getComputedStyle(document.body);
+    const canvasBg = styles.getPropertyValue('--canvas-bg-light').trim() || '#f8fafc';
+    const cardBg = styles.getPropertyValue('--card-bg').trim() || '#ffffff';
+    const bgSecondary = styles.getPropertyValue('--bg-secondary').trim() || '#e2e8f0';
+    const bgTertiary = styles.getPropertyValue('--bg-tertiary').trim() || '#d6eaf8';
+    
+    gradient.addColorStop(0, bgTertiary);
+    gradient.addColorStop(0.2, bgSecondary);
+    gradient.addColorStop(0.5, cardBg);
+    gradient.addColorStop(0.8, bgSecondary);
+    gradient.addColorStop(1, bgTertiary);
     
     return gradient;
   }
@@ -72,8 +85,13 @@ export class CanvasGradients {
       0, GAME_AREA_HEIGHT + BOTTOM_AREA_HEIGHT
     );
     
-    gradient.addColorStop(0, '#fef7ed');
-    gradient.addColorStop(1, '#f3e8ff');
+    // Get colors from theme variables
+    const styles = getComputedStyle(document.body);
+    const bgSecondary = styles.getPropertyValue('--bg-secondary').trim() || '#f8fafc';
+    const bgTertiary = styles.getPropertyValue('--bg-tertiary').trim() || '#e2e8f0';
+    
+    gradient.addColorStop(0, bgSecondary);
+    gradient.addColorStop(1, bgTertiary);
     
     return gradient;
   }
@@ -89,8 +107,13 @@ export class CanvasGradients {
       MIRROR_LINE, GAME_AREA_HEIGHT + BOTTOM_AREA_HEIGHT
     );
     
-    gradient.addColorStop(0, '#ffffff');
-    gradient.addColorStop(1, '#f8fafc');
+    // Get colors from theme variables
+    const styles = getComputedStyle(document.body);
+    const cardBg = styles.getPropertyValue('--card-bg').trim() || '#ffffff';
+    const canvasBg = styles.getPropertyValue('--canvas-bg-light').trim() || '#f8fafc';
+    
+    gradient.addColorStop(0, cardBg);
+    gradient.addColorStop(1, canvasBg);
     
     return gradient;
   }

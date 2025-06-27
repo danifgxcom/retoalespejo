@@ -309,25 +309,27 @@ class SocketService {
     this.socket?.on('gameNotification', callback);
   }
 
-  // Request next challenge
-  nextChallenge(): void {
+  // Signal player ready for next challenge
+  playerReady(): void {
     if (!this.socket || !this.roomId) {
-      console.log('❌ nextChallenge failed - socket:', !!this.socket, 'roomId:', this.roomId);
+      console.log('❌ playerReady failed - socket:', !!this.socket, 'roomId:', this.roomId);
       return;
     }
 
-    console.log('📤 Emitting nextChallenge:', { roomId: this.roomId });
-    this.socket.emit('nextChallenge', { 
+    console.log('📤 Emitting playerReady:', { roomId: this.roomId });
+    this.socket.emit('playerReady', { 
       roomId: this.roomId
     });
   }
 
-  // Listen for next challenge ready event
-  onNextChallengeReady(callback: (data: { 
-    requestedBy: string;
-    newTimer: number;
+  // Listen for players ready update
+  onPlayersReadyUpdate(callback: (data: { 
+    readyCount: number;
+    totalPlayers: number;
+    readyPlayers: string[];
+    playerUsername: string;
   }) => void): void {
-    this.socket?.on('nextChallengeReady', callback);
+    this.socket?.on('playersReadyUpdate', callback);
   }
 }
 

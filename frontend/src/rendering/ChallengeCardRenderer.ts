@@ -1,6 +1,7 @@
 import { Challenge } from '../components/ChallengeCard';
 import { Piece } from '../components/GamePiece';
 import { GameGeometry } from '../utils/geometry/GameGeometry';
+import { PieceColors } from '../utils/piece/PieceColors';
 
 export interface ChallengeCardRenderConfig {
   cardLeft: number;
@@ -318,12 +319,10 @@ export class ChallengeCardRenderer {
    * Creates a display piece from piece position data
    */
   private createDisplayPiece(piecePos: any, index: number, offsetX: number, offsetY: number): Piece {
-    const centerColor = piecePos.type === 'A' ? 
-      (piecePos.face === 'front' ? '#FFD700' : '#FF4444') : 
-      (piecePos.face === 'front' ? '#FF4444' : '#FFD700');
-    const triangleColor = piecePos.type === 'A' ? 
-      (piecePos.face === 'front' ? '#FF4444' : '#FFD700') : 
-      (piecePos.face === 'front' ? '#FFD700' : '#FF4444');
+    // Use theme-aware colors
+    const colors = PieceColors.getColorsForFace(piecePos.face);
+    const centerColor = colors.centerColor;
+    const triangleColor = colors.triangleColor;
 
     return {
       id: 1000 + index,

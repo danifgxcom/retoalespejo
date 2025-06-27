@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, forwardRef, useImperativeHandle, useState, useMemo } from 'react';
+import { useTheme } from '../contexts/ThemeContext';
 import { Piece, drawPiece } from './GamePiece';
 import { Challenge } from './ChallengeCard';
 import { GameGeometry } from '../utils/geometry/GameGeometry';
@@ -18,6 +19,7 @@ interface GameCanvasProps {
   onContextMenu: (e: React.MouseEvent<HTMLCanvasElement>) => void;
   geometry: GameGeometry;
   debugMode?: boolean;
+  showGrid?: boolean;
   draggedPiece?: Piece | null;
   interactingPieceId?: number | null;
   temporaryDraggedPieceId?: number | null;
@@ -29,9 +31,10 @@ export interface GameCanvasRef {
 }
 
 const GameCanvas = forwardRef<GameCanvasRef, GameCanvasProps>(
-    ({ pieces, currentChallenge, challenges, onMouseDown, onMouseMove, onMouseUp, onMouseLeave, onContextMenu, geometry, debugMode = false, draggedPiece, interactingPieceId, temporaryDraggedPieceId, animatingPieceId }, ref) => {
+    ({ pieces, currentChallenge, challenges, onMouseDown, onMouseMove, onMouseUp, onMouseLeave, onContextMenu, geometry, debugMode = false, showGrid = false, draggedPiece, interactingPieceId, temporaryDraggedPieceId, animatingPieceId }, ref) => {
       const canvasRef = useRef<HTMLCanvasElement>(null);
       const containerRef = useRef<HTMLDivElement>(null);
+      const { theme } = useTheme(); // Get current theme to force re-render on theme change
       // Almacenar los resultados de validación para cada desafío
       const [challengeValidations, setChallengeValidations] = useState<{[key: number]: any}>({});
       
@@ -91,7 +94,6 @@ const GameCanvas = forwardRef<GameCanvasRef, GameCanvasProps>(
             scale
           });
           
-          console.log(`🎯 Canvas responsive update: ${Math.floor(newWidth)}x${Math.floor(newHeight)}, scale: ${scale.toFixed(3)}`);
         };
 
         // Initial calculation
@@ -130,9 +132,145 @@ const GameCanvas = forwardRef<GameCanvasRef, GameCanvasProps>(
         pieceSize: PIECE_SIZE
       }), []);
 
-      // Use shared drawing utility
-      const drawBackgroundAreas = (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => {
-        CanvasDrawing.drawBackgroundAreas(ctx);
+      // Grid drawing function - simple uniform grid for all pieces
+      const drawGrid = (ctx: CanvasRenderingContext2D) => {
+        const gridSize = 10; // Same as GRID_SIZE in useMouseHandlers - uniform for all pieces
+        
+        ctx.save();
+        
+        // Draw main grid lines (every 10px) - clear and visible
+        ctx.strokeStyle = 'rgba(0, 100, 255, 0.15)';
+        ctx.lineWidth = 0.8;
+        
+        // Draw vertical lines
+        for (let x = 0; x <= GAME_AREA_WIDTH; x += gridSize) {
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, GAME_AREA_HEIGHT);
+          ctx.stroke();
+        }
+        
+        // Draw horizontal lines
+        for (let y = 0; y <= GAME_AREA_HEIGHT; y += gridSize) {
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(GAME_AREA_WIDTH, y);
+          ctx.stroke();
+        }
+        
+        // Draw thicker reference lines every 50px for visual reference
+        ctx.strokeStyle = 'rgba(0, 100, 255, 0.3)';
+        ctx.lineWidth = 1.5;
+        
+        const majorGridSize = 50;
+        
+        // Draw major vertical lines
+        for (let x = 0; x <= GAME_AREA_WIDTH; x += majorGridSize) {
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, GAME_AREA_HEIGHT);
+          ctx.stroke();
+        }
+        
+        // Draw major horizontal lines
+        for (let y = 0; y <= GAME_AREA_HEIGHT; y += majorGridSize) {
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(GAME_AREA_WIDTH, y);
+          ctx.stroke();
+        }
+        
+        // Add simple grid info
+        ctx.font = '12px "Segoe UI", sans-serif';
+        ctx.fillStyle = 'rgba(0, 100, 255, 0.8)';
+        ctx.fillText('Grid Fijo: 10px uniforme', 10, GAME_AREA_HEIGHT - 15);
+        
+        ctx.restore();
+      };
+
+      // Use shared drawing utility with theme colors - Cross-browser compatible version
+      const drawBackgroundAreas = (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, showGrid: boolean = false) => {
+        // Use theme context directly instead of body classes for reliable detection
+        const isAccessibleTheme = theme === 'accessible';
+        const isColorfulTheme = theme === 'colorful';
+        
+        // Define colors directly based on theme context for cross-browser compatibility
+        let canvasBg: string;
+        
+        if (isAccessibleTheme) {
+          canvasBg = '#1e293b'; // Dark navy for accessible theme
+        } else if (isColorfulTheme) {
+          canvasBg = 'rgba(248, 250, 252, 0.95)'; // Light blue-tinted for colorful theme  
+        } else {
+          // Fallback
+          canvasBg = '#f8fafc'; // Default light
+        }
+        
+        // Fill entire canvas with theme background
+        ctx.fillStyle = canvasBg;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Create theme-aware gradients for areas
+        drawThemeAwareBackgroundAreas(ctx, isAccessibleTheme);
+      };
+
+      // Theme-aware background areas that work cross-browser
+      const drawThemeAwareBackgroundAreas = (ctx: CanvasRenderingContext2D, isAccessibleTheme: boolean) => {
+        const { GAME_AREA_WIDTH, GAME_AREA_HEIGHT, BOTTOM_AREA_HEIGHT, MIRROR_LINE } = CANVAS_CONSTANTS;
+        
+        // Define colors based on theme
+        const colors = isAccessibleTheme ? {
+          // Accessible theme colors - high contrast
+          gameArea1: '#334155',    // Dark slate
+          gameArea2: '#1e293b',    // Darker slate  
+          gameArea3: '#0f172a',    // Very dark navy
+          mirrorArea1: '#374151',  // Medium slate
+          mirrorArea2: '#1f2937',  // Dark gray
+          pieceArea1: '#374151',   // Medium slate
+          pieceArea2: '#1e293b',   // Dark slate
+        } : {
+          // Colorful theme colors - light and vibrant
+          gameArea1: '#ffffff',    // White
+          gameArea2: '#f8fafc',    // Very light blue
+          gameArea3: '#e2e8f0',    // Light blue-gray
+          mirrorArea1: '#e8f4f8',  // Light cyan
+          mirrorArea2: '#d6eaf8',  // Slightly darker cyan
+          pieceArea1: '#fef7ed',   // Light orange
+          pieceArea2: '#f3e8ff',   // Light purple
+        };
+
+        // Game area gradient
+        const gameGradient = ctx.createRadialGradient(
+          GAME_AREA_WIDTH / 2, GAME_AREA_HEIGHT / 2, 0,
+          GAME_AREA_WIDTH / 2, GAME_AREA_HEIGHT / 2, GAME_AREA_WIDTH
+        );
+        gameGradient.addColorStop(0, colors.gameArea1);
+        gameGradient.addColorStop(0.6, colors.gameArea2);
+        gameGradient.addColorStop(1, colors.gameArea3);
+        ctx.fillStyle = gameGradient;
+        ctx.fillRect(0, 0, GAME_AREA_WIDTH, GAME_AREA_HEIGHT);
+
+        // Mirror area gradient
+        const mirrorGradient = ctx.createLinearGradient(MIRROR_LINE, 0, MIRROR_LINE + GAME_AREA_WIDTH, 0);
+        mirrorGradient.addColorStop(0, colors.mirrorArea2);
+        mirrorGradient.addColorStop(0.2, colors.gameArea2);
+        mirrorGradient.addColorStop(0.5, colors.gameArea1);
+        mirrorGradient.addColorStop(0.8, colors.gameArea2);
+        mirrorGradient.addColorStop(1, colors.mirrorArea1);
+        ctx.fillStyle = mirrorGradient;
+        ctx.fillRect(MIRROR_LINE, 0, GAME_AREA_WIDTH, GAME_AREA_HEIGHT);
+
+        // Piece storage area - Extended to full width
+        const pieceGradient = ctx.createLinearGradient(0, GAME_AREA_HEIGHT, 0, GAME_AREA_HEIGHT + BOTTOM_AREA_HEIGHT);
+        pieceGradient.addColorStop(0, colors.pieceArea1);
+        pieceGradient.addColorStop(1, colors.pieceArea2);
+        ctx.fillStyle = pieceGradient;
+        ctx.fillRect(0, GAME_AREA_HEIGHT, GAME_AREA_WIDTH * 2, BOTTOM_AREA_HEIGHT);
+
+        // Draw grid overlay if enabled
+        if (showGrid) {
+          drawGrid(ctx);
+        }
       };
 
       // Dibujar marco de espejo clásico en bordes exteriores y líneas divisorias elegantes
@@ -177,24 +315,25 @@ const GameCanvas = forwardRef<GameCanvasRef, GameCanvasProps>(
           ctx.fillText(text, x, y);
         };
 
+        // Theme-aware text colors
+        const isAccessibleTheme = theme === 'accessible';
+        const primaryTextColor = isAccessibleTheme ? '#f1f5f9' : '#1e293b';
+        const secondaryTextColor = isAccessibleTheme ? '#cbd5e1' : '#64748b';
+
         // Área de juego
-        drawTextWithShadow('🎮 ÁREA DE JUEGO', 15, 30, '#1e293b');
+        drawTextWithShadow('🎮 ÁREA DE JUEGO', 15, 30, primaryTextColor);
 
         // Espejo con icono
-        drawTextWithShadow('🪞 ESPEJO', MIRROR_LINE + 15, 30, '#1e293b');
+        drawTextWithShadow('🪞 ESPEJO', MIRROR_LINE + 15, 30, primaryTextColor);
 
         // Piezas disponibles
-        drawTextWithShadow('🧩 PIEZAS DISPONIBLES', 15, GAME_AREA_HEIGHT + 30, '#1e293b');
-
-        // Objetivo
-        drawTextWithShadow('🎯 OBJETIVO', MIRROR_LINE + 15, GAME_AREA_HEIGHT + 30, '#1e293b');
+        drawTextWithShadow('🧩 PIEZAS DISPONIBLES', 15, GAME_AREA_HEIGHT + 30, primaryTextColor);
 
         // Agregar subtítulos descriptivos
         ctx.font = '13px "Segoe UI", sans-serif';
-        drawTextWithShadow('Arrastra aquí tus piezas', 15, 50, '#64748b');
-        drawTextWithShadow('Reflejo automático', MIRROR_LINE + 15, 50, '#64748b');
-        drawTextWithShadow('Haz clic para rotar/voltear', 15, GAME_AREA_HEIGHT + 50, '#64748b');
-        drawTextWithShadow('Patrón a conseguir', MIRROR_LINE + 15, GAME_AREA_HEIGHT + 50, '#64748b');
+        drawTextWithShadow('Arrastra aquí tus piezas', 15, 50, secondaryTextColor);
+        drawTextWithShadow('Reflejo automático', MIRROR_LINE + 15, 50, secondaryTextColor);
+        drawTextWithShadow('Haz clic para rotar/voltear', 15, GAME_AREA_HEIGHT + 50, secondaryTextColor);
       };
 
       // Dibujar reflejos de las piezas con efecto realista
@@ -349,23 +488,64 @@ const GameCanvas = forwardRef<GameCanvasRef, GameCanvasProps>(
       // Dibujar el marco de la tarjeta de desafío
       const drawCardFrame = (ctx: CanvasRenderingContext2D) => {
         const challenge = challenges[currentChallenge];
+        const isAccessibleTheme = theme === 'accessible';
+        
+        const cardLeft = MIRROR_LINE + 50;
+        const cardTop = GAME_AREA_HEIGHT + 50;
+        const cardWidth = GAME_AREA_WIDTH - 100;
+        const cardHeight = BOTTOM_AREA_HEIGHT - 100;
 
-        // Fondo de la tarjeta
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(MIRROR_LINE + 50, GAME_AREA_HEIGHT + 50, GAME_AREA_WIDTH - 100, BOTTOM_AREA_HEIGHT - 100);
+        // Theme-aware challenge card background with difficulty-based gradient
+        if (isAccessibleTheme) {
+          // Accessible theme: Dark gradients with good contrast
+          const gradient = ctx.createLinearGradient(cardLeft, cardTop, cardLeft + cardWidth, cardTop + cardHeight);
+          
+          // Difficulty-based dark gradients for accessible theme
+          const difficultyColors = {
+            'Principiante': ['#1e293b', '#334155'], // Dark slate tones
+            'Fácil': ['#1e293b', '#475569'],        // Slightly lighter
+            'Intermedio': ['#334155', '#1e40af'],   // Dark slate to navy
+            'Difícil': ['#1e40af', '#1d4ed8'],      // Navy blues 
+            'Avanzado': ['#1d4ed8', '#2563eb']      // Bright blues (high contrast)
+          };
+          
+          const colors = difficultyColors[challenge?.difficulty as keyof typeof difficultyColors] || ['#1e293b', '#334155'];
+          gradient.addColorStop(0, colors[0]);
+          gradient.addColorStop(1, colors[1]);
+          ctx.fillStyle = gradient;
+        } else {
+          // Colorful theme: Light gradients inspired by original Educa colors
+          const gradient = ctx.createLinearGradient(cardLeft, cardTop, cardLeft + cardWidth, cardTop + cardHeight);
+          
+          // Difficulty-based light gradients for colorful theme
+          const difficultyColors = {
+            'Principiante': ['#f0f9ff', '#e0f2fe'], // Very light blue
+            'Fácil': ['#e0f2fe', '#bae6fd'],        // Light blue
+            'Intermedio': ['#bae6fd', '#7dd3fc'],   // Medium blue
+            'Difícil': ['#7dd3fc', '#38bdf8'],      // Brighter blue
+            'Avanzado': ['#38bdf8', '#0ea5e9']      // Electric blue (Educa inspired)
+          };
+          
+          const colors = difficultyColors[challenge?.difficulty as keyof typeof difficultyColors] || ['#ffffff', '#f8fafc'];
+          gradient.addColorStop(0, colors[0]);
+          gradient.addColorStop(1, colors[1]);
+          ctx.fillStyle = gradient;
+        }
+        
+        ctx.fillRect(cardLeft, cardTop, cardWidth, cardHeight);
 
-        // Borde exterior de la tarjeta
-        ctx.strokeStyle = '#333333';
-        ctx.lineWidth = 4;
-        ctx.strokeRect(MIRROR_LINE + 50, GAME_AREA_HEIGHT + 50, GAME_AREA_WIDTH - 100, BOTTOM_AREA_HEIGHT - 100);
+        // Theme-aware border
+        ctx.strokeStyle = isAccessibleTheme ? '#64748b' : '#1e40af'; // Gray vs navy
+        ctx.lineWidth = isAccessibleTheme ? 3 : 4;
+        ctx.strokeRect(cardLeft, cardTop, cardWidth, cardHeight);
 
-        // Título de la tarjeta
-        ctx.fillStyle = '#333333';
+        // Theme-aware text
+        ctx.fillStyle = isAccessibleTheme ? '#f1f5f9' : '#1e293b'; // Light vs dark text
         ctx.font = 'bold 14px Arial';
         ctx.textAlign = 'center';
         ctx.fillText('CHALLENGE CARD', MIRROR_LINE + GAME_AREA_WIDTH/2, GAME_AREA_HEIGHT + 75);
 
-        // Número del desafío
+        // Challenge number with high contrast
         ctx.font = 'bold 20px Arial';
         if (challenge && challenge.id !== undefined) {
           ctx.fillText(`#${challenge.id}`, MIRROR_LINE + GAME_AREA_WIDTH/2, GAME_AREA_HEIGHT + 95);
@@ -640,14 +820,6 @@ const GameCanvas = forwardRef<GameCanvasRef, GameCanvasProps>(
 
         // DEBUG INFO para tarjeta de reto (solo en modo debug)
         if (debugMode) {
-          console.log('🎯 TARJETA DE RETO DEBUG:');
-          console.log(`Card area: ${cardAreaWidth}x${cardAreaHeight}`);
-          console.log(`Game scale: ${scale.toFixed(3)}`);
-          console.log(`Mirror line X: ${mirrorLineX.toFixed(1)}`);
-          console.log(`Game offset: (${gameAreaOffsetX}, ${gameAreaOffsetY})`);
-          console.log(`Pieces count: ${scaledPlayerPieces.length}`);
-          console.log(`Card offset: (${cardOffsetX}, ${cardOffsetY})`);
-          console.log(`Scaled pieces:`, scaledPlayerPieces);
 
           ctx.fillStyle = '#ff0000';
           ctx.font = 'bold 12px Arial';
@@ -679,13 +851,29 @@ const GameCanvas = forwardRef<GameCanvasRef, GameCanvasProps>(
         ctx.imageSmoothingEnabled = false;
 
         sortedPieces.forEach((piecePos, index) => {
-          // Crear una pieza visual a partir de la posición - usar lógica consistente
+          // Crear una pieza visual a partir de la posición usando colores del tema
+          const computedStyle = getComputedStyle(document.body);
+          const frontCenter = computedStyle.getPropertyValue('--canvas-piece-front-center') || '#FFD700';
+          const frontTriangle = computedStyle.getPropertyValue('--canvas-piece-front-triangle') || '#FF4444';
+          const backCenter = computedStyle.getPropertyValue('--canvas-piece-back-center') || '#FF4444';
+          const backTriangle = computedStyle.getPropertyValue('--canvas-piece-back-triangle') || '#FFD700';
+          
+          // Determinar colores basados en cara y tipo usando temas
+          let centerColor, triangleColor;
+          if (piecePos.type === 'A') {
+            centerColor = piecePos.face === 'front' ? frontCenter : backCenter;
+            triangleColor = piecePos.face === 'front' ? frontTriangle : backTriangle;
+          } else {
+            centerColor = piecePos.face === 'front' ? backCenter : frontCenter;
+            triangleColor = piecePos.face === 'front' ? backTriangle : frontTriangle;
+          }
+          
           const displayPiece = {
             id: 1000 + index,
             type: piecePos.type,
             face: piecePos.face,
-            centerColor: piecePos.face === 'front' ? '#FFD700' : '#FF4444',
-            triangleColor: piecePos.face === 'front' ? '#FF4444' : '#FFD700',
+            centerColor,
+            triangleColor,
             x: gameAreaOffsetX + piecePos.x, // Usar offset del área de juego escalada
             y: gameAreaOffsetY + piecePos.y,
             rotation: piecePos.rotation,
@@ -702,12 +890,7 @@ const GameCanvas = forwardRef<GameCanvasRef, GameCanvasProps>(
             y: displayPiece.y
           };
 
-          if (debugMode) {
-            console.log(`🧩 Piece ${index + 1}:`);
-            console.log(`  Original: x=${displayPiece.x.toFixed(1)}, y=${displayPiece.y.toFixed(1)}`);
-            console.log(`  Reflected: x=${reflectedPiece.x.toFixed(1)}, y=${reflectedPiece.y.toFixed(1)}`);
-            console.log(`  Gap between pieces: ${Math.abs(reflectedX - (displayPiece.x + PIECE_SIZE * scale)).toFixed(1)}px`);
-          }
+          // Debug logging removed for performance
 
           // Dibujar la pieza del jugador
           drawPieceClean(ctx, displayPiece, displayPiece.x, displayPiece.y, PIECE_SIZE * scale);
@@ -734,7 +917,7 @@ const GameCanvas = forwardRef<GameCanvasRef, GameCanvasProps>(
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        drawBackgroundAreas(ctx, canvas);
+        drawBackgroundAreas(ctx, canvas, showGrid);
         drawMirrorFrameAndDivisions(ctx, canvas);
 
         // DEBUG MODE: Etiquetas de áreas solo en modo debug
@@ -744,37 +927,17 @@ const GameCanvas = forwardRef<GameCanvasRef, GameCanvasProps>(
 
         // DEBUG MODE: Dibujar límites y información de debug
         if (debugMode) {
-          // Dibujar límites del área de piezas disponibles
+          // Dibujar límites del área de piezas disponibles (extended)
           ctx.strokeStyle = 'blue';
           ctx.lineWidth = 3;
           ctx.setLineDash([10, 5]);
-          ctx.strokeRect(0, GAME_AREA_HEIGHT, GAME_AREA_WIDTH, BOTTOM_AREA_HEIGHT);
-          ctx.setLineDash([]);
-
-          // Dibujar límites del cuadrante izquierdo (área de piezas)
-          ctx.strokeStyle = 'green';
-          ctx.lineWidth = 2;
-          ctx.setLineDash([5, 5]);
-          ctx.strokeRect(0, GAME_AREA_HEIGHT, GAME_AREA_WIDTH/2, BOTTOM_AREA_HEIGHT);
-          ctx.setLineDash([]);
-
-          // Dibujar límites del cuadrante derecho (área de objetivo)
-          ctx.strokeStyle = 'orange';
-          ctx.lineWidth = 2;
-          ctx.setLineDash([5, 5]);
-          ctx.strokeRect(GAME_AREA_WIDTH/2, GAME_AREA_HEIGHT, GAME_AREA_WIDTH/2, BOTTOM_AREA_HEIGHT);
+          ctx.strokeRect(0, GAME_AREA_HEIGHT, GAME_AREA_WIDTH * 2, BOTTOM_AREA_HEIGHT);
           ctx.setLineDash([]);
 
           // Etiquetas de coordenadas y áreas
           ctx.fillStyle = 'blue';
           ctx.font = 'bold 14px Arial';
-          ctx.fillText(`ÁREA PIEZAS: (0,${GAME_AREA_HEIGHT}) a (${GAME_AREA_WIDTH},${CANVAS_HEIGHT})`, 10, GAME_AREA_HEIGHT + 70);
-
-          ctx.fillStyle = 'green';
-          ctx.fillText(`CUADRANTE PIEZAS: (0,${GAME_AREA_HEIGHT}) a (${GAME_AREA_WIDTH/2},${CANVAS_HEIGHT})`, 10, GAME_AREA_HEIGHT + 90);
-
-          ctx.fillStyle = 'orange';
-          ctx.fillText(`CUADRANTE OBJETIVO: (${GAME_AREA_WIDTH/2},${GAME_AREA_HEIGHT}) a (${GAME_AREA_WIDTH},${CANVAS_HEIGHT})`, 10, GAME_AREA_HEIGHT + 110);
+          ctx.fillText(`ÁREA PIEZAS EXTENDIDA: (0,${GAME_AREA_HEIGHT}) a (${GAME_AREA_WIDTH * 2},${CANVAS_HEIGHT})`, 10, GAME_AREA_HEIGHT + 70);
         }
 
         // USAR GAMEAREARENDERER para dibujar piezas con etiquetas interactivas
@@ -814,47 +977,17 @@ const GameCanvas = forwardRef<GameCanvasRef, GameCanvasProps>(
         }
 
         drawMirrorReflections(ctx);
-        drawChallengeCard(ctx);
       };
 
       // Validar todos los desafíos una sola vez al inicializar el componente
       useEffect(() => {
         const validations: {[key: number]: any} = {};
         if (challenges && challenges.length > 0) {
-          console.log('🔍 DEBUGGING CHALLENGES - Total challenges loaded:', challenges.length);
-
           challenges.forEach(challenge => {
             if (challenge && challenge.id !== undefined && challenge.objective && challenge.objective.playerPieces) {
-              console.log(`🎯 Challenge ${challenge.id} (${challenge.name}):`);
-              console.log('  Player pieces:', challenge.objective.playerPieces);
-
-              // Verificar coordenadas específicamente
-              challenge.objective.playerPieces.forEach((piece, index) => {
-                console.log(`  Piece ${index + 1}: type=${piece.type}, x=${piece.x}, y=${piece.y}, rotation=${piece.rotation}`);
-
-                // Verificar si toca el espejo manualmente
-                const touchesCheck = geometry.isPieceTouchingMirror(piece);
-                const bbox = geometry.getPieceBoundingBox(piece);
-                console.log(`    Bounding box: left=${bbox.left}, right=${bbox.right}, top=${bbox.top}, bottom=${bbox.bottom}`);
-                console.log(`    Touches mirror: ${touchesCheck}, Distance to mirror: ${Math.abs(bbox.right - 700)}`);
-              });
-
               // Usar validación real según las reglas del juego
               const validation = geometry.validateChallengeCard(challenge.objective.playerPieces);
               validations[challenge.id] = validation;
-
-              // Log de validación para debugging
-              console.log(`  ✅ Validation result:`, validation);
-              if (!validation.isValid) {
-                console.warn(`  ❌ Challenge ${challenge.id} (${challenge.name}) NO ES VÁLIDO:`, {
-                  touchesMirror: validation.touchesMirror,
-                  hasPieceOverlaps: validation.hasPieceOverlaps,
-                  hasReflectionOverlaps: validation.hasReflectionOverlaps,
-                  entersMirror: validation.entersMirror,
-                  piecesConnected: validation.piecesConnected,
-                  piecesInArea: validation.piecesInArea
-                });
-              }
             }
           });
         }
@@ -862,8 +995,13 @@ const GameCanvas = forwardRef<GameCanvasRef, GameCanvasProps>(
       }, [challenges, geometry]);
 
       useEffect(() => {
-        drawCanvas();
-      }, [pieces, currentChallenge, challenges, challengeValidations, debugMode]); // Incluir debugMode para redibujar
+        // Use requestAnimationFrame for smooth rendering during piece movement
+        const animationId = requestAnimationFrame(() => {
+          drawCanvas();
+        });
+        
+        return () => cancelAnimationFrame(animationId);
+      }, [pieces, currentChallenge, challenges, challengeValidations, debugMode, theme]); // Include theme to force re-render on theme change
 
       return (
           <div ref={containerRef} className="relative w-full h-full flex items-center justify-center">
@@ -871,17 +1009,18 @@ const GameCanvas = forwardRef<GameCanvasRef, GameCanvasProps>(
                 ref={canvasRef}
                 width={CANVAS_WIDTH}
                 height={CANVAS_HEIGHT}
-                className="cursor-pointer bg-white shadow-2xl"
+                className="cursor-pointer shadow-2xl"
                 style={{
                   width: `${canvasDimensions.width}px`,
                   height: `${canvasDimensions.height}px`,
-                  border: '3px solid #e5e7eb',
+                  backgroundColor: 'var(--canvas-bg-light)',
+                  border: '3px solid var(--border-medium)',
                   borderRadius: '16px',
                   boxShadow: `
-                    0 0 0 1px rgba(0, 0, 0, 0.05),
-                    0 1px 3px rgba(0, 0, 0, 0.1),
-                    0 4px 12px rgba(0, 0, 0, 0.15),
-                    0 0 0 3px rgba(59, 130, 246, 0.1)
+                    0 0 0 1px var(--game-shadow),
+                    0 1px 3px var(--game-shadow),
+                    0 4px 12px var(--game-shadow),
+                    0 0 0 3px var(--game-shadow)
                   `
                 }}
                 onMouseDown={onMouseDown}

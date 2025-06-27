@@ -27,6 +27,20 @@ const pieceToPosition = (piece: Piece) => ({
   rotation: piece.rotation
 });
 
+/**
+ * Grid fijo uniforme - TODAS las piezas usan las mismas posiciones del grid
+ */
+const GRID_SIZE = 10; // Grid uniforme para todas las piezas, sin importar rotación
+
+const snapToFixedGrid = (x: number, y: number, rotation: number = 0) => {
+  // Grid uniforme: TODAS las piezas se posicionan en múltiplos exactos de 10px
+  // Esto garantiza que las piezas puedan conectarse perfectamente
+  return {
+    x: Math.round(x / GRID_SIZE) * GRID_SIZE,
+    y: Math.round(y / GRID_SIZE) * GRID_SIZE
+  };
+};
+
 export const useMouseHandlers = ({
                                    pieces,
                                    draggedPiece,
@@ -77,7 +91,7 @@ export const useMouseHandlers = ({
       const x = coords.x - dragOffset.x;
       const y = coords.y - dragOffset.y;
 
-      // Crea una pieza temporal para calcular posición usando geometría
+      // Durante el drag, aplicar constraint geométrico pero sin snap para fluidez
       const tempPiecePosition = pieceToPosition({ ...draggedPiece, x, y });
       const constrainedPosition = geometry.constrainPiecePosition(
         tempPiecePosition, 
@@ -86,45 +100,76 @@ export const useMouseHandlers = ({
         true // Respetar el espejo
       );
 
-      // Actualiza la posición de la pieza y determina si está en el área de juego
-      setPieces((prevPieces) =>
-          prevPieces.map((p) => {
-            if (p.id === draggedPiece.id) {
-              const updatedPiece = { ...p, x: constrainedPosition.x, y: constrainedPosition.y };
-              updatedPiece.placed = geometry.isPieceInGameArea(updatedPiece);
-              return updatedPiece;
-            }
-            return p;
-          })
-      );
-    } else {
-      // Modo hover: mostrar número de pieza cuando se pasa el mouse por encima
-      const hoveredPiece = pieces.slice().reverse().find((piece) => isPieceHit(piece, coords.x, coords.y));
-      setInteractingPieceId(hoveredPiece?.id || null);
+      // Actualización optimizada - solo cambiar la pieza que se mueve
+      setPieces((prevPieces) => {
+        const newPieces = [...prevPieces];
+        const pieceIndex = newPieces.findIndex(p => p.id === draggedPiece.id);
+        if (pieceIndex !== -1) {
+          newPieces[pieceIndex] = {
+            ...newPieces[pieceIndex],
+            x: constrainedPosition.x,
+            y: constrainedPosition.y,
+            placed: constrainedPosition.y < 600 // Check simple para área de juego
+          };
+        }
+        return newPieces;
+      });
     }
-  }, [draggedPiece, dragOffset, setPieces, canvasRef, pieces, isPieceHit, setInteractingPieceId]);
+    // Removed hover interaction completely to improve performance during drag operations
+  }, [draggedPiece, dragOffset, setPieces, canvasRef, geometry]);
 
   const handleMouseUp = useCallback(() => {
     if (draggedPiece) {
-      // Al soltar la pieza, aplicar snap automático y actualizar estado
+      // Al soltar la pieza, aplicar snap a grid fijo
       setPieces((prevPieces) => {
         const updatedPieces = prevPieces.map((p) => {
           if (p.id === draggedPiece.id) {
             const updatedPiece = { ...p };
             
-            // Solo aplicar snap si la pieza está en el área de juego
+            // SISTEMA GRID FIJO: Aplicar snap a grid inteligente según rotación
             if (geometry.isPieceInGameArea(updatedPiece)) {
-              // AUTOSNAP ACTIVADO: Aplicar snap inteligente automático
-              const piecePosition = pieceToPosition(updatedPiece);
-              const otherPiecesInGame = prevPieces
-                .filter(p => p.id !== draggedPiece.id && geometry.isPieceInGameArea(p))
-                .map(p => pieceToPosition(p));
+              // VALIDACIÓN PERMISIVA: Permitir tocar el espejo
+              const gameAreaWidth = 700; // Línea del espejo
+              const gameAreaHeight = 500;
               
-              // Aplicar autosnap con distancia de 30 pixels
-              const snappedPosition = geometry.snapPieceToNearbyTargets(piecePosition, otherPiecesInGame, 30);
-              updatedPiece.x = snappedPosition.x;
-              updatedPiece.y = snappedPosition.y;
+              // Límites muy permisivos - las piezas pueden tocar el espejo perfectamente
+              const minX = -50; // Permitir salir un poco por la izquierda
+              const maxX = gameAreaWidth + 10; // Permitir cruzar ligeramente el espejo (710)
+              const minY = -50; // Permitir salir un poco por arriba  
+              const maxY = gameAreaHeight + 10; // Permitir salir ligeramente por abajo (510)
               
+              // APLICAR SNAP A GRID según la rotación de la pieza
+              const snappedPosition = snapToFixedGrid(updatedPiece.x, updatedPiece.y, updatedPiece.rotation);
+              let finalX = Math.max(minX, Math.min(maxX, snappedPosition.x));
+              let finalY = Math.max(minY, Math.min(maxY, snappedPosition.y));
+              
+              // VALIDACIÓN DE OVERLAP BÁSICA - evitar solapamiento con otras piezas
+              const otherPieces = prevPieces.filter(p => p.id !== draggedPiece.id && p.placed);
+              const pieceSize = 100;
+              
+              for (const otherPiece of otherPieces) {
+                const dx = Math.abs(finalX - otherPiece.x);
+                const dy = Math.abs(finalY - otherPiece.y);
+                
+                // Si hay overlap significativo, ajustar posición
+                if (dx < pieceSize - 20 && dy < pieceSize - 20) {
+                  // Mover la pieza lo suficiente para evitar overlap
+                  if (dx < dy) {
+                    // Mover horizontalmente
+                    finalX = finalX > otherPiece.x ? otherPiece.x + pieceSize : otherPiece.x - pieceSize;
+                  } else {
+                    // Mover verticalmente  
+                    finalY = finalY > otherPiece.y ? otherPiece.y + pieceSize : otherPiece.y - pieceSize;
+                  }
+                  
+                  // Re-aplicar límites después del ajuste
+                  finalX = Math.max(minX, Math.min(maxX, finalX));
+                  finalY = Math.max(minY, Math.min(maxY, finalY));
+                }
+              }
+              
+              updatedPiece.x = finalX;
+              updatedPiece.y = finalY;
               updatedPiece.placed = true;
             } else {
               // Si no está en área de juego, solo marcar placed como false

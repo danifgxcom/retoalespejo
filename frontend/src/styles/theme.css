@@ -10,7 +10,7 @@
   --color-primary-200: #bfdbfe;
   --color-primary-300: #93c5fd;
   --color-primary-400: #60a5fa;
-  --color-primary-500: #3b82f6;
+  --color-primary-500: #1565c0;
   --color-primary-600: #2563eb;
   --color-primary-700: #1d4ed8;
   --color-primary-800: #1e40af;
@@ -61,7 +61,7 @@
   --color-danger-100: #fee2e2;
   --color-danger-200: #fecaca;
   --color-danger-300: #fca5a5;
-  --color-danger-400: #f87171;
+  --color-danger-400: #c62828;
   --color-danger-500: #ef4444;
   --color-danger-600: #dc2626;
   --color-danger-700: #b91c1c;
@@ -143,7 +143,7 @@
   --color-primary-200: #bfdbfe;
   --color-primary-300: #93c5fd;
   --color-primary-400: #60a5fa;
-  --color-primary-500: #3b82f6;
+  --color-primary-500: #1565c0;
   --color-primary-600: #2563eb;
   --color-primary-700: #1d4ed8;
   --color-primary-800: #1e40af;
@@ -181,7 +181,7 @@
   --color-danger-100: #fee2e2;
   --color-danger-200: #fecaca;
   --color-danger-300: #fca5a5;
-  --color-danger-400: #f87171;
+  --color-danger-400: #c62828;
   --color-danger-500: #ef4444;
   --color-danger-600: #dc2626;
   --color-danger-700: #b91c1c;
@@ -564,6 +564,160 @@
   }
 }
 
+/* Theme classes for colorful and accessible themes */
+body.theme-colorful {
+  /* Colorful theme inspired by original Educa game: navy blue, electric blue, gold, and red pieces */
+  
+  /* Primary colors - Navy Blue (like original Educa packaging) */
+  --color-primary-500: #1e3a8a; /* Navy blue */
+  --color-primary-600: #1e40af; /* Deep navy */
+  --color-primary-700: #1d4ed8; /* Bright navy */
+  --color-primary-800: #1e3a8a;
+  --color-primary-900: #172554; /* Very dark navy */
+
+  /* Secondary colors - Electric Blue (like original game accents) */
+  --color-secondary-500: #0ea5e9; /* Electric blue */
+  --color-secondary-600: #0284c7; /* Medium electric blue */
+  --color-secondary-700: #0369a1; /* Deep electric blue */
+  
+  /* Game piece colors - Gold/Yellow and Red from original pieces */
+  --color-warning-500: #fbbf24; /* Gold (piece centers) */
+  --color-warning-600: #f59e0b; /* Deep gold */
+  --color-warning-700: #d97706; /* Very deep gold */
+  
+  --color-danger-500: #dc2626; /* Red (triangles) */
+  --color-danger-600: #b91c1c; /* Deep red */
+  --color-danger-700: #991b1b; /* Very deep red */
+  
+  --color-success-500: #059669; /* Success green */
+  --color-success-600: #047857; /* Deep green */
+  --color-success-700: #065f46; /* Very deep green */
+  
+  --color-info-500: #0284c7; /* Info blue (electric blue variant) */
+  --color-info-600: #0369a1; /* Deep info blue */
+  --color-info-700: #075985; /* Very deep info blue */
+
+  /* Background inspired by original game box - navy blue gradient */
+  --bg-primary: linear-gradient(135deg, #1e3a8a 0%, #0ea5e9 50%, #1e40af 100%);
+  --bg-secondary: #f8fafc;
+  --bg-tertiary: #e2e8f0;
+
+  /* Card backgrounds with blue tint */
+  --card-bg: rgba(255, 255, 255, 0.95);
+  --card-elevated-bg: rgba(248, 250, 252, 0.98);
+  --card-flat-bg: rgba(255, 255, 255, 0.9);
+
+  /* Text colors - dark navy for readability on light backgrounds */
+  --text-primary: #0f172a; /* Very dark navy */
+  --text-secondary: #334155; /* Dark slate */
+  --text-tertiary: #64748b; /* Medium slate */
+  --text-on-primary: #ffffff;
+  --text-on-secondary: #ffffff;
+  --text-on-success: #000000; /* Black on gold for contrast */
+  --text-on-warning: #000000; /* Black on gold for contrast */
+  --text-on-danger: #ffffff;
+  --text-on-info: #ffffff;
+  --text-on-dark: #ffffff;
+  --text-on-light: #0f172a;
+
+  /* Border colors with navy theme */
+  --border-light: #cbd5e1;
+  --border-medium: #94a3b8;
+  --border-dark: #64748b;
+
+  /* Button colors using game colors (yellow, red, blue) for reliability */
+  --button-primary-bg: #1e40af; /* Game blue (navy) */
+  --button-primary-hover: #1d4ed8;
+  --button-secondary-bg: #0ea5e9; /* Game blue (electric) */
+  --button-secondary-hover: #0284c7;
+  --button-success-bg: #fbbf24; /* Game gold/yellow */
+  --button-success-hover: #f59e0b;
+  --button-warning-bg: #f59e0b; /* Game gold */
+  --button-warning-hover: #d97706;
+  --button-danger-bg: #dc2626; /* Game red */
+  --button-danger-hover: #b91c1c;
+  --button-info-bg: #0ea5e9; /* Game blue (electric) */
+  --button-info-hover: #0284c7;
+  --button-gray-bg: #64748b; /* Neutral gray */
+  --button-gray-hover: #475569;
+
+  /* Canvas and game colors - matching original pieces */
+  --canvas-piece-front-center: #fbbf24; /* Gold (like original) */
+  --canvas-piece-front-triangle: #dc2626; /* Red (like original) */
+  --canvas-piece-back-center: #dc2626; /* Red (inverted) */
+  --canvas-piece-back-triangle: #fbbf24; /* Gold (inverted) */
+  --canvas-bg-light: rgba(248, 250, 252, 0.95); /* Light blue-tinted background */
+  
+  /* Game specific with navy theme */
+  --game-bg: rgba(248, 250, 252, 0.95);
+  --game-border: #94a3b8;
+  --game-shadow: rgba(30, 58, 138, 0.15); /* Navy shadow */
+}
+
+body.theme-accessible {
+  /* Accessible theme with maximum contrast - dark navy background inspired by original game but optimized for accessibility */
+  
+  /* Dark navy background for maximum contrast */
+  --bg-primary: #0f172a; /* Very dark navy (from original game but darker) */
+  --bg-secondary: #1e293b; /* Dark slate */
+  --bg-tertiary: #334155; /* Medium slate */
+
+  /* Card backgrounds - dark with strong contrast */
+  --card-bg: #1e293b;
+  --card-elevated-bg: #334155;
+  --card-flat-bg: #1e293b;
+
+  /* Maximum contrast text on dark background */
+  --text-primary: #ffffff; /* Pure white text */
+  --text-secondary: #f1f5f9; /* Very light text */
+  --text-tertiary: #cbd5e1; /* Light text */
+  --text-on-primary: #ffffff;
+  --text-on-secondary: #ffffff;
+  --text-on-success: #000000; /* Black on WCAG yellow/gold */
+  --text-on-warning: #000000; /* Black on WCAG gold */
+  --text-on-danger: #ffffff;
+  --text-on-info: #ffffff;
+  --text-on-dark: #ffffff;
+  --text-on-light: #000000;
+
+  /* High contrast borders */
+  --border-light: #475569;
+  --border-medium: #64748b;
+  --border-dark: #94a3b8;
+
+  /* Button colors - high contrast using game colors (yellow, red, blue) */
+  --button-primary-bg: #1565c0; /* WCAG compliant blue */
+  --button-primary-hover: #1976d2;
+  --button-secondary-bg: #1565c0; /* WCAG compliant blue */
+  --button-secondary-hover: #1976d2;
+  --button-success-bg: #F57F17; /* WCAG compliant yellow/gold */
+  --button-success-hover: #E65100;
+  --button-warning-bg: #F57F17; /* WCAG compliant yellow/gold */
+  --button-warning-hover: #E65100;
+  --button-danger-bg: #c62828; /* WCAG compliant red */
+  --button-danger-hover: #d32f2f;
+  --button-info-bg: #1565c0; /* WCAG compliant blue */
+  --button-info-hover: #1976d2;
+  --button-gray-bg: #424242; /* WCAG compliant gray */
+  --button-gray-hover: #616161;
+
+  /* Canvas colors - maximum contrast pieces on dark background */
+  --canvas-piece-front-center: #fde047; /* Very bright yellow/gold */
+  --canvas-piece-front-triangle: #c62828; /* WCAG compliant red */
+  --canvas-piece-back-center: #c62828; /* WCAG compliant red */
+  --canvas-piece-back-triangle: #fde047; /* Very bright yellow/gold */
+  --canvas-bg-light: #1e293b; /* Dark navy background for canvas */
+  
+  /* Game specific - high contrast dark theme */
+  --game-bg: #1e293b;
+  --game-border: #64748b;
+  --game-shadow: rgba(0, 0, 0, 0.7);
+
+  /* Focus indicators - very bright on dark */
+  --focus-ring: #1565c0;
+  --focus-ring-offset: #0f172a;
+}
+
 /* Apply base styles using the theme variables */
 body {
   color: var(--text-primary);
@@ -642,59 +796,59 @@ input:disabled, select:disabled, textarea:disabled {
 
 /* Button backgrounds - Simplified for better accessibility (solid colors instead of gradients) */
 .bg-primary-gradient {
-  background-color: var(--button-primary-bg);
-  color: var(--text-on-primary);
+  background-color: var(--button-primary-bg) !important;
+  color: var(--text-on-primary) !important;
 }
 .bg-primary-gradient-hover {
-  background-color: var(--button-primary-hover);
+  background-color: var(--button-primary-hover) !important;
 }
 
 .bg-secondary-gradient {
-  background-color: var(--button-secondary-bg);
-  color: var(--text-on-secondary);
+  background-color: var(--button-secondary-bg) !important;
+  color: var(--text-on-secondary) !important;
 }
 .bg-secondary-gradient-hover {
-  background-color: var(--button-secondary-hover);
+  background-color: var(--button-secondary-hover) !important;
 }
 
 .bg-success-gradient {
-  background-color: var(--button-success-bg);
-  color: var(--text-on-success);
+  background-color: var(--button-success-bg) !important;
+  color: var(--text-on-success) !important;
 }
 .bg-success-gradient-hover {
-  background-color: var(--button-success-hover);
+  background-color: var(--button-success-hover) !important;
 }
 
 .bg-warning-gradient {
-  background-color: var(--button-warning-bg);
-  color: var(--text-on-warning);
+  background-color: var(--button-warning-bg) !important;
+  color: var(--text-on-warning) !important;
 }
 .bg-warning-gradient-hover {
-  background-color: var(--button-warning-hover);
+  background-color: var(--button-warning-hover) !important;
 }
 
 .bg-danger-gradient {
-  background-color: var(--button-danger-bg);
-  color: var(--text-on-danger);
+  background-color: var(--button-danger-bg) !important;
+  color: var(--text-on-danger) !important;
 }
 .bg-danger-gradient-hover {
-  background-color: var(--button-danger-hover);
+  background-color: var(--button-danger-hover) !important;
 }
 
 .bg-info-gradient {
-  background-color: var(--button-info-bg);
-  color: var(--text-on-info);
+  background-color: var(--button-info-bg) !important;
+  color: var(--text-on-info) !important;
 }
 .bg-info-gradient-hover {
-  background-color: var(--button-info-hover);
+  background-color: var(--button-info-hover) !important;
 }
 
 .bg-gray-gradient {
-  background-color: var(--button-gray-bg);
-  color: var(--text-on-dark);
+  background-color: var(--button-gray-bg) !important;
+  color: var(--text-on-dark) !important;
 }
 .bg-gray-gradient-hover {
-  background-color: var(--button-gray-hover);
+  background-color: var(--button-gray-hover) !important;
 }
 
 /* Card backgrounds and borders */

@@ -1,4 +1,5 @@
 import React from 'react';
+import { PieceColors } from '../utils/piece/PieceColors';
 
 interface PieceLabelProps {
   pieceId: number;
@@ -17,14 +18,17 @@ export const PieceLabel: React.FC<PieceLabelProps> = ({
 }) => {
   if (!isVisible) return null;
 
+  // Get piece-specific identification color
+  const identificationColor = PieceColors.getIdentificationColor(pieceId);
+
   const labelStyle: React.CSSProperties = {
     position: 'absolute',
     left: x + size / 2 - 25,
     top: y - 35,
     width: 50,
     height: 30,
-    backgroundColor: 'rgba(0, 0, 0, 0.9)',
-    color: 'white',
+    backgroundColor: identificationColor,
+    color: '#ffffff', // White text for better contrast on colored backgrounds
     borderRadius: '18px',
     display: 'flex',
     alignItems: 'center',
@@ -60,17 +64,20 @@ export const drawPieceLabel = (
   const labelY = y - 25; // Más separado de la pieza
   const labelRadius = 25; // Aún más grande para mejor visibilidad
 
+  // Get piece-specific identification color
+  const identificationColor = PieceColors.getIdentificationColor(pieceId);
+
   // Fondo del label con sombra
   ctx.save();
-  
+
   // Sombra
   ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
   ctx.beginPath();
   ctx.arc(labelX + 2, labelY + 2, labelRadius, 0, Math.PI * 2);
   ctx.fill();
-  
-  // Fondo principal
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
+
+  // Fondo principal - usando el color de identificación específico de la pieza
+  ctx.fillStyle = identificationColor;
   ctx.beginPath();
   ctx.arc(labelX, labelY, labelRadius, 0, Math.PI * 2);
   ctx.fill();
@@ -81,11 +88,11 @@ export const drawPieceLabel = (
   ctx.stroke();
 
   // Texto del número - MUCHO MÁS GRANDE
-  ctx.fillStyle = '#ffffff';
+  ctx.fillStyle = '#ffffff'; // Texto blanco para mejor contraste en fondos de colores
   ctx.font = 'bold 28px Arial'; // Tamaño aumentado a 28px para máxima visibilidad
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText(pieceId.toString(), labelX, labelY);
-  
+
   ctx.restore();
 };

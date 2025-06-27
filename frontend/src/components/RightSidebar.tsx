@@ -3,10 +3,14 @@ import { Clock, Users, User, Play, Pause, RotateCcw, Link } from 'lucide-react';
 import ValidationFeedback from './ValidationFeedback';
 import { Player } from '../services/SocketService';
 import socketService from '../services/SocketService';
+import ThemeSwitcher from './accessibility/ThemeSwitcher';
+import ChallengeThumbnail from './ui/ChallengeThumbnail';
+import { Challenge } from './ChallengeCard';
 
 interface RightSidebarProps {
   currentChallenge: number;
   totalChallenges: number;
+  challenges: Challenge[];
   onResetLevel: () => void;
   onCheckSolution: () => { isCorrect: boolean; message: string };
   isMultiplayerEnabled?: boolean;
@@ -22,6 +26,7 @@ interface RightSidebarProps {
 const RightSidebar: React.FC<RightSidebarProps> = ({
   currentChallenge,
   totalChallenges,
+  challenges,
   onResetLevel,
   onCheckSolution,
   isMultiplayerEnabled = false,
@@ -99,7 +104,7 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
             setCurrentWinner(data.winner || null);
             setTime(data.timer || 0);
             setIsRunning(true);
-            
+
             if (onPauseChange) {
               onPauseChange(true);
             } else {
@@ -112,7 +117,7 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
             setCurrentWinner(null);
             setTime(0);
             setIsRunning(true);
-            
+
             if (onPauseChange) {
               onPauseChange(true);
             } else {
@@ -126,7 +131,7 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
           setCurrentWinner(null);
           setTime(0);
           setIsRunning(true);
-          
+
           if (onPauseChange) {
             onPauseChange(true);
           } else {
@@ -196,7 +201,7 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
         setScores(data.scores);
         setCurrentWinner(data.winner);
         setShowSolution(data.showSolution);
-        
+
         // Show different messages based on whether it's the current player
         if (data.isCurrentPlayer) {
           // If it's the current player, they won by elimination
@@ -217,7 +222,7 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
       socketService.onResetVoteUpdate((data) => {
         setResetVoteData(data);
         setShowResetVoting(true);
-        
+
         // Auto-hide after 5 seconds if all votes aren't received
         setTimeout(() => {
           if (data.needsVotes > 0) {
@@ -291,7 +296,7 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
       // Listen for synchronized game notifications
       socketService.onGameNotification((data) => {
         console.log('Game notification received:', data);
-        
+
         // Only show validation-style notifications for certain types
         const validationTypes = ['challengeReset', 'challengeSolved', 'playerEliminated'];
         if (validationTypes.includes(data.type)) {
@@ -352,6 +357,11 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
       isGameActive,
       roomId: socketService.getRoomId() 
     });
+
+    // Ensure timer is running when we resume
+    if (!isRunning && !newPausedState) {
+      setIsRunning(true);
+    }
 
     // Update state based on whether we're using props or internal state
     if (onPauseChange) {
@@ -440,91 +450,165 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
     socketService.startGame();
   };
 
+  // DEBUG: Check what CSS variables are resolving to
+  React.useEffect(() => {
+    const computedStyle = getComputedStyle(document.body);
+    console.log('🔍 RightSidebar CSS Variables Debug:', {
+      cardBg: computedStyle.getPropertyValue('--card-bg').trim(),
+      textPrimary: computedStyle.getPropertyValue('--text-primary').trim(),
+      buttonPrimaryBg: computedStyle.getPropertyValue('--button-primary-bg').trim(),
+      buttonSuccessBg: computedStyle.getPropertyValue('--button-success-bg').trim(),
+      bodyClass: document.body.className,
+      bodyClassList: Array.from(document.body.classList)
+    });
+  }, [gameMode]);
+
   return (
-    <div className="w-full h-full bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-4 space-y-6 flex flex-col">
+    <div className="w-full h-full rounded-lg shadow-lg p-4 space-y-6 flex flex-col" style={{ backgroundColor: 'var(--card-bg)', color: 'var(--text-primary)' }}>
       {/* Timer Section - Redesigned */}
-      <div className="text-center border-b pb-6">
+      <div className="text-center pb-6" style={{ borderBottom: '1px solid var(--border-light)' }}>
         <div className="flex items-center justify-center gap-3 mb-4">
-          <div className="p-2 bg-blue-100 rounded-full">
-            <Clock size={28} className="text-blue-600" />
+          <div className="p-2 rounded-full" style={{ backgroundColor: 'var(--card-elevated-bg)' }}>
+            <Clock size={28} aria-hidden="true" style={{ color: 'var(--text-primary)' }} />
           </div>
-          <h3 className="text-xl font-bold text-gray-800">Cronómetro</h3>
+          <h3 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Cronómetro</h3>
         </div>
 
         {/* Large, beautiful timer display */}
         <div className="relative mb-6">
-          <div className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-2xl p-6 shadow-inner">
-            <div className="text-5xl font-mono font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
+          <div className="rounded-2xl p-6 shadow-inner" style={{ backgroundColor: 'var(--card-elevated-bg)' }}>
+            <div className="text-5xl font-mono font-bold" style={{ color: 'var(--text-primary)' }}>
               {formatTime(time)}
             </div>
-            <div className="text-sm text-gray-600 mt-2">
-              {effectiveIsPaused ? '⏸️ Pausado' : '⏱️ En curso'}
+            <div className="text-sm mt-2" style={{ color: 'var(--text-secondary)' }}>
+              <span aria-hidden="true">{effectiveIsPaused ? '⏸️' : '⏱️'}</span> {effectiveIsPaused ? 'Pausado' : 'En curso'}
             </div>
           </div>
         </div>
 
-        {/* Timer controls - bigger buttons */}
-        <div className="flex gap-3 justify-center">
+        {/* Timer controls - responsive buttons */}
+        <div className="flex gap-1 sm:gap-2 lg:gap-3 justify-center">
           <button
             onClick={handlePauseResume}
-            className={`px-6 py-3 rounded-xl text-lg font-medium flex items-center gap-2 transition-all shadow-lg transform hover:scale-105 ${
+            className={`px-2 sm:px-4 lg:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl text-xs sm:text-sm lg:text-lg font-medium flex items-center gap-1 sm:gap-2 transition-all shadow-lg transform hover:scale-105 ${
               effectiveIsPaused 
-                ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white' 
-                : 'bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700 text-white'
+                ? 'bg-success-gradient hover:bg-success-gradient-hover' 
+                : 'bg-warning-gradient hover:bg-warning-gradient-hover'
             }`}
+            aria-label={effectiveIsPaused ? 'Reanudar cronómetro' : 'Pausar cronómetro'}
           >
-            {effectiveIsPaused ? <Play size={20} /> : <Pause size={20} />}
-            {effectiveIsPaused ? 'Reanudar' : 'Pausar'}
+            {effectiveIsPaused ? <Play size={16} className="sm:w-5 sm:h-5" aria-hidden="true" /> : <Pause size={16} className="sm:w-5 sm:h-5" aria-hidden="true" />}
+            <span className="hidden sm:inline">{effectiveIsPaused ? 'Reanudar' : 'Pausar'}</span>
+            <span className="sm:hidden" aria-hidden="true">{effectiveIsPaused ? '▶️' : '⏸️'}</span>
           </button>
 
           <button
             onClick={handleResetTimer}
-            className="px-6 py-3 bg-gradient-to-r from-gray-500 to-slate-600 hover:from-gray-600 hover:to-slate-700 text-white rounded-xl text-lg font-medium flex items-center gap-2 transition-all shadow-lg transform hover:scale-105"
+            className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl text-xs sm:text-sm lg:text-lg font-medium flex items-center gap-1 sm:gap-2 transition-all shadow-lg transform hover:scale-105"
+            style={{
+              backgroundColor: 'var(--button-gray-bg)',
+              color: 'var(--text-on-dark)'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--button-gray-hover)';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--button-gray-bg)';
+            }}
+            aria-label="Reiniciar cronómetro"
+            type="button"
           >
-            <RotateCcw size={20} />
-            Reset
+            <RotateCcw size={16} className="sm:w-5 sm:h-5" aria-hidden="true" />
+            <span className="hidden sm:inline">Reset</span>
+            <span className="sm:hidden" aria-hidden="true">🔄</span>
           </button>
         </div>
       </div>
 
-      {/* Game Actions - Separated for safety */}
-      <div className="space-y-6">
-        {/* Primary Action - Verify Solution */}
-        <div className="bg-green-50 border border-green-200 rounded-xl p-4">
-          <h4 className="text-sm font-semibold text-green-800 mb-2 text-center">Verificar Progreso</h4>
-          <button
-            onClick={handleCheckSolution}
-            className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold py-4 px-6 rounded-xl transition-all shadow-lg transform hover:scale-105 text-lg flex items-center justify-center gap-3"
-          >
-            <div className="p-1 bg-white/20 rounded-full">
-              ✓
-            </div>
-            Verificar Solución
-          </button>
+
+
+      {/* Primary Action - Verify Solution */}
+      <div className="pb-4" style={{ borderBottom: '1px solid var(--border-light)' }}>
+        <button
+          onClick={handleCheckSolution}
+          className="w-full font-bold py-3 lg:py-4 px-4 lg:px-6 rounded-lg sm:rounded-xl transition-all shadow-lg transform hover:scale-105 text-sm sm:text-base lg:text-lg flex items-center justify-center gap-2 sm:gap-3"
+          style={{
+            backgroundColor: 'var(--button-success-bg)',
+            color: 'var(--text-on-success)'
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--button-success-hover)';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--button-success-bg)';
+          }}
+          aria-label="Verificar solución actual"
+          type="button"
+        >
+          <span aria-hidden="true">✓</span>
+          <span>Verificar Solución</span>
+        </button>
+      </div>
+
+      {/* Challenge Card Section */}
+      <div className="pb-4" style={{ borderBottom: '1px solid var(--border-light)' }}>
+        <div className="text-center mb-3">
+          <h3 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
+            Desafío {currentChallenge + 1} de {totalChallenges}
+          </h3>
+          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+            {challenges[currentChallenge]?.name || 'Cargando...'}
+          </p>
         </div>
 
-        {/* Secondary Action - Reset Level */}
-        <div className="bg-orange-50 border border-orange-200 rounded-xl p-4">
-          <h4 className="text-sm font-semibold text-orange-800 mb-2 text-center">⚠️ Reiniciar Progreso</h4>
-          <button
-            onClick={handleResetLevel}
-            className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white font-bold py-3 px-6 rounded-xl transition-all shadow-lg transform hover:scale-105 text-lg flex items-center justify-center gap-3"
-          >
-            <div className="p-1 bg-white/20 rounded-full">
-              🔄
-            </div>
-            Reiniciar Nivel
-          </button>
-          <p className="text-xs text-orange-600 mt-2 text-center">Se perderá el progreso actual</p>
+        {challenges[currentChallenge] && (
+          <div className="flex justify-center">
+            <ChallengeThumbnail
+              challenge={challenges[currentChallenge]}
+              width={300}
+              height={225}
+              backgroundColor="dark-blue"
+              alt={`Objetivo del reto ${currentChallenge + 1}: ${challenges[currentChallenge]?.name}`}
+            />
+          </div>
+        )}
+
+        <div className="text-center mt-2">
+          <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+            {challenges[currentChallenge]?.description || 'Objetivo del reto'}
+          </p>
         </div>
       </div>
 
+      {/* Secondary Action - Reset Level */}
+      <div className="pb-4" style={{ borderBottom: '1px solid var(--border-light)' }}>
+        <button
+          onClick={handleResetLevel}
+          className="w-full font-bold py-3 lg:py-4 px-4 lg:px-6 rounded-lg sm:rounded-xl transition-all shadow-lg transform hover:scale-105 text-sm sm:text-base lg:text-lg flex items-center justify-center gap-2 sm:gap-3"
+          style={{
+            backgroundColor: 'var(--button-danger-bg)',
+            color: 'var(--text-on-danger)'
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--button-danger-hover)';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--button-danger-bg)';
+          }}
+          aria-label="Reiniciar nivel actual"
+          type="button"
+        >
+          <span aria-hidden="true">🔄</span>
+          <span>Reiniciar Nivel</span>
+        </button>
+      </div>
 
-      {/* Multiplayer Section (Feature Flag) */}
-      {isMultiplayerEnabled && gameMode === 'multiplayer' && (
+
+      {/* Multiplayer Section Removed */}
+      {false && (
         <div className="border-t pt-4">
           <div className="flex items-center justify-center gap-2 mb-3">
-            <Users size={20} className="text-purple-600" />
+            <Users size={20} className="text-secondary-600" aria-hidden="true" />
             <h3 className="font-bold text-gray-800">Multijugador</h3>
           </div>
 
@@ -532,24 +616,48 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
             <div className="space-y-2 mb-3">
               <button 
                 onClick={handleCreateRoom}
-                className="w-full bg-purple-500 hover:bg-purple-600 text-white py-2 px-4 rounded-lg transition-colors text-sm flex items-center justify-center gap-2"
+                className="w-full py-2 px-4 rounded-lg transition-colors text-sm flex items-center justify-center gap-2"
+                style={{
+                  backgroundColor: 'var(--button-secondary-bg)',
+                  color: 'var(--text-on-secondary)'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--button-secondary-hover)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--button-secondary-bg)';
+                }}
+                aria-label="Crear sala de multijugador"
+                type="button"
               >
-                <Play size={16} />
+                <Play size={16} aria-hidden="true" />
                 Crear Sala
               </button>
               <button 
                 onClick={handleJoinRoom}
-                className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg transition-colors text-sm flex items-center justify-center gap-2"
+                className="w-full py-2 px-4 rounded-lg transition-colors text-sm flex items-center justify-center gap-2"
+                style={{
+                  backgroundColor: 'var(--button-primary-bg)',
+                  color: 'var(--text-on-primary)'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--button-primary-hover)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--button-primary-bg)';
+                }}
+                aria-label="Unirse a sala existente"
+                type="button"
               >
-                <Link size={16} />
+                <Link size={16} aria-hidden="true" />
                 Unirse a Sala
               </button>
             </div>
           )}
 
           {roomId && (
-            <div className="bg-purple-100 p-2 rounded-lg mb-3">
-              <p className="text-xs text-black font-medium text-center">
+            <div className="p-2 rounded-lg mb-3" style={{ backgroundColor: 'var(--card-elevated-bg)', border: '1px solid var(--border-light)' }}>
+              <p className="text-xs font-medium text-center" style={{ color: 'var(--text-primary)' }}>
                 Sala: {roomId}
               </p>
             </div>
@@ -557,10 +665,10 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
 
           {/* Current Winner Display (if game is active) */}
           {isGameActive && currentWinner && (
-            <div className="bg-yellow-100 p-2 rounded-lg mb-3">
+            <div className="p-2 rounded-lg mb-3" style={{ backgroundColor: 'var(--card-elevated-bg)', border: '1px solid var(--border-medium)' }}>
               <p className="text-xs text-center font-medium">
-                <span className="text-gray-700">Ganando: </span>
-                <span className="text-yellow-700 font-bold">
+                <span style={{ color: 'var(--text-secondary)' }}>Ganando: </span>
+                <span className="font-bold" style={{ color: 'var(--text-primary)' }}>
                   {connectedPlayers.find(p => p.id === currentWinner)?.username || 'Desconocido'}
                 </span>
               </p>
@@ -568,9 +676,9 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
           )}
 
           {/* Players List with Scores */}
-          <div className="bg-white rounded-lg border border-gray-200 p-2 mb-3">
-            <h4 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-1">
-              <Users size={14} />
+          <div className="rounded-lg p-2 mb-3" style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-light)' }}>
+            <h4 className="text-sm font-semibold mb-2 flex items-center gap-1" style={{ color: 'var(--text-primary)' }}>
+              <Users size={14} aria-hidden="true" />
               Jugadores Conectados
             </h4>
 
@@ -580,11 +688,11 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
                   {connectedPlayers.map((player) => (
                     <li key={player.id} className="flex items-center justify-between gap-2 text-sm">
                       <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                        <span className="text-gray-800">{player.username}</span>
+                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--button-success-bg)' }} aria-hidden="true"></span>
+                        <span style={{ color: 'var(--text-primary)' }}>{player.username}</span>
                       </div>
                       {isGameActive && (
-                        <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full text-xs font-medium">
+                        <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ backgroundColor: 'var(--card-elevated-bg)', color: 'var(--text-primary)' }}>
                           {scores[player.id] || 0}
                         </span>
                       )}
@@ -592,13 +700,13 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
                   ))}
                 </ul>
               ) : (
-                <p className="text-xs text-gray-500 text-center">No hay jugadores conectados</p>
+                <p className="text-xs text-center" style={{ color: 'var(--text-tertiary)' }}>No hay jugadores conectados</p>
               )}
             </div>
 
-            <div className="text-xs text-gray-600 text-center mt-2">
+            <div className="text-xs text-center mt-2" style={{ color: 'var(--text-secondary)' }}>
               <div className="flex items-center justify-center gap-1">
-                <User size={12} />
+                <User size={12} aria-hidden="true" />
                 Jugadores: {connectedPlayers.length}/4
               </div>
             </div>
@@ -615,58 +723,94 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
               shouldShowStartButton, 
               shouldShowActiveIndicator 
             });
-            
+
             if (shouldShowStartButton) {
               return (
                 <button 
                   onClick={handleStartGame}
-                  className="w-full bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg transition-colors text-sm font-medium flex items-center justify-center gap-2 mb-3"
+                  className="w-full py-2 px-4 rounded-lg transition-colors text-sm font-medium flex items-center justify-center gap-2 mb-3"
+                  style={{
+                    backgroundColor: 'var(--button-success-bg)',
+                    color: 'var(--text-on-success)'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--button-success-hover)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--button-success-bg)';
+                  }}
+                  aria-label="Comenzar partida multijugador"
                 >
-                  <Play size={16} />
+                  <Play size={16} aria-hidden="true" />
                   Comenzar Partida
                 </button>
               );
             }
-            
+
             if (shouldShowActiveIndicator) {
               return (
-                <div className="w-full bg-blue-100 border border-blue-300 text-blue-800 py-2 px-4 rounded-lg text-sm font-medium flex items-center justify-center gap-2 mb-3">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                <div className="w-full bg-primary-100 border border-primary-300 text-primary-800 py-2 px-4 rounded-lg text-sm font-medium flex items-center justify-center gap-2 mb-3">
+                  <div className="w-2 h-2 bg-primary-500 rounded-full animate-pulse" aria-hidden="true"></div>
                   Partida en Curso
                 </div>
               );
             }
-            
+
             return null;
           })()}
 
           {/* Join Room Dialog */}
           {showJoinRoomDialog && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-              <div className="bg-white rounded-lg p-4 max-w-sm w-full">
-                <h3 className="text-lg font-bold mb-3">Unirse a una Sala</h3>
+            <div className="fixed inset-0 bg-modal-overlay flex items-center justify-center z-50" role="dialog" aria-modal="true" aria-labelledby="join-room-title">
+              <div className="bg-modal rounded-lg p-4 max-w-sm w-full">
+                <h3 id="join-room-title" className="text-lg font-bold mb-3">Unirse a una Sala</h3>
                 <div className="mb-3">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="room-id-input" className="block text-sm font-medium text-gray-700 mb-1">
                     ID de la Sala
                   </label>
                   <input
+                    id="room-id-input"
                     type="text"
                     value={joinRoomId}
                     onChange={(e) => setJoinRoomId(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-card rounded-md focus:outline-none focus:ring-2 focus:ring-focus"
                     placeholder="Ingresa el ID de la sala"
                   />
                 </div>
                 <div className="flex justify-end gap-2">
                   <button
                     onClick={() => setShowJoinRoomDialog(false)}
-                    className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300"
+                    className="px-4 py-2 rounded-md"
+                    style={{
+                      backgroundColor: 'var(--button-gray-bg)',
+                      color: 'var(--text-on-dark)'
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.backgroundColor = 'var(--button-gray-hover)';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.backgroundColor = 'var(--button-gray-bg)';
+                    }}
+                    aria-label="Cancelar unirse a sala"
+                    type="button"
                   >
                     Cancelar
                   </button>
                   <button
                     onClick={handleJoinRoomSubmit}
-                    className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                    className="px-4 py-2 rounded-md"
+                    style={{
+                      backgroundColor: 'var(--button-primary-bg)',
+                      color: 'var(--text-on-primary)'
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.backgroundColor = 'var(--button-primary-hover)';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.backgroundColor = 'var(--button-primary-bg)';
+                    }}
+                    aria-label="Confirmar unirse a sala"
+                    type="button"
                   >
                     Unirse
                   </button>
@@ -677,11 +821,11 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
         </div>
       )}
 
-      {/* Multiplayer Section (Feature Flag) - Offline Mode */}
-      {isMultiplayerEnabled && gameMode === 'offline' && (
+      {/* Multiplayer Section Removed */}
+      {false && (
         <div className="border-t pt-4">
           <div className="flex items-center justify-center gap-2 mb-3">
-            <Users size={20} className="text-purple-600" />
+            <Users size={20} className="text-secondary-600" aria-hidden="true" />
             <h3 className="font-bold text-gray-800">Multijugador</h3>
           </div>
 
@@ -697,7 +841,7 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
       {!isMultiplayerEnabled && (
         <div className="border-t pt-4">
           <div className="text-center text-gray-500">
-            <Users size={20} className="mx-auto mb-2 opacity-50" />
+            <Users size={20} className="mx-auto mb-2 opacity-50" aria-hidden="true" />
             <p className="text-xs">Modo multijugador</p>
             <p className="text-xs">próximamente</p>
           </div>
@@ -706,9 +850,9 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
 
       {/* Reset Voting Modal */}
       {showResetVoting && resetVoteData && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-xl font-bold mb-4 text-center">🔄 Solicitud de Reinicio</h3>
+        <div className="fixed inset-0 bg-modal-overlay flex items-center justify-center z-50" role="dialog" aria-modal="true" aria-labelledby="reset-vote-title">
+          <div className="bg-modal rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 id="reset-vote-title" className="text-xl font-bold mb-4 text-center">🔄 Solicitud de Reinicio</h3>
             {resetVoteData.requesterUsername && (
               <p className="text-gray-600 mb-4 text-center">
                 <span className="font-semibold">{resetVoteData.requesterUsername}</span> quiere reiniciar el reto.
@@ -726,27 +870,34 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
               <div className="flex gap-3 justify-center">
                 <button
                   onClick={() => socketService.voteResetChallenge(true)}
-                  className="px-6 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium"
+                  className="px-6 py-2 bg-success-gradient hover:bg-success-gradient-hover rounded-lg font-medium"
+                  style={{ color: 'var(--text-on-success)' }}
+                  aria-label="Aceptar reinicio del reto"
                 >
-                  ✓ Aceptar
+                  <span aria-hidden="true">✓</span> Aceptar
                 </button>
                 <button
                   onClick={() => socketService.voteResetChallenge(false)}
-                  className="px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium"
+                  className="px-6 py-2 bg-danger-gradient hover:bg-danger-gradient-hover rounded-lg font-medium"
+                  style={{ color: 'var(--text-on-danger)' }}
+                  aria-label="Rechazar reinicio del reto"
                 >
-                  ✗ Rechazar
+                  <span aria-hidden="true">✗</span> Rechazar
                 </button>
               </div>
             )}
             <button
               onClick={() => setShowResetVoting(false)}
-              className="w-full mt-3 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 text-sm"
+              className="w-full mt-3 px-4 py-2 bg-gray-gradient hover:bg-gray-gradient-hover rounded-lg text-sm"
+              style={{ color: 'var(--text-on-dark)' }}
+              aria-label="Cerrar diálogo de votación"
             >
               Cerrar
             </button>
           </div>
         </div>
       )}
+
 
       {/* Validation Feedback */}
       <ValidationFeedback 

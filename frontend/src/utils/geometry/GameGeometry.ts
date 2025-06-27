@@ -59,7 +59,6 @@ export class GameGeometry {
 
     // Verificar el bbox del reflejo para debugging
     const reflectedBbox = this.getPieceBoundingBox(reflectedPiece);
-    console.log(`🪞 MIRROR REFLECTION: original(${piece.x}, ${piece.y}) bbox[${originalBbox.left.toFixed(1)}, ${originalBbox.right.toFixed(1)}] -> reflected(${reflectedX.toFixed(2)}, ${piece.y}) bbox[${reflectedBbox.left.toFixed(1)}, ${reflectedBbox.right.toFixed(1)}]`);
 
     return reflectedPiece;
   }
@@ -362,7 +361,6 @@ export class GameGeometry {
     const isSignificant = penetrationDepth > penetrationThreshold;
     
     if (isSignificant) {
-      console.log(`⚠️ SIGNIFICANT OVERLAP: ${penetrationDepth.toFixed(2)}px penetration (threshold: ${penetrationThreshold}px)`);
     }
     
     return isSignificant;
@@ -621,13 +619,29 @@ export class GameGeometry {
 
   /**
    * Verifica si una pieza completa (considerando su bounding box) está dentro del área de juego
+   * Usa límites permisivos que coinciden con useMouseHandlers para el grid de 10px
    */
   isPiecePositionInGameArea(piece: PiecePosition): boolean {
     const bbox = this.getPieceBoundingBox(piece);
-    return bbox.left >= 0 &&
-           bbox.right <= this.config.mirrorLineX &&
-           bbox.top >= 0 &&
-           bbox.bottom <= this.config.height;
+    
+    // Límites permisivos que coinciden con useMouseHandlers.ts
+    const minX = -50; // Permitir salir un poco por la izquierda
+    const maxX = this.config.mirrorLineX + 10; // Permitir tocar ligeramente el espejo (710)
+    const minY = -50; // Permitir salir un poco por arriba  
+    const maxY = this.config.height + 10; // Permitir salir ligeramente por abajo (510)
+    
+    console.log(`🔍 isPiecePositionInGameArea check:`);
+    console.log(`  Piece at (${piece.x}, ${piece.y}) rotation=${piece.rotation}°`);
+    console.log(`  BBox: left=${bbox.left.toFixed(1)}, right=${bbox.right.toFixed(1)}, top=${bbox.top.toFixed(1)}, bottom=${bbox.bottom.toFixed(1)}`);
+    console.log(`  Limits: x=[${minX}, ${maxX}], y=[${minY}, ${maxY}]`);
+    
+    const result = bbox.left >= minX &&
+                   bbox.right <= maxX &&
+                   bbox.top >= minY &&
+                   bbox.bottom <= maxY;
+    
+    console.log(`  Result: ${result ? '✅ VALID' : '❌ INVALID'}`);
+    return result;
   }
 
   /**
@@ -670,7 +684,6 @@ export class GameGeometry {
    */
   private applyPrecisionSnapForSameColor(movingPiece: PiecePosition, targetPiece: PiecePosition): PiecePosition | null {
     try {
-      console.log(`🎨 SAME COLOR PRECISION SNAP: Applying ultra-precise snap for same color pieces`);
       
       // Validar entrada
       if (!movingPiece || !targetPiece) {
@@ -725,7 +738,6 @@ export class GameGeometry {
       }
       
       if (bestAlignment) {
-        console.log(`✨ ULTRA-PRECISE ALIGNMENT: Applied same-color snap with distance ${minDistance.toFixed(3)}px`);
         return bestAlignment;
       }
       
@@ -779,20 +791,17 @@ export class GameGeometry {
             if (distance <= snapDistance * 1.5 && this.doPiecesHaveSameColorContact(snappedPiece, otherPiece)) {
               const precisionSnap = this.applyPrecisionSnapForSameColor(snappedPiece, otherPiece);
               if (precisionSnap && this.isValidPosition(precisionSnap)) {
-                console.log(`🎨 SAME COLOR SNAP APPLIED: Perfect alignment for same color pieces`);
                 snappedPiece = precisionSnap;
                 
                 // Verificar que el resultado sea perfecto (gap < 0.1px)
                 const finalDistance = this.getMinDistanceBetweenPieces(snappedPiece, otherPiece);
                 if (finalDistance > 0.1) {
-                  console.log(`🔧 FINAL PRECISION ADJUSTMENT: Fine-tuning from ${finalDistance.toFixed(3)}px to perfect contact`);
                   const finalAdjustment = this.closeSmallGap(snappedPiece, otherPiece, finalDistance);
                   if (finalAdjustment && this.isValidPosition(finalAdjustment)) {
                     snappedPiece = finalAdjustment;
                   }
                 }
                 
-                console.log(`✅ SAME COLOR SNAP COMPLETED: Final distance ${this.getMinDistanceBetweenPieces(snappedPiece, otherPiece).toFixed(4)}px`);
                 return snappedPiece; // Retornar inmediatamente con el resultado perfecto
               }
             }
@@ -816,7 +825,6 @@ export class GameGeometry {
           // Verificar el resultado y ajustar si es necesario
           const finalGap = this.getMinDistanceBetweenPieces(snappedPiece, otherPiece);
           if (finalGap > 0.5) {
-            console.log(`🔧 FINE-TUNING: Final gap ${finalGap.toFixed(3)}px still visible, applying precision adjustment`);
             snappedPiece = this.applyPrecisionAdjustment(snappedPiece, otherPiece, finalGap);
           }
           break; // Solo aplicar el primer cierre exitoso
@@ -854,17 +862,13 @@ export class GameGeometry {
     // Aplicar la mejor alineación encontrada (umbral más bajo)
     if (bestAlignment && bestScore > 0.3) {
       snappedPiece = bestAlignment.position;
-      console.log(`🎯 GEOMETRIC ALIGNMENT: Applied edge-based snap with score ${bestScore.toFixed(3)}`);
-      
       // Verificar y ajustar la penetración final
       const finalPenetration = this.getPenetrationDepth(snappedPiece, bestAlignment.targetPiece);
       if (finalPenetration > 3) {
-        console.log(`🔧 FINE-TUNING: Adjusting penetration from ${finalPenetration.toFixed(2)}px`);
         snappedPiece = this.adjustToPerfectContact(snappedPiece, bestAlignment.targetPiece);
       }
     } else {
       // Fallback al snap tradicional por bounding box si no hay alineación geométrica
-      console.log(`📦 FALLBACK: Using traditional bounding box snap`);
       snappedPiece = this.traditionalSnapToNearbyTargets(snappedPiece, otherPieces, snapDistance);
     }
     
@@ -1255,10 +1259,18 @@ export class GameGeometry {
 
   /**
    * Detecta colisión con el espejo (pieza intentando cruzar la línea del espejo)
+   * Permite que las piezas toquen el espejo con tolerancia para grid fijo
    */
   detectMirrorCollision(piece: PiecePosition): boolean {
     const bbox = this.getPieceBoundingBox(piece);
-    return bbox.right > this.config.mirrorLineX;
+    const toleranceForTouch = 15; // Tolerancia para permitir tocar el espejo
+    
+    // Debug logging para entender las colisiones
+    const penetration = bbox.right - this.config.mirrorLineX;
+    console.log(`🚫 Mirror collision check: bbox.right=${bbox.right.toFixed(1)}, mirrorLine=${this.config.mirrorLineX}, penetration=${penetration.toFixed(1)}, tolerance=${toleranceForTouch}`);
+    
+    // Solo considerar colisión si la pieza penetra significativamente en el espejo
+    return penetration > toleranceForTouch;
   }
 
   /**
@@ -1342,9 +1354,13 @@ export class GameGeometry {
    */
   isPieceTouchingMirror(piece: PiecePosition): boolean {
     const bbox = this.getPieceBoundingBox(piece);
-    const tolerance = 1; // Tolerancia de 1 pixel
+    const tolerance = 12; // Tolerancia aumentada para grid fijo de 10px
+    
+    // Debug logging para entender qué está pasando
+    const distance = Math.abs(bbox.right - this.config.mirrorLineX);
+    console.log(`🪞 Mirror check: bbox.right=${bbox.right.toFixed(1)}, mirrorLine=${this.config.mirrorLineX}, distance=${distance.toFixed(1)}, tolerance=${tolerance}`);
 
-    return Math.abs(bbox.right - this.config.mirrorLineX) <= tolerance;
+    return distance <= tolerance;
   }
 
   /**
@@ -1404,14 +1420,14 @@ export class GameGeometry {
       newX = piece.x + overlap;
     }
 
-    // Límite del espejo (si debe respetarlo)
-    if (respectMirror && bbox.right > this.config.mirrorLineX) {
+    // Límite del espejo (si debe respetarlo y está en área de juego)
+    if (respectMirror && piece.y < this.config.height && bbox.right > this.config.mirrorLineX) {
       const overlap = bbox.right - this.config.mirrorLineX;
       newX = piece.x - overlap;
     }
 
-    // Límite derecho del canvas (si no respeta el espejo)
-    if (!respectMirror && bbox.right > canvasWidth) {
+    // Límite derecho del canvas (si no respeta el espejo o está en área de storage)
+    if ((!respectMirror || piece.y >= this.config.height) && bbox.right > canvasWidth) {
       const overlap = bbox.right - canvasWidth;
       newX = piece.x - overlap;
     }
@@ -1557,14 +1573,8 @@ export class GameGeometry {
       console.log(`\n--- PIECE ${i + 1} ---`);
       console.log(`Position: (${piece.x}, ${piece.y}), rotation: ${piece.rotation}°`);
 
-      // Verificar que la pieza original esté dentro del área de juego
-      const originalBbox = this.getPieceBoundingBox(piece);
-      console.log(`Original bbox:`, originalBbox);
-
-      const withinGameArea = originalBbox.left >= 0 && originalBbox.right <= this.config.mirrorLineX &&
-          originalBbox.top >= 0 && originalBbox.bottom <= this.config.height;
-
-      if (!withinGameArea) {
+      // Verificar que la pieza original esté dentro del área de juego usando los límites permisivos
+      if (!this.isPiecePositionInGameArea(piece)) {
         console.log(`❌ Original piece outside game area`);
         return false;
       }
@@ -1685,7 +1695,7 @@ export class GameGeometry {
     const storageAreaTop = this.config.height; // y >= 600
     const storageAreaBottom = canvasHeight; // y <= 1000
     const storageAreaLeft = 0; // x >= 0
-    const storageAreaRight = this.config.mirrorLineX; // x <= 700
+    const storageAreaRight = canvasWidth; // x <= 1400 (extended storage area)
     
     const bbox = this.getPieceBoundingBox(piece);
     
@@ -1694,11 +1704,6 @@ export class GameGeometry {
                     bbox.top >= storageAreaTop && 
                     bbox.bottom <= storageAreaBottom;
     
-    console.log(`🔍 Storage validation for piece at (${piece.x.toFixed(1)}, ${piece.y.toFixed(1)}):`, {
-      bbox: `(${bbox.left.toFixed(1)}, ${bbox.top.toFixed(1)}) to (${bbox.right.toFixed(1)}, ${bbox.bottom.toFixed(1)})`,
-      storageArea: `(${storageAreaLeft}, ${storageAreaTop}) to (${storageAreaRight}, ${storageAreaBottom})`,
-      isCompletelyInside: isInside
-    });
     
     return isInside;
   }
@@ -1710,7 +1715,7 @@ export class GameGeometry {
     const storageAreaTop = this.config.height; // y >= 600
     const storageAreaBottom = canvasHeight; // y <= 1000
     const storageAreaLeft = 0; // x >= 0
-    const storageAreaRight = this.config.mirrorLineX; // x <= 700
+    const storageAreaRight = canvasWidth; // x <= 1400 (extended storage area)
     
     const bbox = this.getPieceBoundingBox(piece);
     let newX = piece.x;

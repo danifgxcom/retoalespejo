@@ -14,65 +14,7 @@ interface SkipLinkProps {
    */
   className?: string;
 }
-import React from 'react';
 
-interface SkipLinkProps {
-  /**
-   * ID del elemento al que se saltará al activar el enlace
-   */
-  targetId: string;
-
-  /**
-   * Texto del enlace (por defecto "Saltar al contenido principal")
-   */
-  label?: string;
-
-  /**
-   * Estilos CSS adicionales
-   */
-  className?: string;
-}
-
-/**
- * SkipLink - Enlace de salto para usuarios de teclado
- * Permite a los usuarios de teclado saltar directamente al contenido principal
- * sin tener que navegar por todos los elementos del encabezado
- */
-const SkipLink: React.FC<SkipLinkProps> = ({
-  targetId,
-  label = "Saltar al contenido principal",
-  className = "",
-}) => {
-  return (
-    <a
-      href={`#${targetId}`}
-      className={`skip-link ${className}`}
-      onClick={(e) => {
-        // Prevenir comportamiento por defecto
-        e.preventDefault();
-
-        // Encontrar el elemento objetivo y darle foco
-        const target = document.getElementById(targetId);
-        if (target) {
-          // Asegurar que el elemento pueda recibir foco
-          if (!target.hasAttribute('tabindex')) {
-            target.setAttribute('tabindex', '-1');
-          }
-
-          // Dar foco al elemento objetivo
-          target.focus();
-
-          // Actualizar la URL para reflejar el ancla
-          window.history.pushState(null, '', `#${targetId}`);
-        }
-      }}
-    >
-      {label}
-    </a>
-  );
-};
-
-export default SkipLink;
 /**
  * SkipLink component allows keyboard users to bypass navigation
  * and jump directly to the main content.

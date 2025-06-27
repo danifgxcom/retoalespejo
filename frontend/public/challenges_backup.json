@@ -23,10 +23,9 @@
       {
         "type": "A",
         "face": "front",
-        "x": 650,
-        "y": 387.74,
-        "rotation": 270,
-        "comment": "Converted from relative coordinates: x=0 (touching mirror), y=0 (centered) - CORRECTED"
+        "x": 330,
+        "y": 300,
+        "rotation": 0
       }
     ]
   },
@@ -43,14 +42,14 @@
           "type": "A",
           "face": "back",
           "x": 650,
-          "y": 400,
+          "y": 400.76,
           "rotation": 270
         },
         {
           "type": "A",
           "face": "back",
-          "x": 350,
-          "y": 465,
+          "x": 330,
+          "y": 464.76,
           "rotation": 0
         }
       ],
@@ -61,14 +60,14 @@
         "type": "A",
         "face": "back",
         "x": 650,
-        "y": 400,
+        "y": 400.76,
         "rotation": 270
       },
       {
         "type": "A",
         "face": "back",
-        "x": 350,
-        "y": 465,
+        "x": 330,
+        "y": 464.76,
         "rotation": 0
       }
     ]
@@ -86,14 +85,14 @@
           "type": "A",
           "face": "front",
           "x": 650,
-          "y": 365,
+          "y": 366.04,
           "rotation": 270
         },
         {
           "type": "B",
           "face": "front",
           "x": 650,
-          "y": 365,
+          "y": 364.27,
           "rotation": 0
         }
       ],
@@ -104,14 +103,14 @@
         "type": "A",
         "face": "front",
         "x": 650,
-        "y": 365,
+        "y": 366.04,
         "rotation": 270
       },
       {
         "type": "B",
         "face": "front",
         "x": 650,
-        "y": 365,
+        "y": 364.27,
         "rotation": 0
       }
     ]
@@ -127,23 +126,23 @@
       "playerPieces": [
         {
           "type": "A",
-          "face": "front",
-          "x": 650,
-          "y": 210.79,
-          "rotation": 135
-        },
-        {
-          "type": "A",
-          "face": "front",
+          "face": "back",
           "x": 468.98,
-          "y": 394.35,
+          "y": 258.09,
           "rotation": 315
         },
         {
           "type": "A",
           "face": "front",
-          "x": 468.98,
-          "y": 120.29,
+          "x": 650,
+          "y": 77.07,
+          "rotation": 135
+        },
+        {
+          "type": "A",
+          "face": "front",
+          "x": 469.98,
+          "y": 77.07,
           "rotation": 135
         }
       ],
@@ -152,23 +151,23 @@
     "targetPieces": [
       {
         "type": "A",
-        "face": "front",
-        "x": 650,
-        "y": 210.79,
-        "rotation": 135
-      },
-      {
-        "type": "A",
-        "face": "front",
+        "face": "back",
         "x": 468.98,
-        "y": 394.35,
+        "y": 258.09,
         "rotation": 315
       },
       {
         "type": "A",
         "face": "front",
-        "x": 468.98,
-        "y": 120.29,
+        "x": 650,
+        "y": 77.07,
+        "rotation": 135
+      },
+      {
+        "type": "A",
+        "face": "front",
+        "x": 469.98,
+        "y": 77.07,
         "rotation": 135
       }
     ]
@@ -186,28 +185,28 @@
           "type": "B",
           "face": "front",
           "x": 650,
-          "y": 255,
+          "y": 255.15,
           "rotation": 45
         },
         {
           "type": "B",
           "face": "front",
           "x": 378.47,
-          "y": 436.02,
+          "y": 436.17,
           "rotation": 135
         },
         {
           "type": "A",
           "face": "front",
           "x": 650,
-          "y": 255,
+          "y": 255.15,
           "rotation": 225
         },
         {
           "type": "B",
           "face": "front",
           "x": 559.49,
-          "y": 255,
+          "y": 255.15,
           "rotation": 315
         }
       ],
@@ -218,28 +217,28 @@
         "type": "B",
         "face": "front",
         "x": 650,
-        "y": 255,
+        "y": 255.15,
         "rotation": 45
       },
       {
         "type": "B",
         "face": "front",
         "x": 378.47,
-        "y": 436.02,
+        "y": 436.17,
         "rotation": 135
       },
       {
         "type": "A",
         "face": "front",
         "x": 650,
-        "y": 255,
+        "y": 255.15,
         "rotation": 225
       },
       {
         "type": "B",
         "face": "front",
         "x": 559.49,
-        "y": 255,
+        "y": 255.15,
         "rotation": 315
       }
     ]
@@ -256,57 +255,57 @@
         {
           "type": "A",
           "face": "front",
-          "x": 200,
-          "y": -30,
+          "x": 198.16,
+          "y": -32.43,
           "rotation": 45
         },
         {
           "type": "A",
           "face": "front",
-          "x": 380.31,
-          "y": 151.73,
+          "x": 378.47,
+          "y": 149.29,
           "rotation": 225
         },
         {
           "type": "A",
           "face": "front",
-          "x": 559.49,
-          "y": 510.55,
+          "x": 560.2,
+          "y": 509.62,
           "rotation": 225
         },
         {
           "type": "A",
           "face": "front",
-          "x": 650,
-          "y": 58,
+          "x": 649.98,
+          "y": 58.78,
           "rotation": 135
         },
         {
           "type": "A",
           "face": "front",
           "x": 378.47,
-          "y": 329.11,
+          "y": 329.31,
           "rotation": 45
         },
         {
           "type": "A",
           "face": "front",
           "x": 468.98,
-          "y": 239.73,
+          "y": 239.8,
           "rotation": 315
         },
         {
           "type": "B",
           "face": "front",
-          "x": 200,
-          "y": 332.04,
+          "x": 198.16,
+          "y": 329.61,
           "rotation": 135
         },
         {
           "type": "B",
           "face": "front",
-          "x": 381.02,
-          "y": 151.02,
+          "x": 377.45,
+          "y": 149.29,
           "rotation": 315
         }
       ],
@@ -316,57 +315,57 @@
       {
         "type": "A",
         "face": "front",
-        "x": 200,
-        "y": -30,
+        "x": 198.16,
+        "y": -32.43,
         "rotation": 45
       },
       {
         "type": "A",
         "face": "front",
-        "x": 380.31,
-        "y": 151.73,
+        "x": 378.47,
+        "y": 149.29,
         "rotation": 225
       },
       {
         "type": "A",
         "face": "front",
-        "x": 559.49,
-        "y": 510.55,
+        "x": 560.2,
+        "y": 509.62,
         "rotation": 225
       },
       {
         "type": "A",
         "face": "front",
-        "x": 650,
-        "y": 58,
+        "x": 649.98,
+        "y": 58.78,
         "rotation": 135
       },
       {
         "type": "A",
         "face": "front",
         "x": 378.47,
-        "y": 329.11,
+        "y": 329.31,
         "rotation": 45
       },
       {
         "type": "A",
         "face": "front",
         "x": 468.98,
-        "y": 239.73,
+        "y": 239.8,
         "rotation": 315
       },
       {
         "type": "B",
         "face": "front",
-        "x": 200,
-        "y": 332.04,
+        "x": 198.16,
+        "y": 329.61,
         "rotation": 135
       },
       {
         "type": "B",
-        "face": "back",
-        "x": 381.02,
-        "y": 151.02,
+        "face": "front",
+        "x": 377.45,
+        "y": 149.29,
         "rotation": 315
       }
     ]
@@ -384,14 +383,14 @@
           "type": "B",
           "face": "front",
           "x": 650,
-          "y": 355,
+          "y": 356.78,
           "rotation": 45
         },
         {
           "type": "B",
           "face": "front",
           "x": 468.98,
-          "y": 173.27,
+          "y": 169.6,
           "rotation": 225
         }
       ],
@@ -402,14 +401,14 @@
         "type": "B",
         "face": "front",
         "x": 650,
-        "y": 355,
+        "y": 356.78,
         "rotation": 45
       },
       {
         "type": "B",
         "face": "front",
         "x": 468.98,
-        "y": 173.27,
+        "y": 169.6,
         "rotation": 225
       }
     ]
@@ -491,7 +490,7 @@
         {
           "type": "A",
           "face": "front",
-          "x": 550,
+          "x": 520,
           "y": 300,
           "rotation": 0
         }
@@ -509,7 +508,7 @@
       {
         "type": "A",
         "face": "front",
-        "x": 550,
+        "x": 520,
         "y": 300,
         "rotation": 0
       }
@@ -528,21 +527,21 @@
           "type": "A",
           "face": "front",
           "x": 378.47,
-          "y": 315,
+          "y": 316.31,
           "rotation": 45
         },
         {
           "type": "B",
           "face": "front",
           "x": 650,
-          "y": 315,
+          "y": 316.31,
           "rotation": 45
         },
         {
           "type": "A",
           "face": "front",
           "x": 650,
-          "y": 315,
+          "y": 316.31,
           "rotation": 225
         }
       ],
@@ -553,21 +552,21 @@
         "type": "A",
         "face": "front",
         "x": 378.47,
-        "y": 315,
+        "y": 316.31,
         "rotation": 45
       },
       {
         "type": "B",
         "face": "front",
         "x": 650,
-        "y": 315,
+        "y": 316.31,
         "rotation": 45
       },
       {
         "type": "A",
         "face": "front",
         "x": 650,
-        "y": 315,
+        "y": 316.31,
         "rotation": 225
       }
     ]
@@ -576,7 +575,7 @@
     "id": 12,
     "name": "Caras Opuestas",
     "description": "Piezas con caras frontal y posterior",
-    "piecesNeeded": 4,
+    "piecesNeeded": 2,
     "difficulty": "Fácil",
     "targetPattern": "custom",
     "objective": {
@@ -584,30 +583,16 @@
         {
           "type": "A",
           "face": "front",
-          "x": 458,
-          "y": 160.17,
+          "x": 367.49,
+          "y": 108.82,
           "rotation": 90
         },
         {
           "type": "A",
           "face": "back",
-          "x": 458,
-          "y": -20.17,
-          "rotation": 135
-        },
-        {
-          "type": "B",
-          "face": "front",
-          "x": 186.47,
-          "y": 419.02,
-          "rotation": 135
-        },
-        {
-          "type": "A",
-          "face": "back",
-          "x": 650,
-          "y": 352.17,
-          "rotation": 270
+          "x": 378.47,
+          "y": 119.8,
+          "rotation": 45
         }
       ],
       "symmetricPattern": []
@@ -616,30 +601,16 @@
       {
         "type": "A",
         "face": "front",
-        "x": 458,
-        "y": 160.17,
+        "x": 367.49,
+        "y": 108.82,
         "rotation": 90
       },
       {
         "type": "A",
         "face": "back",
-        "x": 458,
-        "y": -20.17,
-        "rotation": 135
-      },
-      {
-        "type": "B",
-        "face": "front",
-        "x": 186.47,
-        "y": 419.02,
-        "rotation": 135
-      },
-      {
-        "type": "A",
-        "face": "back",
-        "x": 650,
-        "y": 352.17,
-        "rotation": 270
+        "x": 378.47,
+        "y": 119.8,
+        "rotation": 45
       }
     ]
   },
@@ -662,7 +633,7 @@
         {
           "type": "B",
           "face": "front",
-          "x": 550,
+          "x": 450,
           "y": 300,
           "rotation": 135
         }
@@ -680,7 +651,7 @@
       {
         "type": "B",
         "face": "front",
-        "x": 550,
+        "x": 450,
         "y": 300,
         "rotation": 135
       }
@@ -713,7 +684,7 @@
           "type": "A",
           "face": "front",
           "x": 650,
-          "y": 300,
+          "y": 400,
           "rotation": 0
         }
       ],
@@ -738,7 +709,7 @@
         "type": "A",
         "face": "front",
         "x": 650,
-        "y": 300,
+        "y": 400,
         "rotation": 0
       }
     ]
@@ -755,15 +726,15 @@
         {
           "type": "B",
           "face": "front",
-          "x": 380,
-          "y": 365,
+          "x": 378.47,
+          "y": 364,
           "rotation": 135
         },
         {
           "type": "B",
           "face": "front",
-          "x": 560,
-          "y": 265,
+          "x": 559.49,
+          "y": 182.98,
           "rotation": 315
         }
       ],
@@ -773,15 +744,15 @@
       {
         "type": "B",
         "face": "front",
-        "x": 380,
-        "y": 365,
+        "x": 378.47,
+        "y": 364,
         "rotation": 135
       },
       {
         "type": "B",
         "face": "front",
-        "x": 560,
-        "y": 265,
+        "x": 559.49,
+        "y": 182.98,
         "rotation": 315
       }
     ]
@@ -798,23 +769,23 @@
         {
           "type": "A",
           "face": "back",
-          "x": 458,
-          "y": -48,
-          "rotation": 90
+          "x": 650,
+          "y": 250,
+          "rotation": 0
         },
         {
           "type": "A",
           "face": "back",
-          "x": 250.47,
-          "y": 542.53,
-          "rotation": 315
+          "x": 520,
+          "y": 350,
+          "rotation": 0
         },
         {
           "type": "A",
           "face": "back",
-          "x": 522,
-          "y": 272,
-          "rotation": 225
+          "x": 450,
+          "y": 250,
+          "rotation": 0
         }
       ],
       "symmetricPattern": []
@@ -823,23 +794,23 @@
       {
         "type": "A",
         "face": "back",
-        "x": 458,
-        "y": -48,
-        "rotation": 90
+        "x": 650,
+        "y": 250,
+        "rotation": 0
       },
       {
         "type": "A",
         "face": "back",
-        "x": 250.47,
-        "y": 542.53,
-        "rotation": 315
+        "x": 520,
+        "y": 350,
+        "rotation": 0
       },
       {
         "type": "A",
         "face": "back",
-        "x": 522,
-        "y": 272,
-        "rotation": 225
+        "x": 450,
+        "y": 250,
+        "rotation": 0
       }
     ]
   }
