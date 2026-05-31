@@ -17,6 +17,7 @@ export class PiecePositioningAlgorithm {
   private geometry: GameGeometry;
   private pieceSize: number;
   private minSpacing: number; // Espacio mínimo entre piezas
+  private readonly preferredRotations = [45, 225, 135, 315, 90, 270, 0, 180];
 
   constructor(geometry: GameGeometry, pieceSize: number = 100, minSpacing: number = 20) {
     this.geometry = geometry;
@@ -29,11 +30,12 @@ export class PiecePositioningAlgorithm {
    */
   private isPieceCompletelyInArea(piece: PiecePosition, area: PositioningArea): boolean {
     const vertices = this.geometry.getPieceVertices(piece);
-    
+    const epsilon = 0.001;
+
     // Todos los vértices deben estar dentro del área
     for (const [x, y] of vertices) {
-      if (x < area.x || x > area.x + area.width || 
-          y < area.y || y > area.y + area.height) {
+      if (x < area.x - epsilon || x > area.x + area.width + epsilon ||
+          y < area.y - epsilon || y > area.y + area.height + epsilon) {
         return false;
       }
     }
@@ -60,283 +62,296 @@ export class PiecePositioningAlgorithm {
     // Para geometrías complejas, no podemos calcular fácilmente el área efectiva
     // Usaremos el área completa y verificaremos con geometría precisa
     if (area.width <= 0 || area.height <= 0) {
-      return { 
-        success: false, 
-        positions: [], 
-        error: `Invalid area: ${area.width}x${area.height}` 
+      return {
+        success: false,
+        positions: [],
+        error: `Invalid area: ${area.width}x${area.height}`
       };
     }
 
-    // Intentar diferentes estrategias de posicionamiento
-    let result = this.tryGridPositioning(numPieces, area, pieceTypes, pieceSpacing);
-    
-    if (!result.success && numPieces <= 4) {
-      // Para pocas piezas, intentar posicionamiento manual optimizado
-      result = this.tryOptimizedPositioning(numPieces, area, pieceTypes, pieceSpacing);
+    if (area.width < this.pieceSize || area.height < this.pieceSize) {
+      return {
+        success: false,
+        positions: [],
+        error: `Area too small: ${area.width}x${area.height} for piece size ${this.pieceSize}`
+      };
     }
 
-    if (!result.success) {
-      // Último recurso: posicionamiento random con múltiples intentos
-      result = this.tryRandomPositioning(numPieces, area, pieceTypes, pieceSpacing);
-    }
-
-    return result;
+    return this.tryShelfPacking(numPieces, area, pieceTypes, pieceSpacing);
   }
 
-  /**
-   * Estrategia 1: Posicionamiento incremental con verificación precisa
-   */
-  private tryGridPositioning(
-    numPieces: number, 
-    area: PositioningArea, 
+  private tryShelfPacking(
+    numPieces: number,
+    area: PositioningArea,
     pieceTypes: Array<'A' | 'B'>,
     spacing: number
   ): PositioningResult {
-    const positions: Array<{x: number, y: number, rotation: number}> = [];
-    const placedPieces: PiecePosition[] = [];
+    const compactPieces = pieceTypes.map((type, index) => {
+      const rotation = this.getCompactStorageRotation(type, index);
+      const originPiece: PiecePosition = { type, face: 'front', x: 0, y: 0, rotation };
+      const originBox = this.geometry.getPieceBoundingBox(originPiece);
 
-    // Intentar colocar cada pieza de forma incremental
-    for (let i = 0; i < numPieces; i++) {
-      let pieceSuccess = false;
-      const maxAttempts = 200;
+      return {
+        type,
+        rotation,
+        originBox,
+        width: originBox.right - originBox.left,
+        height: originBox.bottom - originBox.top
+      };
+    });
 
-      // Probar diferentes posiciones dentro del área
-      for (let attempt = 0; attempt < maxAttempts; attempt++) {
-        // Generar posición candidata en el área
-        const margin = 50; // Margen desde los bordes para evitar que se salgan
-        const x = area.x + margin + Math.random() * (area.width - 2 * margin);
-        const y = area.y + margin + Math.random() * (area.height - 2 * margin);
-        const rotation = 0; // Sin rotación por ahora
+    const cellWidth = Math.max(...compactPieces.map(piece => piece.width));
+    const cellHeight = Math.max(...compactPieces.map(piece => piece.height));
+    const maxColumns = Math.max(1, Math.floor((area.width + spacing) / (cellWidth + spacing)));
 
-        const candidatePiece: PiecePosition = {
-          type: pieceTypes[i],
+    for (let columns = Math.min(numPieces, maxColumns); columns >= 1; columns--) {
+      const rows = Math.ceil(numPieces / columns);
+      const layoutWidth = columns * cellWidth + (columns - 1) * spacing;
+      const layoutHeight = rows * cellHeight + (rows - 1) * spacing;
+
+      if (layoutWidth > area.width || layoutHeight > area.height) {
+        continue;
+      }
+
+      const startX = area.x + (area.width - layoutWidth) / 2;
+      const startY = area.y + (area.height - layoutHeight) / 2;
+      const pieces: PiecePosition[] = [];
+      const positions: Array<{ x: number; y: number; rotation: number }> = [];
+
+      for (let index = 0; index < numPieces; index++) {
+        const row = Math.floor(index / columns);
+        const column = index % columns;
+        const compactPiece = compactPieces[index];
+        const left = startX + column * (cellWidth + spacing) + (cellWidth - compactPiece.width) / 2;
+        const top = startY + row * (cellHeight + spacing) + (cellHeight - compactPiece.height) / 2;
+        const piece: PiecePosition = {
+          type: compactPiece.type,
           face: 'front',
-          x, y, rotation
+          x: left - compactPiece.originBox.left,
+          y: top - compactPiece.originBox.top,
+          rotation: compactPiece.rotation
         };
 
-        // Verificar que está dentro del área
-        if (!this.isPieceCompletelyInArea(candidatePiece, area)) {
-          continue;
-        }
-
-        // Verificar que no solapa con piezas ya colocadas
-        const overlaps = placedPieces.some(existingPiece => 
-          this.geometry.doPiecesOverlap(candidatePiece, existingPiece)
-        );
-
-        if (!overlaps) {
-          positions.push({ x, y, rotation });
-          placedPieces.push(candidatePiece);
-          pieceSuccess = true;
-          break;
-        }
+        pieces.push(piece);
+        positions.push({ x: piece.x, y: piece.y, rotation: piece.rotation });
       }
 
-      if (!pieceSuccess) {
-        return { 
-          success: false, 
-          positions: [], 
-          error: `Could not place piece ${i + 1} of ${numPieces} after ${maxAttempts} attempts` 
-        };
-      }
-    }
+      const allInArea = pieces.every(piece => this.isPieceCompletelyInArea(piece, area));
+      const hasConflicts = pieces.some((piece, index) =>
+        pieces.slice(index + 1).some(otherPiece => this.doPiecesConflict(piece, otherPiece, spacing))
+      );
 
-    return { success: true, positions };
-  }
-
-  /**
-   * Estrategia 2: Posicionamiento optimizado para pocas piezas
-   */
-  private tryOptimizedPositioning(
-    numPieces: number, 
-    area: PositioningArea, 
-    pieceTypes: Array<'A' | 'B'>,
-    spacing: number
-  ): PositioningResult {
-    const positions: Array<{x: number, y: number, rotation: number}> = [];
-
-    switch (numPieces) {
-      case 1:
-        // Centrar en el área
-        positions.push({
-          x: area.x + (area.width - this.pieceSize) / 2,
-          y: area.y + (area.height - this.pieceSize) / 2,
-          rotation: 0
-        });
-        break;
-
-      case 2:
-        // Distribuir horizontalmente si hay espacio, verticalmente si no
-        const horizontalSpace = 2 * this.pieceSize + spacing;
-        const verticalSpace = 2 * this.pieceSize + spacing;
-
-        if (area.width >= horizontalSpace) {
-          // Horizontalmente
-          const startX = area.x + (area.width - horizontalSpace) / 2;
-          const y = area.y + (area.height - this.pieceSize) / 2;
-          
-          positions.push({ x: startX, y, rotation: 0 });
-          positions.push({ x: startX + this.pieceSize + spacing, y, rotation: 0 });
-        } else if (area.height >= verticalSpace) {
-          // Verticalmente
-          const x = area.x + (area.width - this.pieceSize) / 2;
-          const startY = area.y + (area.height - verticalSpace) / 2;
-          
-          positions.push({ x, y: startY, rotation: 0 });
-          positions.push({ x, y: startY + this.pieceSize + spacing, rotation: 0 });
-        } else {
-          return { success: false, positions: [], error: 'Not enough space for 2 pieces' };
-        }
-        break;
-
-      case 3:
-        // Triángulo o línea horizontal
-        const triangleBase = 2 * this.pieceSize + spacing;
-        const triangleHeight = this.pieceSize + spacing + this.pieceSize;
-
-        if (area.width >= triangleBase && area.height >= triangleHeight) {
-          // Formar triángulo
-          const baseY = area.y + area.height - this.pieceSize;
-          const topY = area.y;
-          const centerX = area.x + area.width / 2;
-
-          positions.push({ x: centerX - this.pieceSize - spacing/2, y: baseY, rotation: 0 });
-          positions.push({ x: centerX + spacing/2, y: baseY, rotation: 0 });
-          positions.push({ x: centerX - this.pieceSize/2, y: topY, rotation: 0 });
-        } else {
-          // Línea horizontal
-          const lineWidth = 3 * this.pieceSize + 2 * spacing;
-          if (area.width >= lineWidth) {
-            const startX = area.x + (area.width - lineWidth) / 2;
-            const y = area.y + (area.height - this.pieceSize) / 2;
-            
-            for (let i = 0; i < 3; i++) {
-              positions.push({ 
-                x: startX + i * (this.pieceSize + spacing), 
-                y, 
-                rotation: 0 
-              });
-            }
-          } else {
-            return { success: false, positions: [], error: 'Not enough space for 3 pieces' };
-          }
-        }
-        break;
-
-      case 4:
-        // Grid 2x2
-        const gridWidth = 2 * this.pieceSize + spacing;
-        const gridHeight = 2 * this.pieceSize + spacing;
-
-        if (area.width >= gridWidth && area.height >= gridHeight) {
-          const startX = area.x + (area.width - gridWidth) / 2;
-          const startY = area.y + (area.height - gridHeight) / 2;
-
-          positions.push({ x: startX, y: startY, rotation: 0 });
-          positions.push({ x: startX + this.pieceSize + spacing, y: startY, rotation: 0 });
-          positions.push({ x: startX, y: startY + this.pieceSize + spacing, rotation: 0 });
-          positions.push({ x: startX + this.pieceSize + spacing, y: startY + this.pieceSize + spacing, rotation: 0 });
-        } else {
-          return { success: false, positions: [], error: 'Not enough space for 2x2 grid' };
-        }
-        break;
-
-      default:
-        return { success: false, positions: [], error: 'Optimized positioning only supports 1-4 pieces' };
-    }
-
-    // Verificar solapamientos
-    const testPieces: PiecePosition[] = positions.map((pos, i) => ({
-      type: pieceTypes[i],
-      face: 'front',
-      x: pos.x,
-      y: pos.y,
-      rotation: pos.rotation
-    }));
-
-    if (this.checkNoOverlaps(testPieces)) {
-      return { success: true, positions };
-    }
-
-    return { success: false, positions: [], error: 'Optimized positioning resulted in overlaps' };
-  }
-
-  /**
-   * Estrategia 3: Posicionamiento random con múltiples intentos
-   */
-  private tryRandomPositioning(
-    numPieces: number, 
-    area: PositioningArea, 
-    pieceTypes: Array<'A' | 'B'>,
-    spacing: number,
-    maxAttempts: number = 1000
-  ): PositioningResult {
-    for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      const positions: Array<{x: number, y: number, rotation: number}> = [];
-      const testPieces: PiecePosition[] = [];
-
-      let success = true;
-
-      for (let i = 0; i < numPieces; i++) {
-        let pieceSuccess = false;
-        const maxPieceAttempts = 100;
-
-        for (let pieceAttempt = 0; pieceAttempt < maxPieceAttempts; pieceAttempt++) {
-          const x = area.x + Math.random() * area.width;
-          const y = area.y + Math.random() * area.height;
-          const rotation = 0; // Para simplificar, sin rotación
-
-          const testPiece: PiecePosition = {
-            type: pieceTypes[i],
-            face: 'front',
-            x, y, rotation
-          };
-
-          // Verificar que no solapa con piezas ya colocadas
-          const overlaps = testPieces.some(existingPiece => 
-            this.geometry.doPiecesOverlap(testPiece, existingPiece)
-          );
-
-          // Verificar que está completamente dentro del área
-          const inBounds = this.isPieceInBounds(testPiece, area);
-
-          if (!overlaps && inBounds) {
-            positions.push({ x, y, rotation });
-            testPieces.push(testPiece);
-            pieceSuccess = true;
-            break;
-          }
-        }
-
-        if (!pieceSuccess) {
-          success = false;
-          break;
-        }
-      }
-
-      if (success) {
+      if (allInArea && !hasConflicts) {
         return { success: true, positions };
       }
     }
 
-    return { 
-      success: false, 
-      positions: [], 
-      error: `Failed to find valid random positioning after ${maxAttempts} attempts` 
+    return {
+      success: false,
+      positions: [],
+      error: `Could not position ${numPieces} pieces without overlap inside ${area.width}x${area.height}`
+    };
+  }
+
+  private getCompactStorageRotation(type: 'A' | 'B', index: number): number {
+    if (type === 'A') {
+      return index % 2 === 0 ? 45 : 225;
+    }
+
+    return index % 2 === 0 ? 135 : 315;
+  }
+
+  /**
+   * Estrategia determinista: genera posiciones de bbox dentro del área y usa backtracking
+   * con la geometría real de las piezas. Funciona para cualquier número razonable de fichas.
+   */
+  private tryDeterministicPacking(
+    numPieces: number, 
+    area: PositioningArea, 
+    pieceTypes: Array<'A' | 'B'>,
+    spacing: number
+  ): PositioningResult {
+    const candidatesByIndex = pieceTypes.map(type =>
+      this.generateCandidatesForType(type, area, spacing)
+    );
+
+    if (candidatesByIndex.some(candidates => candidates.length === 0)) {
+      return {
+        success: false,
+        positions: [],
+        error: 'No valid candidate positions fit inside the area'
+      };
+    }
+
+    const order = pieceTypes
+      .map((_, index) => index)
+      .sort((a, b) => candidatesByIndex[a].length - candidatesByIndex[b].length || a - b);
+
+    const placedByIndex = new Array<PiecePosition | null>(numPieces).fill(null);
+    const placedPieces: PiecePosition[] = [];
+    let visitedNodes = 0;
+    const maxVisitedNodes = 3000;
+
+    const search = (orderIndex: number): boolean => {
+      visitedNodes++;
+      if (visitedNodes > maxVisitedNodes) {
+        return false;
+      }
+
+      if (orderIndex === order.length) {
+        return true;
+      }
+
+      const pieceIndex = order[orderIndex];
+      const candidates = candidatesByIndex[pieceIndex];
+
+      for (const candidate of candidates) {
+        if (placedPieces.some(piece => this.doPiecesConflict(candidate, piece, spacing))) {
+          continue;
+        }
+
+        placedByIndex[pieceIndex] = candidate;
+        placedPieces.push(candidate);
+
+        if (search(orderIndex + 1)) {
+          return true;
+        }
+
+        placedPieces.pop();
+        placedByIndex[pieceIndex] = null;
+      }
+
+      return false;
+    };
+
+    if (!search(0)) {
+      return {
+        success: false,
+        positions: [],
+        error: `Could not position ${numPieces} pieces without overlap inside ${area.width}x${area.height}`
+      };
+    }
+
+    return {
+      success: true,
+      positions: placedByIndex.map(piece => ({
+        x: piece!.x,
+        y: piece!.y,
+        rotation: piece!.rotation
+      }))
     };
   }
 
   /**
-   * Verifica que una pieza está completamente dentro del área (DUPLICADO - usar isPieceCompletelyInArea)
+   * Crea candidatos alineando la bounding box real de una pieza dentro del área.
    */
-  private isPieceInBounds(piece: PiecePosition, area: PositioningArea): boolean {
-    return this.isPieceCompletelyInArea(piece, area);
+  private generateCandidatesForType(
+    type: 'A' | 'B',
+    area: PositioningArea,
+    spacing: number
+  ): PiecePosition[] {
+    const candidates: PiecePosition[] = [];
+    const paddedArea = {
+      x: area.x + spacing,
+      y: area.y + spacing,
+      width: area.width - spacing * 2,
+      height: area.height - spacing * 2
+    };
+
+    for (const rotation of this.preferredRotations) {
+      const originPiece: PiecePosition = { type, face: 'front', x: 0, y: 0, rotation };
+      const originBox = this.geometry.getPieceBoundingBox(originPiece);
+      const bboxWidth = originBox.right - originBox.left;
+      const bboxHeight = originBox.bottom - originBox.top;
+
+      if (bboxWidth > paddedArea.width || bboxHeight > paddedArea.height) {
+        continue;
+      }
+
+      const maxLeft = paddedArea.x + paddedArea.width - bboxWidth;
+      const maxTop = paddedArea.y + paddedArea.height - bboxHeight;
+      const stepX = Math.max(40, Math.floor(bboxWidth + spacing));
+      const stepY = Math.max(40, Math.floor(bboxHeight + spacing));
+      const leftValues = this.buildAxisPositions(paddedArea.x, maxLeft, stepX);
+      const topValues = this.buildAxisPositions(paddedArea.y, maxTop, stepY);
+
+      for (const top of topValues) {
+        for (const left of leftValues) {
+          const candidate: PiecePosition = {
+            type,
+            face: 'front',
+            x: left - originBox.left,
+            y: top - originBox.top,
+            rotation
+          };
+
+          if (this.isPieceCompletelyInArea(candidate, area)) {
+            candidates.push(candidate);
+          }
+        }
+      }
+    }
+
+    const centerX = area.x + area.width / 2;
+    const centerY = area.y + area.height / 2;
+
+    candidates.sort((a, b) => {
+      const boxA = this.geometry.getPieceBoundingBox(a);
+      const boxB = this.geometry.getPieceBoundingBox(b);
+      const centerAX = (boxA.left + boxA.right) / 2;
+      const centerAY = (boxA.top + boxA.bottom) / 2;
+      const centerBX = (boxB.left + boxB.right) / 2;
+      const centerBY = (boxB.top + boxB.bottom) / 2;
+      const distanceA = Math.abs(centerAX - centerX) + Math.abs(centerAY - centerY);
+      const distanceB = Math.abs(centerBX - centerX) + Math.abs(centerBY - centerY);
+
+      return distanceA - distanceB || boxA.top - boxB.top || boxA.left - boxB.left;
+    });
+
+    return candidates.slice(0, 80);
+  }
+
+  private buildAxisPositions(min: number, max: number, step: number): number[] {
+    if (max < min) {
+      return [];
+    }
+
+    const values: number[] = [];
+    for (let value = min; value <= max; value += step) {
+      values.push(value);
+    }
+
+    if (values[values.length - 1] !== max) {
+      values.push(max);
+    }
+
+    return values;
+  }
+
+  private doPiecesConflict(pieceA: PiecePosition, pieceB: PiecePosition, spacing: number): boolean {
+    if (this.geometry.doPiecesOverlap(pieceA, pieceB)) {
+      return true;
+    }
+
+    if (spacing <= 0) {
+      return false;
+    }
+
+    const boxA = this.geometry.getPieceBoundingBox(pieceA);
+    const boxB = this.geometry.getPieceBoundingBox(pieceB);
+
+    return !(
+      boxA.right + spacing <= boxB.left + 0.001 ||
+      boxB.right + spacing <= boxA.left + 0.001 ||
+      boxA.bottom + spacing <= boxB.top + 0.001 ||
+      boxB.bottom + spacing <= boxA.top + 0.001
+    );
   }
 
   /**
    * Verifica que no hay solapamientos entre piezas
    */
-  private checkNoOverlaps(pieces: PiecePosition[]): boolean {
+  checkNoOverlaps(pieces: PiecePosition[]): boolean {
     for (let i = 0; i < pieces.length; i++) {
       for (let j = i + 1; j < pieces.length; j++) {
         if (this.geometry.doPiecesOverlap(pieces[i], pieces[j])) {

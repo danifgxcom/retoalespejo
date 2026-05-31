@@ -162,6 +162,47 @@ export class ChallengeCardRenderer {
     ctx.fillText(`#${challenge.id}`, cardLeft + cardWidth/2, cardTop + 45);
   }
 
+  /**
+   * Draws the objective pieces and their reflections in the challenge card
+   */
+  private drawObjectivePieces(ctx: CanvasRenderingContext2D, playerPieces: any[], debugMode: boolean): void {
+    const { cardLeft, contentTop, cardWidth, contentHeight, mirrorLineX, scale, gameAreaWidth } = this.config;
+
+    // Calculate offset to center the game area within the card content area
+    const scaledGameWidth = gameAreaWidth * scale;
+    const gameAreaOffsetX = cardLeft + (cardWidth - scaledGameWidth) / 2;
+    const gameAreaOffsetY = contentTop;
+    const scaledMirrorLineX = gameAreaOffsetX + mirrorLineX * scale;
+
+    if (debugMode) {
+      this.logDebugInfo(gameAreaOffsetX, gameAreaOffsetY, scaledMirrorLineX, playerPieces);
+    }
+
+    // Draw each piece and its reflection
+    // Scale the piece position coordinates and pass them as the offsets
+    // createDisplayPiece does: x = offsetX + piecePos.x, so we pass the base card offset
+    // and scale the piecePos coordinates by creating a scaled copy
+    playerPieces.forEach((piecePos, index) => {
+      const scaledPiecePos = {
+        ...piecePos,
+        x: piecePos.x * scale,
+        y: piecePos.y * scale
+      };
+      this.drawPieceAndReflection(
+        ctx,
+        scaledPiecePos,
+        index,
+        gameAreaOffsetX,
+        gameAreaOffsetY,
+        scaledMirrorLineX,
+        debugMode
+      );
+    });
+
+    if (debugMode) {
+      this.drawDebugOverlays(ctx, gameAreaOffsetX, gameAreaOffsetY, scaledMirrorLineX, cardLeft, contentTop, cardWidth, contentHeight);
+    }
+  }
 
 
   /**

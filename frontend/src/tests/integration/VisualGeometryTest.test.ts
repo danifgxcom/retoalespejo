@@ -1,4 +1,4 @@
-import { GameGeometry, PiecePosition, GameAreaConfig } from './geometry/GameGeometry';
+import { GameGeometry, PiecePosition, GameAreaConfig } from '../../utils/geometry/GameGeometry';
 
 describe('Visual Geometry Test - Verificar coherencia entre cálculo y dibujo', () => {
   test('Verificar que una pieza en x=330 realmente toque el espejo visualmente', () => {

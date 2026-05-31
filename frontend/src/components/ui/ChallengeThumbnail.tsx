@@ -1,8 +1,9 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useMemo } from 'react';
 import { Challenge } from '../ChallengeCard';
 import { drawPiece, Piece } from '../GamePiece';
 import { useTheme } from '../../contexts/ThemeContext';
 import { PieceColors } from '../../utils/piece/PieceColors';
+import { GameGeometry, PiecePosition } from '../../utils/geometry/GameGeometry';
 
 interface ChallengeThumbnailProps {
   challenge: Challenge;
@@ -44,6 +45,12 @@ const ChallengeThumbnail: React.FC<ChallengeThumbnailProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const isInteractive = interactive || !!onClick;
   const { theme } = useTheme(); // Get current theme to force re-render on theme change
+  const thumbnailGeometry = useMemo(() => new GameGeometry({
+    width: 700,
+    height: 600,
+    mirrorLineX: 700,
+    pieceSize: 100
+  }), []);
 
   // Handle keyboard events for interactive thumbnails
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -91,30 +98,46 @@ const ChallengeThumbnail: React.FC<ChallengeThumbnailProps> = ({
       // We'll set it via the canvas style instead of drawing over everything
     }
 
-    // Calculate scaling and centering
-    const playerPieces = challenge.objective.playerPieces;
+    // Calculate scaling and centering from the real geometry, including reflections.
+    const playerPieces = challenge.objective.playerPieces as PiecePosition[];
     if (playerPieces.length === 0) return;
 
-    // Área FIJA para TODAS las miniaturas - mismo crop y escala
-    const totalWidth = 1400;   // Juego (700) + Espejo (700)
-    const standardHeight = 600; // Altura fija
-
-    // Escala FIJA para todas con zoom del 50%
     const padding = 16;
-    const baseScale = Math.min((width - padding * 2) / totalWidth, (height - padding * 2) / standardHeight);
-    const scale = baseScale * 1.5; // Aplicar zoom del 50%
+    const mirrorLine = 700;
+    const allVertices = playerPieces.flatMap(piece => {
+      const vertices = thumbnailGeometry.getPieceVertices(piece);
+      const reflectedVertices = vertices.map(([x, y]) => [2 * mirrorLine - x, y] as [number, number]);
+      return [...vertices, ...reflectedVertices];
+    });
 
-    // Centrado FIJO
-    const scaledWidth = totalWidth * scale;
-    const scaledHeight = standardHeight * scale;
-    const offsetX = (width - scaledWidth) / 2;
-    const offsetY = (height - scaledHeight) / 2;
+    const minX = Math.min(...allVertices.map(([x]) => x));
+    const maxX = Math.max(...allVertices.map(([x]) => x));
+    const minY = Math.min(...allVertices.map(([, y]) => y));
+    const maxY = Math.max(...allVertices.map(([, y]) => y));
+    const contentWidth = Math.max(1, maxX - minX);
+    const contentHeight = Math.max(1, maxY - minY);
+    const scale = Math.min((width - padding * 2) / contentWidth, (height - padding * 2) / contentHeight);
+    const offsetX = (width - contentWidth * scale) / 2 - minX * scale;
+    const offsetY = (height - contentHeight * scale) / 2 - minY * scale;
 
     // Debug logging disabled to prevent console spam
     // Use browser dev tools for debugging if needed
 
+    const mirrorX = mirrorLine * scale + offsetX;
+    if (mirrorX >= 0 && mirrorX <= width) {
+      ctx.save();
+      ctx.strokeStyle = isAccessibleTheme ? '#f97316' : '#ef4444';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 4]);
+      ctx.beginPath();
+      ctx.moveTo(mirrorX, 8);
+      ctx.lineTo(mirrorX, height - 8);
+      ctx.stroke();
+      ctx.restore();
+    }
+
     // Draw original pieces
-    playerPieces.forEach((piecePos, index) => {
+    playerPieces.forEach((piecePos) => {
       const x = piecePos.x * scale + offsetX;
       const y = piecePos.y * scale + offsetY;
       const size = 100 * scale;
@@ -142,8 +165,7 @@ const ChallengeThumbnail: React.FC<ChallengeThumbnailProps> = ({
 
     // Draw reflected pieces
 
-    playerPieces.forEach((piecePos, index) => {
-      const mirrorLine = 700;
+    playerPieces.forEach((piecePos) => {
       const reflectedX = 2 * mirrorLine - piecePos.x - 100;
       const x = reflectedX * scale + offsetX;
       const y = piecePos.y * scale + offsetY;
@@ -176,7 +198,7 @@ const ChallengeThumbnail: React.FC<ChallengeThumbnailProps> = ({
     });
 
 
-  }, [challenge, width, height, backgroundColor, theme]); // Include theme to force re-render on theme change
+  }, [challenge, width, height, backgroundColor, theme, thumbnailGeometry]); // Include theme to force re-render on theme change
 
   // Generate a description for screen readers
   const generateDescription = () => {

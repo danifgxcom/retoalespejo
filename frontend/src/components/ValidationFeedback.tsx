@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { CheckCircle, XCircle, AlertCircle, Sparkles } from 'lucide-react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { CheckCircle, XCircle, Sparkles, X } from 'lucide-react';
 
 interface ValidationFeedbackProps {
   result: {
@@ -12,6 +12,25 @@ interface ValidationFeedbackProps {
 const ValidationFeedback: React.FC<ValidationFeedbackProps> = ({ result, onClose }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
+  const onCloseRef = useRef(onClose);
+  const closeTimeoutRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  const closeFeedback = useCallback(() => {
+    if (closeTimeoutRef.current) {
+      window.clearTimeout(closeTimeoutRef.current);
+    }
+
+    setIsAnimating(false);
+    closeTimeoutRef.current = window.setTimeout(() => {
+      setIsVisible(false);
+      onCloseRef.current();
+      closeTimeoutRef.current = null;
+    }, 300);
+  }, []);
 
   useEffect(() => {
     if (result) {
@@ -19,17 +38,19 @@ const ValidationFeedback: React.FC<ValidationFeedbackProps> = ({ result, onClose
       setIsAnimating(true);
       
       // Auto-close after 4 seconds if successful, 6 seconds if error
-      const timeout = setTimeout(() => {
-        setIsAnimating(false);
-        setTimeout(() => {
-          setIsVisible(false);
-          onClose();
-        }, 300);
+      const timeout = window.setTimeout(() => {
+        closeFeedback();
       }, result.isCorrect ? 4000 : 6000);
 
-      return () => clearTimeout(timeout);
+      return () => {
+        window.clearTimeout(timeout);
+        if (closeTimeoutRef.current) {
+          window.clearTimeout(closeTimeoutRef.current);
+          closeTimeoutRef.current = null;
+        }
+      };
     }
-  }, [result, onClose]);
+  }, [result, closeFeedback]);
 
   if (!result || !isVisible) return null;
 
@@ -64,10 +85,19 @@ const ValidationFeedback: React.FC<ValidationFeedbackProps> = ({ result, onClose
         }`}
       >
         <div className={`${getBackgroundClass()} p-1 rounded-2xl shadow-2xl`}>
-          <div className={`bg-white rounded-xl p-8 border-4 ${getBorderClass()} max-w-md`}>
+          <div className={`relative bg-white rounded-xl p-8 border-4 ${getBorderClass()} max-w-md`}>
+            <button
+              type="button"
+              onClick={closeFeedback}
+              className="absolute right-3 top-3 rounded-full p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              aria-label="Cerrar mensaje de validación"
+            >
+              <X size={18} aria-hidden="true" />
+            </button>
+
             {/* Success Animation */}
             {result.isCorrect && (
-              <div className="absolute -top-4 -right-4">
+              <div className="absolute -top-4 -right-4 pointer-events-none">
                 <div className="relative">
                   <Sparkles size={24} className="text-yellow-400 animate-pulse" />
                   <div className="absolute inset-0 animate-ping">
@@ -99,21 +129,23 @@ const ValidationFeedback: React.FC<ValidationFeedbackProps> = ({ result, onClose
             {/* Progress or action */}
             {result.isCorrect ? (
               <div className="text-center">
-                <div className="inline-flex items-center gap-2 bg-green-100 text-green-700 px-4 py-2 rounded-full font-medium">
+                <div className="inline-flex items-center gap-2 bg-green-100 text-green-700 px-4 py-2 rounded-full font-medium mb-4">
                   <CheckCircle size={16} />
                   ¡Desafío completado!
                 </div>
+                <button
+                  type="button"
+                  onClick={closeFeedback}
+                  className="block mx-auto bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium transition-colors shadow-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                >
+                  Continuar
+                </button>
               </div>
             ) : (
               <div className="text-center">
                 <button
-                  onClick={() => {
-                    setIsAnimating(false);
-                    setTimeout(() => {
-                      setIsVisible(false);
-                      onClose();
-                    }, 300);
-                  }}
+                  type="button"
+                  onClick={closeFeedback}
                   className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-medium transition-colors shadow-lg"
                 >
                   Seguir intentando

@@ -324,19 +324,34 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
 
   // Reset timer when challenge changes
   useEffect(() => {
-    // Only reset in offline mode or if not in active game
-    if (gameMode === 'offline' || !isGameActive) {
+    if (gameMode === 'offline') {
+      setTime(0);
+      setIsRunning(true);
+
+      if (onPauseChange) {
+        onPauseChange(false);
+      } else {
+        setInternalIsPaused(false);
+      }
+      setPausedBy(null);
+      if (onPausedByChange) {
+        onPausedByChange(null);
+      }
+      return;
+    }
+
+    // In menus or inactive multiplayer rooms, keep the timer reset and stopped.
+    if (!isGameActive) {
       setTime(0);
       setIsRunning(false);
 
-      // Update pause state based on whether we're using props or internal state
       if (onPauseChange) {
         onPauseChange(true);
       } else {
         setInternalIsPaused(true);
       }
     }
-  }, [currentChallenge, gameMode, isGameActive, onPauseChange]);
+  }, [currentChallenge, gameMode, isGameActive, onPauseChange, onPausedByChange]);
 
   const formatTime = (seconds: number): string => {
     // Handle NaN, null, undefined, or negative values
@@ -389,6 +404,17 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
       // In offline mode, call the provided reset function
       console.log('❌ Calling local reset - gameMode:', gameMode, 'isGameActive:', isGameActive);
       onResetLevel();
+      setTime(0);
+      setIsRunning(true);
+      if (onPauseChange) {
+        onPauseChange(false);
+      } else {
+        setInternalIsPaused(false);
+      }
+      setPausedBy(null);
+      if (onPausedByChange) {
+        onPausedByChange(null);
+      }
     }
   };
 
@@ -403,11 +429,14 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
       console.log('❌ Resetting timer locally - gameMode:', gameMode, 'isGameActive:', isGameActive);
       setTime(0);
       setIsRunning(true);
-      // Update pause state based on whether we're using props or internal state
       if (onPauseChange) {
-        onPauseChange(true); // Start paused
+        onPauseChange(false);
       } else {
-        setInternalIsPaused(true); // Start paused
+        setInternalIsPaused(false);
+      }
+      setPausedBy(null);
+      if (onPausedByChange) {
+        onPausedByChange(null);
       }
     }
   };
@@ -415,6 +444,19 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
   const handleCheckSolution = () => {
     const result = onCheckSolution();
     setValidationResult(result);
+
+    if (result.isCorrect) {
+      setIsRunning(false);
+      if (onPauseChange) {
+        onPauseChange(true);
+      } else {
+        setInternalIsPaused(true);
+      }
+      setPausedBy('SYSTEM');
+      if (onPausedByChange) {
+        onPausedByChange('SYSTEM');
+      }
+    }
 
     // In multiplayer mode, report to server
     if (gameMode === 'multiplayer' && isGameActive) {

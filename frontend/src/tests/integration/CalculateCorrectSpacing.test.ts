@@ -1,4 +1,4 @@
-import { GameGeometry, PiecePosition, GameAreaConfig } from './geometry/GameGeometry';
+import { GameGeometry, PiecePosition, GameAreaConfig } from '../../utils/geometry/GameGeometry';
 
 describe('Calculate Correct Spacing', () => {
   let geometry: GameGeometry;

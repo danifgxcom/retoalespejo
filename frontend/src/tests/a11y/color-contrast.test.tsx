@@ -7,19 +7,8 @@ interface ColorTestCase {
   name: string;
 }
 
-// Convierte hex a RGB
-function hexToRgb(hex: string): [number, number, number] {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  return result 
-    ? [
-        parseInt(result[1], 16),
-        parseInt(result[2], 16),
-        parseInt(result[3], 16)
-      ] 
-    : [0, 0, 0];
-}
-
 // Prueba el contraste utilizando APCA (la métrica moderna recomendada por WCAG 3.0)
+// calcAPCA acepta strings hex directamente
 describe('Pruebas de contraste de color según APCA (WCAG 3.0)', () => {
   const colorPairs: ColorTestCase[] = [
     // Colores de tema primario
@@ -45,13 +34,8 @@ describe('Pruebas de contraste de color según APCA (WCAG 3.0)', () => {
 
   colorPairs.forEach(({ foreground, background, minContrast, name }) => {
     test(`${name} debe tener suficiente contraste`, () => {
-      const fgRGB = hexToRgb(foreground);
-      const bgRGB = hexToRgb(background);
-
-      // APCA calcula el contraste (valores absolutos más altos = mejor contraste)
-      // Texto normal: 60+ para AA, 75+ para AAA
-      // Texto grande: 45+ para AA, 60+ para AAA
-      const contrast = Math.abs(calcAPCA(fgRGB, bgRGB));
+      // Pass hex strings directly to calcAPCA (it uses colorParsley internally)
+      const contrast = Math.abs(calcAPCA(foreground, background) as number);
 
       expect(contrast).toBeGreaterThanOrEqual(
         minContrast,

@@ -1,4 +1,4 @@
-import { GameGeometry, PiecePosition, GameAreaConfig } from './geometry/GameGeometry';
+import { GameGeometry, PiecePosition, GameAreaConfig } from '../../utils/geometry/GameGeometry';
 
 describe('Debug Challenge 3 and 4', () => {
   let geometry: GameGeometry;

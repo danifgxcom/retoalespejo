@@ -1,5 +1,5 @@
-import { ViewportManager, ViewportConfig, WorldConfig } from './rendering/ViewportManager';
-import { PiecePosition } from './geometry/GameGeometry';
+import { ViewportManager, ViewportConfig, WorldConfig } from '../../utils/rendering/ViewportManager';
+import { PiecePosition } from '../../utils/geometry/GameGeometry';
 
 describe('ViewportManager', () => {
   let viewportManager: ViewportManager;

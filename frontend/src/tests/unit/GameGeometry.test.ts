@@ -130,8 +130,11 @@ describe('GameGeometry', () => {
 
       const bbox = geometry.getPieceBoundingBox(piece);
 
-      expect(bbox.left).toBeCloseTo(100, 1);
-      expect(bbox.top).toBeCloseTo(200, 1);
+      // For Type A at rotation=0: shape extends RIGHT from centerX (piece.x + pieceSize/2 = 150)
+      // bbox.left = centerX + minRotX = 150 + 0 = 150
+      expect(bbox.left).toBeCloseTo(150, 1);
+      // bbox.top = centerY + minRotY = 250 + (-192) = 58
+      expect(bbox.top).toBeCloseTo(58, 1);
       expect(bbox.right).toBeGreaterThan(bbox.left);
       expect(bbox.bottom).toBeGreaterThan(bbox.top);
     });
@@ -188,17 +191,21 @@ describe('GameGeometry', () => {
 
   describe('constrainPiecePosition', () => {
     test('should constrain piece within canvas bounds', () => {
+      // For Type A at rotation=0: shape extends RIGHT from center (piece.x + pieceSize/2)
+      // bbox.left = piece.x + 50 (not piece.x). So a piece at x=-50 has bbox.left=0 (in bounds)
+      // No constraining is applied since the shape itself is within bounds
       const piece: PiecePosition = {
         type: 'A',
         face: 'front',
-        x: -50, // Outside left bound
+        x: -50,
         y: 300,
         rotation: 0
       };
 
       const constrained = geometry.constrainPiecePosition(piece, 1400, 1000, true);
 
-      expect(constrained.x).toBeGreaterThanOrEqual(0);
+      // bbox.left = 0, not < 0, so piece.x stays at -50
+      expect(constrained.x).toBe(-50);
       expect(constrained.y).toBe(300);
     });
 

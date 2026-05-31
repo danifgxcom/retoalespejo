@@ -1,4 +1,4 @@
-import { GameGeometry, PiecePosition, GameAreaConfig } from './geometry/GameGeometry';
+import { GameGeometry, PiecePosition, GameAreaConfig } from '../../utils/geometry/GameGeometry';
 
 describe('Find Valid Type B Position', () => {
   test('Find a valid position for type B piece', () => {
@@ -11,7 +11,8 @@ describe('Find Valid Type B Position', () => {
     const geometry = new GameGeometry(config);
     
     // Test different positions for type B pieces
-    const testPositions = [330, 350, 370, 380, 400, 420, 450, 480, 500, 520, 550];
+    // For Type B at rotation=0: bbox.right = piece.x+50. For touching at 700: piece.x=650
+    const testPositions = [330, 350, 370, 380, 400, 420, 450, 480, 500, 520, 550, 620, 640, 650];
     
     for (const x of testPositions) {
       const piece: PiecePosition = {

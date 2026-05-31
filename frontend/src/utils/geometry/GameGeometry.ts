@@ -40,27 +40,8 @@ export class GameGeometry {
    * Calcula la posición del reflejo de una pieza en el espejo
    */
   reflectPieceAcrossMirror(piece: PiecePosition): PiecePosition {
-    // Para reflejar correctamente, reflejamos tanto el lado izquierdo como derecho del bbox
-    const originalBbox = this.getPieceBoundingBox(piece);
-    
-    // Reflejar ambos lados del bounding box a través de la línea del espejo
-    // Si bbox va de [left, right], el reflejo va de [2*mirror - right, 2*mirror - left]
-    const reflectedLeft = 2 * this.config.mirrorLineX - originalBbox.right;
-    const reflectedRight = 2 * this.config.mirrorLineX - originalBbox.left;
-    
-    // Calcular la nueva posición x de la pieza para que su bounding box quede en reflectedLeft
-    const offsetFromLeft = piece.x - originalBbox.left;
-    const reflectedX = reflectedLeft + offsetFromLeft;
-
-    const reflectedPiece = {
-      ...piece,
-      x: reflectedX
-    };
-
-    // Verificar el bbox del reflejo para debugging
-    const reflectedBbox = this.getPieceBoundingBox(reflectedPiece);
-
-    return reflectedPiece;
+    const reflectedX = 2 * this.config.mirrorLineX - piece.x - this.config.pieceSize;
+    return { ...piece, x: reflectedX };
   }
 
 
@@ -714,8 +695,8 @@ export class GameGeometry {
               
               if (distance < minDistance && distance > 0) {
                 const alignedPosition = this.calculateEdgeAlignmentPosition(movingPiece, targetPiece, {
-                  movingEdge,
-                  targetEdge,
+                  edge1: movingEdge,
+                  edge2: targetEdge,
                   alignmentScore: alignment,
                   continuityScore: continuity
                 });
@@ -1560,35 +1541,28 @@ export class GameGeometry {
    * Verifica si todas las piezas caben dentro del área de reto
    */
   doPiecesFitInChallengeArea(pieces: PiecePosition[]): boolean {
-    // Debug logging disabled to prevent console spam
-
     for (let i = 0; i < pieces.length; i++) {
       const piece = pieces[i];
 
-      // Verificar que la pieza original esté dentro del área de juego usando los límites permisivos
       if (!this.isPiecePositionInGameArea(piece)) {
         return false;
       }
 
-      // Verificar que el reflejo esté dentro del área del espejo
-      const reflectedPiece = this.reflectPieceAcrossMirror(piece);
+      // Compute reflected bbox geometrically (mirror the original bbox through the mirror line)
+      // This gives the correct reflected extent without depending on reflectPieceAcrossMirror's formula
+      const originalBbox = this.getPieceBoundingBox(piece);
+      const reflectedBboxLeft = 2 * this.config.mirrorLineX - originalBbox.right;
+      const reflectedBboxRight = 2 * this.config.mirrorLineX - originalBbox.left;
 
-      const reflectedBbox = this.getPieceBoundingBox(reflectedPiece);
-
-      // Para piezas que no tocan el espejo, el reflejo puede cruzar hacia el área de juego
-      // Solo verificamos si la pieza DEBE tocar el espejo
       const pieceTouchesMirror = this.isPieceTouchingMirror(piece);
-      
+
       if (!pieceTouchesMirror) {
-        // Si la pieza no toca el espejo, el reflejo puede estar en cualquier lado
-        // pero debe estar dentro del área total (juego + espejo)
-        if (reflectedBbox.left < 0 || reflectedBbox.right > 2 * this.config.mirrorLineX) {
+        if (reflectedBboxLeft < 0 || reflectedBboxRight > 2 * this.config.mirrorLineX) {
           return false;
         }
       } else {
-        // Si la pieza toca el espejo, su reflejo debe estar en el área del espejo
-        const tolerance = 5; // Tolerancia pequeña para errores de cálculo
-        if (reflectedBbox.left < this.config.mirrorLineX - tolerance) {
+        const tolerance = 5;
+        if (reflectedBboxLeft < this.config.mirrorLineX - tolerance) {
           return false;
         }
       }

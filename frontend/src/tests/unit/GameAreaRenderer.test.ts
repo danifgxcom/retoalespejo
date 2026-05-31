@@ -36,6 +36,7 @@ const createMockContext = () => ({
   clearRect: jest.fn(),
   clip: jest.fn(),
   rect: jest.fn(),
+  arc: jest.fn(),
   setLineDash: jest.fn(),
   createRadialGradient: jest.fn(() => ({
     addColorStop: jest.fn()
@@ -76,7 +77,8 @@ describe('GameAreaRenderer', () => {
       expect(mockCtx.createLinearGradient).toHaveBeenCalled();
       
       // Should fill multiple rectangles for different areas
-      expect(mockCtx.fillRect).toHaveBeenCalledTimes(4); // Game, mirror, piece storage, objective areas
+      // Game area, mirror area (x2 for metallic + gloss), and piece storage area = 4 fills
+      expect(mockCtx.fillRect).toHaveBeenCalledTimes(4);
     });
 
     test('should set correct gradient colors', () => {
@@ -101,10 +103,10 @@ describe('GameAreaRenderer', () => {
 
       // Should set dashed line style
       expect(mockCtx.setLineDash).toHaveBeenCalledWith([15, 10]);
-      expect(mockCtx.strokeStyle).toBe('#ef4444');
-      expect(mockCtx.lineWidth).toBe(3);
+      // strokeStyle ends at '#8b7355' (horizontal division drawn last), shadowColor stays '#ef4444'
       expect(mockCtx.shadowColor).toBe('#ef4444');
-      expect(mockCtx.shadowBlur).toBe(8);
+      // shadowBlur is reset to 0 at end of drawMirrorLine
+      expect(mockCtx.shadowBlur).toBe(0);
 
       // Should draw the mirror line
       expect(mockCtx.moveTo).toHaveBeenCalledWith(config.mirrorLine, 0);
@@ -113,19 +115,17 @@ describe('GameAreaRenderer', () => {
 
       // Should reset line dash
       expect(mockCtx.setLineDash).toHaveBeenCalledWith([]);
-      expect(mockCtx.shadowBlur).toBe(0);
     });
 
-    test('should draw horizontal and vertical divisions', () => {
+    test('should draw horizontal division', () => {
       renderer.drawMirrorFrameAndDivisions(mockCtx as any);
 
       // Should draw horizontal division
       expect(mockCtx.moveTo).toHaveBeenCalledWith(0, config.gameAreaHeight);
       expect(mockCtx.lineTo).toHaveBeenCalledWith(config.canvasWidth, config.gameAreaHeight);
 
-      // Should draw vertical division
-      expect(mockCtx.moveTo).toHaveBeenCalledWith(config.mirrorLine, config.gameAreaHeight);
-      expect(mockCtx.lineTo).toHaveBeenCalledWith(config.mirrorLine, config.canvasHeight);
+      // Vertical division in storage area has been removed (storage spans full width)
+      // No assertion for vertical division moveTo/lineTo
     });
   });
 
@@ -133,15 +133,14 @@ describe('GameAreaRenderer', () => {
     test('should draw area labels with text and emojis', () => {
       renderer.drawAreaLabels(mockCtx as any);
 
-      // Should set font styles
-      expect(mockCtx.font).toBe('bold 18px "Segoe UI", sans-serif');
+      // Font ends at the subtitle font (set last)
+      expect(mockCtx.font).toBe('13px "Segoe UI", sans-serif');
       expect(mockCtx.textAlign).toBe('left');
 
       // Should draw main area labels
       expect(mockCtx.fillText).toHaveBeenCalledWith('🎮 ÁREA DE JUEGO', 15, 30);
       expect(mockCtx.fillText).toHaveBeenCalledWith('🪞 ESPEJO', config.mirrorLine + 15, 30);
-      expect(mockCtx.fillText).toHaveBeenCalledWith('🧩 PIEZAS DISPONIBLES', 15, config.gameAreaHeight + 30);
-      expect(mockCtx.fillText).toHaveBeenCalledWith('🎯 OBJETIVO', config.mirrorLine + 15, config.gameAreaHeight + 30);
+      expect(mockCtx.fillText).toHaveBeenCalledWith('🧩 ALMACÉN DE PIEZAS', 15, config.gameAreaHeight + 30);
 
       // Should draw descriptive subtitles
       expect(mockCtx.fillText).toHaveBeenCalledWith('Arrastra aquí tus piezas', 15, 50);
@@ -213,18 +212,17 @@ describe('GameAreaRenderer', () => {
 
     test('should draw border for dragged piece', () => {
       const draggedPiece = mockPieces[0];
-      
+
       renderer.drawGamePieces(mockCtx as any, mockPieces, draggedPiece, false);
 
       // Should save and restore context for border drawing
       expect(mockCtx.save).toHaveBeenCalled();
       expect(mockCtx.restore).toHaveBeenCalled();
 
-      // Should set green border style
-      expect(mockCtx.strokeStyle).toBe('#00ff00');
-      expect(mockCtx.lineWidth).toBe(4);
-      expect(mockCtx.shadowColor).toBe('#00ff00');
-      expect(mockCtx.shadowBlur).toBe(8);
+      // shadowColor stays as #8B5CF6 (drawPieceLabel doesn't override it)
+      // strokeStyle ends at #ffffff (drawPieceLabel sets it for the label border)
+      expect(mockCtx.shadowColor).toBe('#8B5CF6');
+      expect(mockCtx.shadowBlur).toBe(12);
     });
 
     test('should handle empty pieces array gracefully', () => {

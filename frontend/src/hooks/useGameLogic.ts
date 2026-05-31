@@ -6,6 +6,7 @@ import { ChallengeGenerator } from '../utils/challenges/ChallengeGenerator';
 import { RelativePiecePositions } from '../utils/geometry/RelativePiecePositions';
 import { ResponsiveCanvas } from '../utils/rendering/ResponsiveCanvas';
 import { PieceColors } from '../utils/piece/PieceColors';
+import { PiecePositioningAlgorithm, PositioningArea } from '../utils/positioning/PiecePositioningAlgorithm';
 import { useTheme } from '../contexts/ThemeContext';
 
 export const useGameLogic = () => {
@@ -23,6 +24,7 @@ export const useGameLogic = () => {
   // Inicializar clases de geometría y generador de challenges
   const geometry = useMemo(() => new GameGeometry(gameAreaConfig), []);
   const challengeGenerator = useMemo(() => new ChallengeGenerator(geometry), [geometry]);
+  const piecePositioningAlgorithm = useMemo(() => new PiecePositioningAlgorithm(geometry, gameAreaConfig.pieceSize, 12), [geometry]);
 
   // Sistema de coordenadas responsive
   const [responsiveCanvas, setResponsiveCanvas] = useState<ResponsiveCanvas | null>(null);
@@ -222,156 +224,57 @@ export const useGameLogic = () => {
     return initialPieces;
   };
 
-  // Función para generar piezas con posiciones fijas que funcionan
-  const createChallengeSpecificPieces = (challenge: Challenge): Piece[] => {
-    const availableAreaX = 0;
-    const availableAreaY = 500; // Inicio del área de piezas disponibles (ajustado)
-    const availableAreaWidth = 700;
-    const availableAreaHeight = 500; // Altura del área de piezas disponibles (más grande)
-    const pieceSize = 100;
-    const margin = 80; // Margen más grande para piezas rotadas
+  const getStorageArea = (): PositioningArea => ({
+    x: 0,
+    y: gameAreaConfig.height,
+    width: 1400,
+    height: 1000 - gameAreaConfig.height
+  });
 
-    const initialPieces: Piece[] = [];
-
-    // Las piezas iniciales son genéricas - el usuario las configurará según necesite
-
-    // Posiciones fijas que funcionan sin solapamiento
-    const getPositionsForPieceCount = (count: number) => {
-      // Debug logging disabled to prevent console spam
-
-      switch (count) {
-        case 1:
-          return [{ x: 100, y: 650, rotation: 0 }];
-        case 2:
-          return [
-            { x: 100, y: 650, rotation: 0 },
-            { x: 250, y: 650, rotation: 0 }
-          ];
-        case 3:
-          return [
-            { x: 100, y: 650, rotation: 0 },
-            { x: 250, y: 650, rotation: 0 },
-            { x: 400, y: 650, rotation: 0 }
-          ];
-        case 4:
-          return [
-            { x: 100, y: 650, rotation: 0 },
-            { x: 250, y: 650, rotation: 0 },
-            { x: 400, y: 650, rotation: 0 },
-            { x: 550, y: 650, rotation: 0 }
-          ];
-        case 8:
-          return [
-            { x: 100, y: 600, rotation: 0 },
-            { x: 220, y: 600, rotation: 0 },
-            { x: 340, y: 600, rotation: 0 },
-            { x: 460, y: 600, rotation: 0 },
-            { x: 580, y: 600, rotation: 0 },
-            { x: 100, y: 750, rotation: 0 },
-            { x: 220, y: 750, rotation: 0 },
-            { x: 340, y: 750, rotation: 0 }
-          ];
-        default:
-          return [{ x: 100, y: 650, rotation: 0 }];
-      }
-    };
-
-    const positions = getPositionsForPieceCount(challenge.piecesNeeded);
-
-    // Crear piezas exactamente como las especifica el reto
-    // Debug logging disabled to prevent console spam
-
-    for (let i = 0; i < challenge.piecesNeeded; i++) {
-      const targetPiece = challenge.objective.playerPieces[i];
+  const buildPiecesFromPositions = (
+    challenge: Challenge,
+    positions: Array<{ x: number; y: number; rotation: number }>
+  ): Piece[] => {
+    return challenge.objective.playerPieces.slice(0, challenge.piecesNeeded).map((targetPiece, index) => {
       const template = createPieceTemplate(targetPiece.type, targetPiece.face);
-      const position = positions[i];
+      const position = positions[index];
 
-      const piece = {
+      return {
         ...template,
-        id: i + 1,
-        type: targetPiece.type, // Forzar el tipo exacto del reto
-        face: targetPiece.face, // Forzar la cara exacta del reto
+        id: index + 1,
+        type: targetPiece.type,
+        face: targetPiece.face,
         x: position.x,
         y: position.y,
-        rotation: position.rotation, // Usar la rotación exacta de la posición
-        placed: false // Las piezas empiezan sin colocar, en el área de piezas disponibles
+        rotation: position.rotation,
+        placed: false
       };
+    });
+  };
 
-      // Debug logging disabled to prevent console spam
+  // Función para generar piezas automáticamente dentro del área de almacenamiento
+  const createChallengeSpecificPieces = (challenge: Challenge): Piece[] => {
+    const targetPieces = challenge.objective.playerPieces.slice(0, challenge.piecesNeeded);
+    const pieceTypes = targetPieces.map(piece => piece.type);
+    const result = piecePositioningAlgorithm.positionPieces(
+      challenge.piecesNeeded,
+      getStorageArea(),
+      pieceTypes,
+      12
+    );
 
-      // Validar y ajustar la posición para que esté completamente en el área de almacenamiento
-      const piecePosition = {
-        type: piece.type,
-        face: piece.face,
-        x: piece.x,
-        y: piece.y,
-        rotation: piece.rotation
-      };
-      const isCompletelyInStorage = geometry.isPieceCompletelyInStorageArea(piecePosition, 1400, 1000);
-
-      if (!isCompletelyInStorage) {
-        console.log(`⚠️ Piece ${piece.id} is NOT completely in storage area, constraining...`);
-        const constrainedPosition = geometry.constrainPieceToStorageArea(piecePosition, 1400, 1000);
-        piece.x = constrainedPosition.x;
-        piece.y = constrainedPosition.y;
-        console.log(`🔧 Piece ${piece.id} constrained from (${position.x.toFixed(1)}, ${position.y.toFixed(1)}) to (${piece.x.toFixed(1)}, ${piece.y.toFixed(1)})`);
-      }
-
-      // Verificar colisiones con otras piezas ya creadas
-      const otherPieces = initialPieces.map(p => ({
-        type: p.type,
-        face: p.face,
-        x: p.x,
-        y: p.y,
-        rotation: p.rotation
-      }));
-
-      const updatedPiecePosition = {
-        type: piece.type,
-        face: piece.face,
-        x: piece.x,
-        y: piece.y,
-        rotation: piece.rotation
-      };
-
-      const collisions = geometry.detectPieceCollisions(updatedPiecePosition, otherPieces);
-      if (collisions.hasCollisions) {
-        console.log(`⚠️ Piece ${piece.id} has collisions with other pieces, finding alternative position...`);
-
-        // Intentar posiciones alternativas
-        const storageAreaWidth = 350; // Área de almacenamiento: x 0-350
-        const storageAreaHeight = 400; // Área de almacenamiento: y 600-1000
-        let foundValidPosition = false;
-
-        for (let attempts = 0; attempts < 20 && !foundValidPosition; attempts++) {
-          const testX = 50 + (attempts % 6) * 50; // Posiciones en grilla
-          const testY = 650 + Math.floor(attempts / 6) * 80;
-
-          const testPosition = { ...updatedPiecePosition, x: testX, y: testY };
-          const testConstrainedPosition = geometry.constrainPieceToStorageArea(testPosition, 1400, 1000);
-
-          const testCollisions = geometry.detectPieceCollisions(testConstrainedPosition, otherPieces);
-          const testInStorage = geometry.isPieceCompletelyInStorageArea(testConstrainedPosition, 1400, 1000);
-
-          if (!testCollisions.hasCollisions && testInStorage) {
-            piece.x = testConstrainedPosition.x;
-            piece.y = testConstrainedPosition.y;
-            foundValidPosition = true;
-            console.log(`✅ Found collision-free position for piece ${piece.id}: (${piece.x.toFixed(1)}, ${piece.y.toFixed(1)})`);
-          }
-        }
-
-        if (!foundValidPosition) {
-          console.warn(`❌ Could not find collision-free position for piece ${piece.id}, keeping current position`);
-        }
-      }
-
-      console.log(`🧩 Creating piece ${piece.id} (${piece.type}, ${piece.face}) at storage (${piece.x.toFixed(1)}, ${piece.y.toFixed(1)}) - Target: (${targetPiece.type}, ${targetPiece.face})`);
-      initialPieces.push(piece);
+    if (result.success) {
+      return buildPiecesFromPositions(challenge, result.positions);
     }
 
-    console.log(`✅ Created ${initialPieces.length} pieces matching challenge requirements`);
-    return initialPieces;
+    console.warn(`Could not auto-position pieces for challenge ${challenge.id}: ${result.error}`);
+    const fallbackPositions = targetPieces.map((_, index) => ({
+      x: 80 + (index % 4) * 300,
+      y: 620 + Math.floor(index / 4) * 220,
+      rotation: index % 2 === 0 ? 45 : 225
+    }));
+
+    return buildPiecesFromPositions(challenge, fallbackPositions);
   };
 
   // Función legacy para mantener compatibilidad

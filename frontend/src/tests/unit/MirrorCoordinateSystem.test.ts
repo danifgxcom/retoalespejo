@@ -1,5 +1,5 @@
-import { MirrorCoordinateSystem, MirrorCoordinateConfig, MirrorRelativePiecePosition } from './geometry/MirrorCoordinateSystem';
-import { PiecePosition, GameGeometry } from './geometry/GameGeometry';
+import { MirrorCoordinateSystem, MirrorCoordinateConfig, MirrorRelativePiecePosition } from '../../utils/geometry/MirrorCoordinateSystem';
+import { PiecePosition, GameGeometry } from '../../utils/geometry/GameGeometry';
 
 describe('MirrorCoordinateSystem', () => {
   let mirrorSystem: MirrorCoordinateSystem;
@@ -71,7 +71,9 @@ describe('MirrorCoordinateSystem', () => {
 
       const absolute = mirrorSystem.relativeToAbsolute(relativePiece);
 
-      expect(absolute.x).toBe(600);
+      // x=0 means touching mirror; use getPositionTouchingMirror to get expected value
+      const expectedX = geometry.getPositionTouchingMirror(400, 180, 'B').x;
+      expect(absolute.x).toBe(expectedX);
       expect(absolute.y).toBe(400); // 300 + 100 = 400
       expect(absolute.type).toBe('B');
       expect(absolute.face).toBe('back');
@@ -80,17 +82,19 @@ describe('MirrorCoordinateSystem', () => {
 
   describe('absoluteToRelative', () => {
     it('should convert absolute position to relative correctly', () => {
+      // Use the actual touching position (from getPositionTouchingMirror) as the absolute x
+      const touchingX = geometry.getPositionTouchingMirror(300, 0, 'A').x;
       const absolutePiece: PiecePosition = {
         type: 'A',
         face: 'front',
-        x: 600, // Touching mirror position
+        x: touchingX, // Actual touching position for rotation=0
         y: 300, // Center
         rotation: 0
       };
 
       const relative = mirrorSystem.absoluteToRelative(absolutePiece);
 
-      expect(relative.x).toBe(0); // Should be touching mirror
+      expect(relative.x).toBe(0); // Should be touching mirror (x = touchingX - touchingX = 0)
       expect(relative.y).toBe(0); // Should be centered
       expect(relative.type).toBe('A');
       expect(relative.face).toBe('front');
@@ -98,17 +102,19 @@ describe('MirrorCoordinateSystem', () => {
     });
 
     it('should convert piece left of touching position correctly', () => {
+      // x offset is piece.x - touchingPosition.x
+      const touchingX = geometry.getPositionTouchingMirror(200, 45, 'A').x;
       const absolutePiece: PiecePosition = {
         type: 'A',
         face: 'front',
-        x: 400, // 200px left of touching position (600)
+        x: touchingX - 100, // 100px left of touching position
         y: 200, // 100px above center (300)
         rotation: 45
       };
 
       const relative = mirrorSystem.absoluteToRelative(absolutePiece);
 
-      expect(relative.x).toBe(-200); // 400 - 600 = -200
+      expect(relative.x).toBe(-100); // 100px left of touching position
       expect(relative.y).toBe(-100); // 200 - 300 = -100
       expect(relative.rotation).toBe(45);
     });
@@ -148,6 +154,7 @@ describe('MirrorCoordinateSystem', () => {
 
   describe('challenge conversion', () => {
     it('should convert relative challenge to absolute format', () => {
+      const touchingX = geometry.getPositionTouchingMirror(300, 0, 'A').x;
       const relativeChallenge = {
         id: 1,
         name: "Test Challenge",
@@ -176,11 +183,12 @@ describe('MirrorCoordinateSystem', () => {
       expect(absolute.id).toBe(1);
       expect(absolute.name).toBe("Test Challenge");
       expect(absolute.objective.playerPieces).toHaveLength(2);
-      expect(absolute.objective.playerPieces[0].x).toBe(600); // Touching mirror
-      expect(absolute.objective.playerPieces[1].x).toBe(500); // 100px left
+      expect(absolute.objective.playerPieces[0].x).toBe(touchingX); // Touching mirror
+      expect(absolute.objective.playerPieces[1].x).toBe(touchingX - 100); // 100px left
     });
 
     it('should convert absolute challenge to relative format', () => {
+      const touchingX = geometry.getPositionTouchingMirror(300, 0, 'A').x;
       const absoluteChallenge = {
         id: 2,
         name: "Absolute Challenge",
@@ -191,7 +199,7 @@ describe('MirrorCoordinateSystem', () => {
             {
               type: 'A' as const,
               face: 'front' as const,
-              x: 600, // Touching mirror
+              x: touchingX, // Actual touching position
               y: 300, // Center
               rotation: 0
             }
@@ -317,39 +325,41 @@ describe('MirrorCoordinateSystem', () => {
 
   describe('specific coordinate examples', () => {
     it('should handle the original problematic coordinates correctly', () => {
-      // The original x=330, y=300 that was confusing
+      // x=330 is NOW the touching position (getPositionTouchingMirror returns 330)
+      const touchingX = geometry.getPositionTouchingMirror(300, 0, 'A').x; // = 330
       const originalAbsolute: PiecePosition = {
         type: 'A',
         face: 'front',
-        x: 330,
+        x: touchingX, // = 330 (the touching position)
         y: 300,
         rotation: 0
       };
 
       const relative = mirrorSystem.absoluteToRelative(originalAbsolute);
-      
-      // x=330 should be 270px left of touching position (600-330=270)
-      expect(relative.x).toBe(-270);
-      expect(relative.y).toBe(0); // y=300 is center, so relative y=0
-      
+
+      // x=touchingX should map to relative x=0 (touching mirror)
+      expect(relative.x).toBe(0);
+      expect(relative.y).toBe(0); // y=300 is center
+
       // Verify round-trip
       const backToAbsolute = mirrorSystem.relativeToAbsolute(relative);
       expect(backToAbsolute).toEqual(originalAbsolute);
     });
 
-    it('should convert the other confusing coordinate x=72', () => {
+    it('should convert coordinates to correct relative offset', () => {
+      const touchingX = geometry.getPositionTouchingMirror(300, 0, 'A').x; // = 330
       const originalAbsolute: PiecePosition = {
         type: 'A',
         face: 'front',
-        x: 72,
+        x: touchingX - 258, // 258px left of touching position
         y: 300,
         rotation: 0
       };
 
       const relative = mirrorSystem.absoluteToRelative(originalAbsolute);
-      
-      // x=72 should be 528px left of touching position (600-72=528)
-      expect(relative.x).toBe(-528);
+
+      // Should be 258px left of touching position
+      expect(relative.x).toBe(-258);
       expect(relative.y).toBe(0);
     });
   });

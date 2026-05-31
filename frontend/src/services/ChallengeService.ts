@@ -30,6 +30,7 @@ export interface ChallengeLoadResult {
 export class ChallengeService {
   private generator: ChallengeGenerator;
   private validationService: ValidationService;
+  private geometry: GameGeometry;
   private config: ChallengeServiceConfig;
   private migration: ChallengeMigration;
   private isLoading: boolean = false;
@@ -38,6 +39,7 @@ export class ChallengeService {
     geometry: GameGeometry,
     config: Partial<ChallengeServiceConfig> = {}
   ) {
+    this.geometry = geometry;
     this.generator = new ChallengeGenerator(geometry);
     this.validationService = new ValidationService(geometry);
     this.migration = new ChallengeMigration(700, 300, 100); // mirrorLineX, centerY, pieceSize
@@ -121,7 +123,7 @@ export class ChallengeService {
    * Obtiene información del challenge actual
    */
   getChallengeInfo(challenge: Challenge) {
-    const validation = this.validationService.validateChallengeCard(
+    const validation = this.geometry.validateChallengeCard(
       challenge.objective.playerPieces
     );
 
@@ -140,7 +142,7 @@ export class ChallengeService {
       return false;
     }
 
-    const validation = this.validationService.validateChallengeCard(
+    const validation = this.geometry.validateChallengeCard(
       challenge.objective.playerPieces
     );
 

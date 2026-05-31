@@ -118,12 +118,27 @@ const MirrorChallengeGame: React.FC = () => {
   const handleStartOffline = () => {
     setGameMode('offline');
     setShowStartupMenu(false);
-    setIsGamePaused(true); // Start paused in offline mode
+    setIsGameActive(true);
+    setGamePhase('playing');
+    setIsGamePaused(false);
+    setPausedBy(null);
+    setChallengeWinner(null);
 
     // Disconnect from server if connected
     if (socketService.isConnected()) {
       socketService.disconnect();
     }
+  };
+
+  const handleCheckSolution = () => {
+    const result = checkSolutionWithMirrors();
+
+    if (result.isCorrect) {
+      setIsGamePaused(true);
+      setPausedBy('SYSTEM');
+    }
+
+    return result;
   };
 
   const handleStartMultiplayer = () => {
@@ -340,7 +355,7 @@ const MirrorChallengeGame: React.FC = () => {
               onRotatePiece={rotatePiece}
               onRotatePieceCounterClockwise={rotatePieceCounterClockwise}
               onFlipPiece={flipPiece}
-              onCheckSolution={checkSolutionWithMirrors}
+              onCheckSolution={gameMode === 'multiplayer' ? undefined : handleCheckSolution}
               onLoadCustomChallenges={loadCustomChallenges}
               onOpenChallengeEditor={() => setShowChallengeEditor(true)}
               isLoading={isLoading}
@@ -535,7 +550,7 @@ const MirrorChallengeGame: React.FC = () => {
             totalChallenges={challenges.length}
             challenges={challenges}
             onResetLevel={resetLevel}
-            onCheckSolution={checkSolutionWithMirrors}
+            onCheckSolution={handleCheckSolution}
             isMultiplayerEnabled={MULTIPLAYER_ENABLED}
             gameMode={gameMode}
             connectedPlayers={connectedPlayers}
