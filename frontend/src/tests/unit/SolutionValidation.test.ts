@@ -1,4 +1,4 @@
-import { ValidationService, SOLUTION_TOLERANCE, PiecePosition } from '@reto/geometry';
+import { GameGeometry, ValidationService, SOLUTION_TOLERANCE, PiecePosition } from '@reto/geometry';
 
 const pieza = (over: Partial<PiecePosition> = {}): PiecePosition => ({
   type: 'A',
@@ -156,5 +156,71 @@ describe('centroide', () => {
   test('normalizar sólo en vertical conserva la X, que mide la distancia al espejo', () => {
     const [a, b] = ValidationService.normalizeVertically([pieza({ x: 0, y: 0 }), pieza({ x: 100, y: 100 })]);
     expect([a.x, a.y, b.x, b.y]).toEqual([0, -50, 100, 50]);
+  });
+});
+
+/**
+ * La tarjeta del reto dibuja la figura por regiones de color y NO enseña dónde
+ * acaba cada pieza — es deliberado, como las tarjetas originales. El jugador,
+ * por tanto, no puede saber con qué descomposición se escribió el objetivo, y
+ * no tiene por qué: varias descomposiciones distintas componen la misma figura.
+ *
+ * El reto 16 ("Suelo de salón", 8 piezas) tiene al menos dos. La validación
+ * exigía la del fichero y daba "Hay una pieza A girada 180° de más" sobre una
+ * solución que en pantalla es idéntica al objetivo.
+ */
+describe('descomposiciones distintas de la misma figura', () => {
+  const challenges = JSON.parse(
+    require('fs').readFileSync('./public/challenges.json', 'utf8')
+  );
+  const objetivo: PiecePosition[] = challenges[15].objective.playerPieces;
+
+  // Mismos centros que el objetivo, otros tipos y giros. Comprobado aparte que
+  // el área que ocupa es la misma salvo un 0.05% de ruido en las fronteras.
+  const alterna: PiecePosition[] = [
+    { type: 'A', face: 'front', rotation: 45,  x: 428.470996, y: 47.961328 },
+    { type: 'A', face: 'front', rotation: 225, x: 249.745166, y: 47.961328 },
+    { type: 'A', face: 'front', rotation: 0,   x: 244.980664, y: 445.019336 },
+    { type: 'B', face: 'front', rotation: 225, x: 609.490332, y: 230 },
+    { type: 'A', face: 'front', rotation: 45,  x: 609.490332, y: 410 },
+    { type: 'B', face: 'front', rotation: 45,  x: 609.490332, y: 50 },
+    { type: 'A', face: 'front', rotation: 45,  x: 428.470996, y: 228.980664 },
+    { type: 'A', face: 'front', rotation: 225, x: 247.45166,  y: 228.980664 },
+  ];
+
+  test('la descomposición alternativa compone la misma figura', () => {
+    expect(ValidationService.figuresMatch(alterna, objetivo)).toBe(true);
+  });
+
+  test('y se da por correcta', () => {
+    expect(ValidationService.checkRelativePositions(alterna, objetivo).isCorrect).toBe(true);
+  });
+
+  test('bajada entera sigue valiendo: la vertical es libre', () => {
+    expect(ValidationService.checkRelativePositions(mover(alterna, 0, 80), objetivo).isCorrect).toBe(true);
+  });
+
+  test('pero una figura DISTINTA se sigue rechazando', () => {
+    // Una sola pieza girada un paso cambia la figura: es el caso que la
+    // comparación de áreas no puede dejar pasar.
+    const rota = alterna.map((p, i) => (i === 2 ? { ...p, rotation: 45 } : p));
+    expect(ValidationService.figuresMatch(rota, objetivo)).toBe(false);
+    expect(ValidationService.checkRelativePositions(rota, objetivo).isCorrect).toBe(false);
+  });
+
+  test('y alejarla del espejo también: cambia la figura compuesta', () => {
+    expect(ValidationService.checkRelativePositions(mover(alterna, -60, 0), objetivo).isCorrect).toBe(false);
+  });
+
+  test('la ruta completa la acepta, con las reglas de geometría por delante', () => {
+    // checkRelativePositions sola no basta como prueba: validateSolution pasa
+    // antes por validateChallengeCard (contacto, solape, espejo), y si aquello
+    // rechazara la colocación el jugador seguiría sin poder ganar.
+    const geometry = new GameGeometry({ width: 700, height: 600, mirrorLineX: 700, pieceSize: 100 });
+    const colocadas = alterna.map((p, i) => ({ ...p, id: i + 1, placed: true }));
+
+    const resultado = ValidationService.validateSolution(colocadas as never, challenges[15], geometry);
+
+    expect(resultado.isCorrect).toBe(true);
   });
 });

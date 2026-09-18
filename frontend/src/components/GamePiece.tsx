@@ -1,4 +1,4 @@
-import { PIECE_PARTS, PIECE_OUTLINE_UNITS, toLocalPoint, getPieceExtent, getPieceRadius } from '@reto/geometry';
+import { PIECE_PARTS, PIECE_OUTLINE_UNITS, toLocalPoint, getPieceExtent, getPieceRadius, getPartsInWorld } from '@reto/geometry';
 import type { Piece as GeometryPiece } from '@reto/geometry';
 
 export interface Piece extends GeometryPiece {
@@ -68,27 +68,12 @@ const drawShape = (ctx: CanvasRenderingContext2D, coordinates: [number, number][
  * pintar una pieza suelta. Las tarjetas de reto necesitan lo contrario: los
  * polígonos de TODAS las piezas en un mismo sistema, para poder agruparlos por
  * color y contornear la figura entera (ver `drawColorRegions`).
+ *
+ * Vive en `@reto/geometry` porque la validación compara la figura compuesta con
+ * la del objetivo y necesita exactamente los mismos polígonos: dos copias de
+ * esta transformación acabarían discrepando.
  */
-export const getPiecePartsInWorld = (
-  piece: { type: 'A' | 'B'; rotation: number; x: number; y: number },
-  size: number
-): Array<{ kind: 'center' | 'triangle'; points: Array<[number, number]> }> => {
-  const rad = (piece.rotation * Math.PI) / 180;
-  const cos = Math.cos(rad);
-  const sin = Math.sin(rad);
-
-  return PIECE_PARTS.map(part => ({
-    kind: part.kind,
-    points: part.units.map(([unitX, unitY]) => {
-      const [localX, localY] = toLocalPoint(unitX, unitY, size);
-      const x = piece.type === 'B' ? -localX : localX;
-      return [
-        piece.x + x * cos - localY * sin,
-        piece.y + x * sin + localY * cos,
-      ] as [number, number];
-    }),
-  }));
-};
+export const getPiecePartsInWorld = getPartsInWorld;
 
 /** Orienta un polígono en sentido horario para que el relleno `nonzero` de
  *  varios polígonos sea su unión y no abra huecos donde se solapan. */

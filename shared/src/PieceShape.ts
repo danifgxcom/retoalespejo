@@ -109,3 +109,32 @@ export const getPieceRadius = (pieceSize: number): number =>
     (max, [x, y]) => Math.max(max, Math.hypot(x, y)),
     0
   );
+
+/**
+ * Partes de color de la pieza en coordenadas de mundo: giro, tipo y posición ya
+ * aplicados, sin pasar por el contexto del lienzo.
+ *
+ * `getWorldVertices` da el contorno; esto da el interior repartido por partes,
+ * que es lo que hace falta para pintar la figura por regiones de color (las
+ * tarjetas de reto) y para compararla con la del objetivo (la validación).
+ */
+export const getPartsInWorld = (
+  piece: { type: PieceType; x: number; y: number; rotation: number },
+  pieceSize: number
+): Array<{ kind: 'center' | 'triangle'; points: Array<[number, number]> }> => {
+  const rad = (piece.rotation * Math.PI) / 180;
+  const cos = Math.cos(rad);
+  const sin = Math.sin(rad);
+
+  return PIECE_PARTS.map(part => ({
+    kind: part.kind,
+    points: part.units.map(([unitX, unitY]) => {
+      const [localX, localY] = toLocalPoint(unitX, unitY, pieceSize);
+      const x = piece.type === 'B' ? -localX : localX;
+      return [
+        piece.x + x * cos - localY * sin,
+        piece.y + x * sin + localY * cos,
+      ] as [number, number];
+    }),
+  }));
+};

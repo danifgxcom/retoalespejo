@@ -33,15 +33,31 @@ No hay SSH directo al contenedor: se entra por el anfitrión con
 
 - **`frontend/dist/` → `web/`.** Vite emite los assets con hash de contenido,
   así que nginx los cachea para siempre y sólo `index.html` va sin caché.
+- **`shared/dist/` + `shared/package.json` → `shared/`.** Es `@reto/geometry`,
+  la geometría y la validación que comparten cliente y servidor.
+- **`backend/src/` → `app/src/`.** El servidor Socket.io.
 - **`shared/challenges.json` → `shared/challenges.json` y
   `shared/dist/challenges.json`.** Las dos, porque `@reto/geometry` resuelve la
   segunda y el repo edita la primera.
 
-Los retos **no son sólo datos del cliente**: el backend valida contra su propia
-copia (`require('@reto/geometry/challenges.json')`). Desplegar la web sin ellos
-deja a cliente y servidor juzgando la misma partida con objetivos distintos, y
-el fallo no da error: simplemente la validación empieza a discrepar. Por eso van
-en el mismo despliegue y el servicio se reinicia después (los carga al arrancar).
+Los retos y las reglas **no son sólo cosa del cliente**: el backend es
+autoritativo y valida con su propio `@reto/geometry`. Desplegar la web sola deja
+a cliente y servidor juzgando la misma partida con objetivos y reglas distintos,
+y el fallo no da error: simplemente empiezan a discrepar. Por eso van en el
+mismo despliegue y el servicio se reinicia después (lo carga al arrancar).
+
+### Una sola copia de la geometría
+
+`npm install` resolvió `"@reto/geometry": "file:../shared"` **copiando** el
+paquete dentro de `app/node_modules/@reto/geometry`. Había pues dos copias, y
+durante un tiempo el despliegue actualizaba la que nadie lee: el backend se
+quedó validando con la geometría y los retos del día que alguien copió el
+paquete a mano, sin que nada avisara.
+
+Ahora `app/node_modules/@reto/geometry` es un **enlace** a `shared/`, y el
+script lo rehace en cada despliegue. Por eso termina preguntándole al propio
+backend de dónde resuelve la geometría: que el servicio arranque no prueba que
+esté leyendo la nueva.
 
 ## Comprobar después
 
@@ -50,6 +66,12 @@ curl -s https://desafiaalreflejo.danifgx.org/ | grep -oE 'assets/index-[A-Za-z0-
 ls frontend/dist/assets                      # el hash tiene que coincidir
 curl -s https://desafiaalreflejo.danifgx.org/challenges.json | head -20
 ssh root@192.168.8.10 "pct exec 110 -- systemctl status desafia-al-reflejo --no-pager"
+
+# Qué geometría y qué retos ve el BACKEND (no basta con mirar la web)
+ssh root@192.168.8.10 "pct exec 110 -- bash -lc 'cd /opt/desafia-al-reflejo/app && node -e \"
+  console.log(require.resolve(\\\"@reto/geometry\\\"));
+  console.log(require(\\\"@reto/geometry/challenges.json\\\").length + \\\" retos\\\");
+\"'"
 ```
 
 Un HTTP 200 no basta: nginx sirve el `index.html` viejo igual de bien. Lo que
