@@ -3,10 +3,19 @@
  */
 
 export const CANVAS_CONSTANTS = {
-  // Canvas dimensions - adjusted for better layout (game area up, larger storage down)
+  // El lienzo mide 1400x1000 y NO se toca: toda la maquetación responsive se
+  // apoya en esa relación 1.4:1. Lo que se reparte es la altura entre las dos
+  // zonas.
+  //
+  // El área de juego necesita 552 px de alto: es lo que mide la figura del
+  // reto 16, la más alta de las 16, y con 500 no cabía. El almacén necesita
+  // 374 px: ocho piezas en cuatro columnas y dos filas (celda de 181 px de
+  // alto más 12 de separación), que es el peor caso; los demás retos se
+  // resuelven en una sola fila de 181. De ahí 600/400, que deja holgura a
+  // ambos lados sin cambiar el tamaño del lienzo.
   GAME_AREA_WIDTH: 700,
-  GAME_AREA_HEIGHT: 500,
-  BOTTOM_AREA_HEIGHT: 500,
+  GAME_AREA_HEIGHT: 600,
+  BOTTOM_AREA_HEIGHT: 400,
   MIRROR_LINE: 700,
   CANVAS_WIDTH: 1400,
   CANVAS_HEIGHT: 1000,

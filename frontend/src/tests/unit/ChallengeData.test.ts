@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import { GameGeometry } from '@reto/geometry';
 import golden from '../fixtures/piece-geometry.golden.json';
+import { CANVAS_CONSTANTS } from '../../utils/canvas/CanvasConstants';
 
 /**
  * Los retos publicados deben (a) haber quedado tras la migración exactamente
@@ -17,6 +18,31 @@ describe('public/challenges.json', () => {
       c.objective.playerPieces.filter((p: any) => p.anchor !== 'center').map(() => c.id)
     );
     expect(sinMigrar).toEqual([]);
+  });
+
+  test('la figura cabe en el área de juego', () => {
+    // El jugador compone la figura donde quiera EN VERTICAL (la validación
+    // normaliza en Y), pero tiene que caber entera dentro del tablero. Con el
+    // área de juego a 500 px de alto no cabía: el reto 16 mide 552. De ahí el
+    // reparto 600/400 de CANVAS_CONSTANTS. En horizontal no hay libertad —
+    // la X mide la distancia al espejo — así que se comprueba tal cual.
+    const { GAME_AREA_WIDTH, GAME_AREA_HEIGHT } = CANVAS_CONSTANTS;
+    const fallos: string[] = [];
+
+    challenges.forEach((c: any) => {
+      const cajas = c.objective.playerPieces.map((p: any) => geometry.getPieceBoundingBox(p));
+      const alto = Math.max(...cajas.map((b: any) => b.bottom)) - Math.min(...cajas.map((b: any) => b.top));
+      const izquierda = Math.min(...cajas.map((b: any) => b.left));
+
+      if (alto > GAME_AREA_HEIGHT) {
+        fallos.push(`reto ${c.id}: ${alto.toFixed(0)}px de alto, no cabe en ${GAME_AREA_HEIGHT}`);
+      }
+      if (izquierda < config.mirrorLineX - GAME_AREA_WIDTH) {
+        fallos.push(`reto ${c.id}: se sale por la izquierda (x=${izquierda.toFixed(0)})`);
+      }
+    });
+
+    expect(fallos).toEqual([]);
   });
 
   test('el objetivo encaja sin huecos: contra el espejo y entre piezas', () => {

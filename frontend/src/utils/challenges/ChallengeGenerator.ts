@@ -282,13 +282,18 @@ export class ChallengeGenerator {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
 
-        const response = await fetch(url, { 
+        // `cache: 'no-cache'` revalida SIEMPRE contra el servidor (un 304 de
+        // unos bytes gracias al ETag). Antes se mandaba `Cache-Control:
+        // max-age=31536000` como cabecera de PETICIÓN, que no es "cachea esto
+        // un año" sino "me vale una copia de hasta un año": el navegador
+        // servía el challenges.json viejo y las cartas salían con las piezas
+        // en las coordenadas antiguas, separadas, con la costura a la vista.
+        // Los retos cambian con cada corrección de geometría, así que este
+        // fichero no se puede congelar en el cliente.
+        const response = await fetch(url, {
           signal: controller.signal,
-          headers: {
-            'Accept': 'application/json',
-            // Usar caché agresivo para archivos no personalizados
-            'Cache-Control': isCustomFile ? 'no-cache' : 'max-age=31536000'
-          }
+          cache: 'no-cache',
+          headers: { 'Accept': 'application/json' }
         });
 
         clearTimeout(timeoutId);

@@ -71,3 +71,24 @@ describe('ChallengeGenerator', () => {
     });
   });
 });
+
+/**
+ * Los retos cambian con cada corrección de geometría, así que challenges.json
+ * NO se puede congelar en la caché del navegador: si se sirve una copia vieja,
+ * las piezas de la tarjeta salen en posiciones antiguas, sin contacto, y la
+ * costura entre ellas se VE (era el caso del reto 6, con las piezas en
+ * 640/510 en vez de 636/508).
+ */
+describe('ChallengeGenerator.loadChallengesFromFile', () => {
+  test('revalida contra el servidor en vez de aceptar caché vieja', async () => {
+    const geometry = new GameGeometry({ width: 600, height: 600, mirrorLineX: 700, pieceSize: 100 });
+    const fetchMock = jest.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve([]) });
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    await new ChallengeGenerator(geometry).loadChallengesFromFile(`/challenges-${Date.now()}.json`);
+
+    const [, init] = fetchMock.mock.calls[0];
+    expect(init.cache).toBe('no-cache');
+    expect(init.headers['Cache-Control']).toBeUndefined();
+  });
+});

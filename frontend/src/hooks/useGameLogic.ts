@@ -12,6 +12,7 @@ import { ValidationService, ValidationResult } from '@reto/geometry';
 import { loadGameProgress, saveGameProgress } from '../utils/progress/gameProgress';
 import { computeCampaignNavigation } from '../utils/progress/campaignNavigation';
 import { createHistory, pushSnapshot, undoStep, redoStep, HistoryState } from '../utils/progress/undoHistory';
+import { CANVAS_CONSTANTS } from '../utils/canvas/CanvasConstants';
 
 export const useGameLogic = () => {
   // F21: la paleta (única propiedad de la que dependen los colores de pieza)
@@ -20,11 +21,14 @@ export const useGameLogic = () => {
   const highContrast = palette === 'high';
   
   // Configuración de geometría del juego
+  // Las medidas salen de CANVAS_CONSTANTS y no se repiten aquí: había un 500
+  // propio que se quedaba atrás en cuanto se repartía la altura de otra forma,
+  // y entonces la lógica y el dibujo discrepaban sobre dónde acaba el tablero.
   const gameAreaConfig: GameAreaConfig = {
-    width: 700,
-    height: 500,
-    mirrorLineX: 700,
-    pieceSize: 100
+    width: CANVAS_CONSTANTS.GAME_AREA_WIDTH,
+    height: CANVAS_CONSTANTS.GAME_AREA_HEIGHT,
+    mirrorLineX: CANVAS_CONSTANTS.MIRROR_LINE,
+    pieceSize: CANVAS_CONSTANTS.PIECE_SIZE
   };
 
   // Inicializar clases de geometría y generador de challenges
@@ -229,9 +233,9 @@ export const useGameLogic = () => {
 
   const getStorageArea = (): PositioningArea => ({
     x: 0,
-    y: gameAreaConfig.height,
-    width: 1400,
-    height: 1000 - gameAreaConfig.height
+    y: CANVAS_CONSTANTS.GAME_AREA_HEIGHT,
+    width: CANVAS_CONSTANTS.CANVAS_WIDTH,
+    height: CANVAS_CONSTANTS.BOTTOM_AREA_HEIGHT
   });
 
   const buildPiecesFromPositions = (
@@ -273,7 +277,7 @@ export const useGameLogic = () => {
     console.warn(`Could not auto-position pieces for challenge ${challenge.id}: ${result.error}`);
     const fallbackPositions = targetPieces.map((_, index) => ({
       x: 80 + (index % 4) * 300,
-      y: 620 + Math.floor(index / 4) * 220,
+      y: CANVAS_CONSTANTS.GAME_AREA_HEIGHT + 120 + Math.floor(index / 4) * 220,
       rotation: index % 2 === 0 ? 45 : 225
     }));
 
