@@ -200,6 +200,17 @@ describe('descomposiciones distintas de la misma figura', () => {
     expect(ValidationService.checkRelativePositions(mover(alterna, 0, 80), objetivo).isCorrect).toBe(true);
   });
 
+  test('aguanta la holgura de colocación, como el emparejamiento por pieza', () => {
+    // El jugador encaja a contacto exacto con sus vecinas, que no es exactamente
+    // donde el fichero de retos puso la pieza. Comparar áreas a secas era
+    // absurdamente estricto: DOS píxeles de desvío en una sola pieza bastaban
+    // para rechazar la figura, cuando findMatching siempre admitió 20.
+    const desviar = (dx: number) => alterna.map((p, i) => (i === 2 ? { ...p, x: p.x + dx } : p));
+
+    expect(ValidationService.figuresMatch(desviar(SOLUTION_TOLERANCE.position), objetivo)).toBe(true);
+    expect(ValidationService.figuresMatch(desviar(40), objetivo)).toBe(false);
+  });
+
   test('pero una figura DISTINTA se sigue rechazando', () => {
     // Una sola pieza girada un paso cambia la figura: es el caso que la
     // comparación de áreas no puede dejar pasar.
@@ -210,6 +221,15 @@ describe('descomposiciones distintas de la misma figura', () => {
 
   test('y alejarla del espejo también: cambia la figura compuesta', () => {
     expect(ValidationService.checkRelativePositions(mover(alterna, -60, 0), objetivo).isCorrect).toBe(false);
+  });
+
+  test('una pieza volteada cambia los colores y se rechaza', () => {
+    const volteada = alterna.map((p, i) => (i === 6 ? { ...p, face: 'back' as const } : p));
+    expect(ValidationService.figuresMatch(volteada, objetivo)).toBe(false);
+  });
+
+  test('si falta una pieza, la figura no cuadra', () => {
+    expect(ValidationService.figuresMatch(alterna.slice(0, 7), objetivo)).toBe(false);
   });
 
   test('la ruta completa la acepta, con las reglas de geometría por delante', () => {

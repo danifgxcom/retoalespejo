@@ -53,18 +53,29 @@ export const SOLUTION_TOLERANCE = {
 /**
  * Margen con el que se dan por iguales dos figuras compuestas.
  *
- * `step` es el paso de muestreo del área. `jitter` desplaza las muestras para
+ * `step` es el paso de muestreo del área y `jitter` desplaza las muestras para
  * que no caigan justo sobre los bordes, donde el resultado depende de qué pieza
- * reclama el punto. `area` es la fracción de área que pueden discrepar: dos
- * descomposiciones de la MISMA figura discrepan ~0.05% (sólo en las fronteras
- * internas, que están en sitios distintos), mientras que la diferencia más
- * pequeña que puede haber entre dos figuras DISTINTAS es un triángulo pequeño
- * de la pieza, un 1.6% del área de la figura más grande de los 16 retos. El
- * 0.5% cae holgadamente entre las dos.
+ * reclama el punto.
+ *
+ * `margin` es lo importante: una diferencia a menos de esos píxeles de un borde
+ * —de cualquiera de las dos figuras— no cuenta. Sin él, comparar áreas es
+ * absurdamente estricto: dos píxeles de desvío en una sola pieza ya bastaban
+ * para rechazar la figura, cuando el emparejamiento por pieza siempre admitió
+ * `SOLUTION_TOLERANCE.position`, 20 px. Y ese desvío es lo normal: el jugador
+ * encaja a contacto exacto con sus vecinas, que no es exactamente donde el
+ * fichero de retos puso la pieza.
+ *
+ * 10 px absorbe esa holgura y sigue MUY por debajo de los 26.5 px de radio
+ * interior del triángulo pequeño de la pieza, que es la diferencia más pequeña
+ * que puede haber entre dos figuras de verdad distintas: a esa le quedan 16 px
+ * de núcleo lejos de todo borde, de sobra para que se note.
+ *
+ * `area` queda sólo como red de seguridad.
  */
 export const FIGURE_TOLERANCE = {
   step: 4,
   jitter: 0.37,
+  margin: 10,
   area: 0.005,
 } as const;
 
@@ -218,7 +229,7 @@ export class ValidationService {
     const arribaA = Math.min(...colocadas.map(r => r.minY));
     const arribaB = Math.min(...objetivo.map(r => r.minY));
 
-    const { step, jitter, area } = FIGURE_TOLERANCE;
+    const { step, jitter, margin, area } = FIGURE_TOLERANCE;
     const x0 = Math.min(...colocadas.map(r => r.minX), ...objetivo.map(r => r.minX));
     const x1 = Math.max(...colocadas.map(r => r.maxX), ...objetivo.map(r => r.maxX));
     const alto = Math.max(
@@ -226,14 +237,28 @@ export class ValidationService {
       Math.max(...objetivo.map(r => r.maxY)) - arribaB
     );
 
+    /** ¿Hay un borde a menos de `margin` de este punto? */
+    const juntoAUnBorde = (regiones: ColourRegion[], x: number, y: number, color: 0 | 1 | 2) =>
+      this.colourAt(regiones, x - margin, y) !== color ||
+      this.colourAt(regiones, x + margin, y) !== color ||
+      this.colourAt(regiones, x, y - margin) !== color ||
+      this.colourAt(regiones, x, y + margin) !== color;
+
     let discrepan = 0;
     let pintadas = 0;
     for (let y = 0; y <= alto; y += step) {
       for (let x = x0; x <= x1; x += step) {
-        const a = this.colourAt(colocadas, x + jitter, y + arribaA + jitter);
-        const b = this.colourAt(objetivo, x + jitter, y + arribaB + jitter);
+        const px = x + jitter;
+        const pyA = y + arribaA + jitter;
+        const pyB = y + arribaB + jitter;
+        const a = this.colourAt(colocadas, px, pyA);
+        const b = this.colourAt(objetivo, px, pyB);
         if (b !== 0) pintadas++;
-        if (a !== b) discrepan++;
+        if (a === b) continue;
+        // Junto a un borde, una diferencia es holgura de colocación; lejos de
+        // todo borde, es que sobra o falta trozo de figura.
+        if (juntoAUnBorde(colocadas, px, pyA, a) || juntoAUnBorde(objetivo, px, pyB, b)) continue;
+        discrepan++;
       }
     }
 
