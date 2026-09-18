@@ -1,4 +1,5 @@
 import { io, Socket } from 'socket.io-client';
+import type { Piece } from '@reto/geometry';
 
 // Types for socket events
 export interface Player {
@@ -7,18 +8,31 @@ export interface Player {
   isActive: boolean;
 }
 
+export interface SocketMessage {
+  type?: string;
+  message?: string;
+  [key: string]: unknown;
+}
+
+export interface MultiplayerGameState {
+  timer: number;
+  isActive: boolean;
+  isPaused: boolean;
+  winner: string | null;
+  scores: Record<string, number>;
+  showSolution: boolean;
+  phase: 'waiting' | 'countdown' | 'playing';
+}
+
+export interface ChallengeStat {
+  [key: string]: unknown;
+}
+
 export interface RoomData {
   roomId: string;
   players: Player[];
-  messages: any[];
-  gameState: {
-    timer: number;
-    isActive: boolean;
-    isPaused: boolean;
-    winner: string | null;
-    scores: Record<string, number>; // Map of player ID to score
-    showSolution: boolean;
-  };
+  messages: SocketMessage[];
+  gameState: MultiplayerGameState;
 }
 
 class SocketService {
@@ -38,13 +52,6 @@ class SocketService {
     const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
     this.socket = io(BACKEND_URL);
 
-    this.socket.on('connect', () => {
-      console.log('Connected to server with ID:', this.socket?.id);
-    });
-
-    this.socket.on('disconnect', () => {
-      console.log('Disconnected from server');
-    });
 
     this.socket.on('error', (error) => {
       console.error('Socket error:', error);
@@ -81,12 +88,28 @@ class SocketService {
   }
 
   // Listen for player joined event
-  onPlayerJoined(callback: (data: { playerId: string; username: string; players: Player[] }) => void): void {
+  onPlayerJoined(callback: (data: { playerId: string; username: string; players: Player[]; hostId: string | null }) => void): void {
     this.socket?.on('playerJoined', callback);
   }
 
+  // El anfitrión es el único que puede arrancar la partida o reiniciar el
+  // cronómetro; el servidor lo reasigna solo si se marcha.
+  onHostChanged(callback: (data: { hostId: string | null }) => void): void {
+    this.socket?.on('hostChanged', callback);
+  }
+
+  // El servidor rechaza acciones no autorizadas con este evento.
+  onError(callback: (data: { message: string }) => void): void {
+    this.socket?.on('error', callback);
+  }
+
+  // Id de socket propio, para compararlo con el hostId.
+  getSocketId(): string | null {
+    return this.socket?.id ?? null;
+  }
+
   // Listen for room history event
-  onRoomHistory(callback: (data: { messages: any[]; gameState: any }) => void): void {
+  onRoomHistory(callback: (data: { messages: SocketMessage[]; gameState: MultiplayerGameState; hostId: string | null }) => void): void {
     this.socket?.on('roomHistory', callback);
   }
 
@@ -112,35 +135,17 @@ class SocketService {
     this.socket.emit('startGame', { roomId: this.roomId });
   }
 
-  // Update player score
-  updateScore(playerId: string, score: number): void {
-    if (!this.socket || !this.roomId) return;
-
-    this.socket.emit('updateScore', { 
-      roomId: this.roomId, 
-      playerId, 
-      score 
-    });
-  }
-
   // Listen for game started event
-  onGameStarted(callback: (data: { gameState: any }) => void): void {
+  onGameStarted(callback: (data: { gameState?: MultiplayerGameState; winner?: string | null; timer?: number }) => void): void {
     this.socket?.on('gameStarted', callback);
-  }
-
-  // Listen for score updated event
-  onScoreUpdated(callback: (data: { scores: Record<string, number>, winner: string | null }) => void): void {
-    this.socket?.on('scoreUpdated', callback);
   }
 
   // Toggle timer (pause/resume)
   toggleTimer(isPaused: boolean): void {
     if (!this.socket || !this.roomId) {
-      console.log('❌ toggleTimer failed - socket:', !!this.socket, 'roomId:', this.roomId);
       return;
     }
 
-    console.log('📤 Emitting toggleTimer:', { roomId: this.roomId, isPaused });
     this.socket.emit('toggleTimer', { 
       roomId: this.roomId, 
       isPaused 
@@ -150,36 +155,30 @@ class SocketService {
   // Reset timer
   resetTimer(): void {
     if (!this.socket || !this.roomId) {
-      console.log('❌ resetTimer failed - socket:', !!this.socket, 'roomId:', this.roomId);
       return;
     }
 
-    console.log('📤 Emitting resetTimer:', { roomId: this.roomId });
     this.socket.emit('resetTimer', { 
       roomId: this.roomId
     });
   }
 
-  // Report wrong piece (player disqualified)
-  reportWrongPiece(currentTime?: number): void {
+  // Report wrong piece (player disqualified).
+  // El tiempo lo lleva el servidor: mandarlo desde aquí no tenía efecto y era
+  // una vía de trampa.
+  reportWrongPiece(): void {
     if (!this.socket || !this.roomId) return;
 
-    console.log('📤 Emitting wrongPiece:', { roomId: this.roomId, currentTime });
-    this.socket.emit('wrongPiece', { 
-      roomId: this.roomId,
-      currentTime
-    });
+    this.socket.emit('wrongPiece', { roomId: this.roomId });
   }
 
-  // Report solved piece (player gets a point)
-  reportSolvedPiece(pieceId: number, currentTime?: number): void {
+  // El servidor valida esta instantánea; el cliente no comunica una victoria.
+  reportSolvedPiece(pieces: ReadonlyArray<Piece>): void {
     if (!this.socket || !this.roomId) return;
 
-    console.log('📤 Emitting solvePiece:', { roomId: this.roomId, pieceId, currentTime });
-    this.socket.emit('solvePiece', { 
-      roomId: this.roomId, 
-      pieceId,
-      currentTime
+    this.socket.emit('solvePiece', {
+      roomId: this.roomId,
+      pieces: pieces.map(({ type, face, x, y, rotation, placed }) => ({ type, face, x, y, rotation, placed }))
     });
   }
 
@@ -205,7 +204,7 @@ class SocketService {
     scores: Record<string, number>, 
     winner: string | null,
     completionTime?: number,
-    challengeStats?: any[]
+    challengeStats?: ChallengeStat[]
   }) => void): void {
     this.socket?.on('challengeSolved', callback);
   }
@@ -239,18 +238,16 @@ class SocketService {
   }
 
   // Listen for phase changed event
-  onPhaseChanged(callback: (data: { phase: string; gameState: any }) => void): void {
+  onPhaseChanged(callback: (data: { phase: string; gameState: MultiplayerGameState; currentChallengeIndex?: number }) => void): void {
     this.socket?.on('phaseChanged', callback);
   }
 
   // Request reset challenge
   requestResetChallenge(): void {
     if (!this.socket || !this.roomId) {
-      console.log('❌ requestResetChallenge failed - socket:', !!this.socket, 'roomId:', this.roomId);
       return;
     }
 
-    console.log('📤 Emitting requestResetChallenge:', { roomId: this.roomId });
     this.socket.emit('requestResetChallenge', { 
       roomId: this.roomId
     });
@@ -312,11 +309,9 @@ class SocketService {
   // Signal player ready for next challenge
   playerReady(): void {
     if (!this.socket || !this.roomId) {
-      console.log('❌ playerReady failed - socket:', !!this.socket, 'roomId:', this.roomId);
       return;
     }
 
-    console.log('📤 Emitting playerReady:', { roomId: this.roomId });
     this.socket.emit('playerReady', { 
       roomId: this.roomId
     });

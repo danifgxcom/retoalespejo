@@ -1,6 +1,5 @@
 import React, { useEffect, useRef } from 'react';
 import { Trophy, Clock, ArrowRight, Users } from 'lucide-react';
-import { VisuallyHidden } from '../components/accessibility';
 
 interface ChallengeWinOverlayProps {
   winner: {

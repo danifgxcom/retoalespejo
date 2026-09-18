@@ -1,5 +1,5 @@
 import { PiecePositioningAlgorithm, PositioningArea } from '../../utils/positioning/PiecePositioningAlgorithm';
-import { GameGeometry, GameAreaConfig } from '../../utils/geometry/GameGeometry';
+import { GameGeometry, GameAreaConfig } from '@reto/geometry';
 
 describe('PiecePositioningAlgorithm', () => {
   let algorithm: PiecePositioningAlgorithm;
@@ -127,18 +127,16 @@ describe('PiecePositioningAlgorithm', () => {
     });
 
     test('should position 4 pieces without overlap', () => {
+      // Con la geometría real (en vez de la caja pieceSize x pieceSize inexistente)
+      // el algoritmo SÍ encuentra sitio para 4 piezas sin solape.
       const result = algorithm.positionPieces(4, pieceArea, ['A', 'B', 'A', 'B']);
-      
-      expect(typeof result.success).toBe('boolean');
-      if (result.success) {
-        expect(result.positions).toHaveLength(4);
-        result.positions.forEach((pos, index) => {
-          expectPieceInArea(pos, pieceArea, ['A', 'B', 'A', 'B'][index] as 'A' | 'B');
-        });
-        expectNoOverlaps(result.positions, ['A', 'B', 'A', 'B']);
-      } else {
-        expect(result.error).toBeTruthy();
-      }
+
+      expect(result.success).toBe(true);
+      expect(result.positions).toHaveLength(4);
+      result.positions.forEach((pos, index) => {
+        expectPieceInArea(pos, pieceArea, ['A', 'B', 'A', 'B'][index] as 'A' | 'B');
+      });
+      expectNoOverlaps(result.positions, ['A', 'B', 'A', 'B']);
     });
 
     test('should handle larger numbers of pieces', () => {
@@ -150,22 +148,18 @@ describe('PiecePositioningAlgorithm', () => {
       };
 
       const result = algorithm.positionPieces(
-        6, 
-        largerArea, 
+        6,
+        largerArea,
         ['A', 'B', 'A', 'B', 'A', 'B']
       );
-      
-      expect(typeof result.success).toBe('boolean');
-      if (result.success) {
-        expect(result.positions).toHaveLength(6);
-        const types: Array<'A' | 'B'> = ['A', 'B', 'A', 'B', 'A', 'B'];
-        result.positions.forEach((pos, index) => {
-          expectPieceInArea(pos, largerArea, types[index]);
-        });
-        expectNoOverlaps(result.positions, types);
-      } else {
-        expect(result.error).toBeTruthy();
-      }
+
+      expect(result.success).toBe(true);
+      expect(result.positions).toHaveLength(6);
+      const types: Array<'A' | 'B'> = ['A', 'B', 'A', 'B', 'A', 'B'];
+      result.positions.forEach((pos, index) => {
+        expectPieceInArea(pos, largerArea, types[index]);
+      });
+      expectNoOverlaps(result.positions, types);
     });
 
     test('should position 8 pieces in the startup storage area', () => {
@@ -270,8 +264,8 @@ describe('PiecePositioningAlgorithm', () => {
         height: 400
       };
 
-      // La geometría asimétrica actual permite validar de forma estable 1-2 piezas.
-      for (let numPieces = 1; numPieces <= 2; numPieces++) {
+      // Con la geometría real el algoritmo coloca de 1 a 4 piezas sin solape.
+      for (let numPieces = 1; numPieces <= 4; numPieces++) {
         const pieceTypes = Array(numPieces).fill(0).map((_, i) => i % 2 === 0 ? 'A' : 'B') as Array<'A' | 'B'>;
         
         const result = algorithm.positionPieces(numPieces, realPieceArea, pieceTypes);
@@ -294,21 +288,15 @@ describe('PiecePositioningAlgorithm', () => {
         height: 400
       };
 
-      // El algoritmo no debe ser determinista para el random, pero 
-      // grid debería dar resultados consistentes
+      // El algoritmo es determinista (shelf packing, sin aleatoriedad): mismos
+      // inputs deben dar el mismo resultado.
       const result1 = algorithm.positionPieces(4, testArea, ['A', 'B', 'A', 'B']);
       const result2 = algorithm.positionPieces(4, testArea, ['A', 'B', 'A', 'B']);
-      
-      expect(typeof result1.success).toBe('boolean');
-      expect(typeof result2.success).toBe('boolean');
 
-      if (result1.success && result2.success) {
-        // Ambos deberían tener el mismo número de piezas
-        expect(result1.positions).toHaveLength(4);
-        expect(result2.positions).toHaveLength(4);
-      } else {
-        expect(result1.error || result2.error).toBeTruthy();
-      }
+      expect(result1.success).toBe(true);
+      expect(result2.success).toBe(true);
+      expect(result1.positions).toHaveLength(4);
+      expect(result2.positions).toEqual(result1.positions);
     });
   });
 });

@@ -1,5 +1,6 @@
-import { GameGeometry, PiecePosition } from './geometry/GameGeometry';
-import { Challenge, ObjectivePattern } from '../components/ChallengeCard';
+import { GameGeometry, PiecePosition } from '@reto/geometry';
+import { Challenge, ObjectivePattern } from '../../components/ChallengeCard';
+import { migrateLegacyAnchor } from '@reto/geometry';
 
 export class ChallengeGenerator {
   // Static cache to ensure challenges are only loaded once per application lifetime
@@ -29,7 +30,6 @@ export class ChallengeGenerator {
             "rotation": 0
           }
         ],
-        "symmetricPattern": []
       },
       "targetPieces": [
         {
@@ -79,7 +79,6 @@ export class ChallengeGenerator {
             "rotation": 135
           }
         ],
-        "symmetricPattern": []
       },
       "targetPieces": [
         {
@@ -136,7 +135,6 @@ export class ChallengeGenerator {
             "rotation": 0
           }
         ],
-        "symmetricPattern": []
       },
       "targetPieces": [
         {
@@ -186,7 +184,6 @@ export class ChallengeGenerator {
             "rotation": 0
           }
         ],
-        "symmetricPattern": []
       },
       "targetPieces": [
         {
@@ -217,13 +214,13 @@ export class ChallengeGenerator {
   constructor(geometry: GameGeometry) {
     this.geometry = geometry;
 
-    // Complete the symmetricPattern for embedded challenges
+    // Los challenges embebidos están escritos en el ancla antigua (esquina superior
+    // izquierda); migrarlos al ancla nueva (centro de la pieza) igual que a los cargados.
+    const pieceSize = this.geometry.getConfig().pieceSize;
     this.embeddedChallenges.forEach(challenge => {
-      if (!challenge.objective.symmetricPattern || challenge.objective.symmetricPattern.length === 0) {
-        const playerPieces = challenge.objective.playerPieces;
-        const mirrorPieces = playerPieces.map(piece => this.geometry.reflectPieceAcrossMirror(piece));
-        challenge.objective.symmetricPattern = [...playerPieces, ...mirrorPieces];
-      }
+      challenge.objective.playerPieces = challenge.objective.playerPieces.map(piece =>
+        ({ ...migrateLegacyAnchor(piece, pieceSize), anchor: 'center' as const })
+      );
     });
   }
 
@@ -250,7 +247,6 @@ export class ChallengeGenerator {
 
     // Verificar si ya tenemos esta URL en caché (solo para archivos no personalizados)
     if (!isCustomFile && ChallengeGenerator.urlCache.has(url)) {
-      console.log(`Usando desafíos en caché para URL: ${url}`);
       const cachedChallenges = ChallengeGenerator.urlCache.get(url) || [];
 
       // Almacenar en la instancia según el tipo
@@ -265,7 +261,6 @@ export class ChallengeGenerator {
 
     // Evitar múltiples cargas simultáneas del mismo archivo
     if (this.isLoadingFile && !isCustomFile) {
-      console.log('Ya se está cargando un archivo, ignorando solicitud adicional');
       return isCustom ? (this.customChallenges || []) : (this.defaultChallenges || []);
     }
 
@@ -279,11 +274,9 @@ export class ChallengeGenerator {
 
       // Si tenemos desafíos precargados, usarlos directamente
       if (preloadedChallenges && preloadedChallenges.length > 0) {
-        console.log(`Usando desafíos precargados (${preloadedChallenges.length})`);
         challenges = preloadedChallenges;
       } else {
         // De lo contrario, cargar desde la URL
-        console.log(`Intentando cargar desafíos desde: ${url}`);
 
         // Set a timeout for the fetch operation
         const controller = new AbortController();
@@ -306,16 +299,14 @@ export class ChallengeGenerator {
 
         challenges = await response.json();
       }
-      console.log(`Desafíos cargados correctamente: ${challenges.length} desafíos encontrados`);
 
-      // Validar y completar los desafíos cargados
+      // Migrar al ancla nueva (centro de la pieza) las piezas que vengan del formato antiguo,
+      // ya sean del archivo por defecto o de uno que el usuario haya subido.
+      const pieceSize = this.geometry.getConfig().pieceSize;
       const validChallenges = challenges.map(challenge => {
-        // Asegurarse de que symmetricPattern esté completo
-        if (!challenge.objective.symmetricPattern || challenge.objective.symmetricPattern.length === 0) {
-          const playerPieces = challenge.objective.playerPieces;
-          const mirrorPieces = playerPieces.map(piece => this.geometry.reflectPieceAcrossMirror(piece));
-          challenge.objective.symmetricPattern = [...playerPieces, ...mirrorPieces];
-        }
+        challenge.objective.playerPieces = challenge.objective.playerPieces.map(piece =>
+          piece.anchor === 'center' ? piece : { ...migrateLegacyAnchor(piece, pieceSize), anchor: 'center' as const }
+        );
         return challenge;
       });
 
@@ -340,7 +331,7 @@ export class ChallengeGenerator {
       // Log more detailed error information
       if (error instanceof TypeError && error.message === 'Failed to fetch') {
         console.warn('Error de red al intentar cargar el archivo. Verificar que el archivo exista y sea accesible.');
-      } else if (error.name === 'AbortError') {
+      } else if (error instanceof Error && error.name === 'AbortError') {
         console.warn('La carga de desafíos ha excedido el tiempo límite.');
       } else if (error instanceof SyntaxError) {
         console.warn('El archivo JSON no tiene un formato válido.');
@@ -402,7 +393,6 @@ export class ChallengeGenerator {
       }
 
       // Asegurarse de que al menos una pieza toque el espejo
-      const mirrorLineX = this.geometry.getConfig().mirrorLineX;
       const randomPieceIndex = randomInRange(0, piecesCount - 1);
       const pieceToTouchMirror = playerPieces[randomPieceIndex];
       const mirrorPosition = this.geometry.getPositionTouchingMirror(
@@ -466,10 +456,8 @@ export class ChallengeGenerator {
    * Crea un objetivo simétrico a partir de las piezas del jugador
    */
   private createSymmetricObjective(playerPieces: PiecePosition[]): ObjectivePattern {
-    const mirrorPieces = playerPieces.map(piece => this.geometry.reflectPieceAcrossMirror(piece));
     return {
-      playerPieces,
-      symmetricPattern: [...playerPieces, ...mirrorPieces]
+      playerPieces
     };
   }
 
@@ -513,7 +501,6 @@ export class ChallengeGenerator {
 
           validation = this.geometry.validateChallengeCard(playerPieces);
           if (validation.isValid) {
-            console.log(`Found valid heart challenge: rotation=${rotation}, y=${y}, x=${newPosition.x}`);
             validCombinationFound = true;
             break;
           }
@@ -531,7 +518,6 @@ export class ChallengeGenerator {
       }
 
       // Verificar que ahora es válido
-      console.log('Challenge corazón simple después de ajustes:', validation.isValid ? 'VÁLIDO' : 'NO VÁLIDO');
     }
 
     return {
@@ -645,12 +631,6 @@ export class ChallengeGenerator {
     let attempts = 0;
 
     while (!validation.isValid && attempts < 50) {
-      console.log(`Challenge 3 attempt ${attempts + 1}:`, {
-        touchesMirror: validation.touchesMirror,
-        piecesConnected: validation.piecesConnected,
-        hasPieceOverlaps: validation.hasPieceOverlaps,
-        entersMirror: validation.entersMirror
-      });
 
       // Asegurar que la pieza inferior toque el espejo
       if (!validation.touchesMirror) {
@@ -675,7 +655,6 @@ export class ChallengeGenerator {
 
         playerPieces[0].y = desiredBottomEdge - piece1Height + piece1OffsetY;
 
-        console.log(`Positioning piece 1 at y=${playerPieces[0].y} to touch piece 2 vertically`);
       }
 
       // Si aún hay solapamientos, separar más las piezas
@@ -686,7 +665,6 @@ export class ChallengeGenerator {
         const overlapAmount = bbox1.bottom - bbox2.top;
         if (overlapAmount > 0) {
           playerPieces[0].y -= (overlapAmount + 2);
-          console.log(`Moved piece 1 up by ${overlapAmount + 2} to avoid overlap`);
         }
       }
 
@@ -694,7 +672,6 @@ export class ChallengeGenerator {
       attempts++;
     }
 
-    console.log(`Challenge 3 final validation:`, validation);
 
     return {
       id: 3,
@@ -745,12 +722,6 @@ export class ChallengeGenerator {
     let attempts = 0;
 
     while (!validation.isValid && attempts < 50) {
-      console.log(`Challenge 4 attempt ${attempts + 1}:`, {
-        touchesMirror: validation.touchesMirror,
-        piecesConnected: validation.piecesConnected,
-        hasPieceOverlaps: validation.hasPieceOverlaps,
-        entersMirror: validation.entersMirror
-      });
 
       // Asegurar que la pieza derecha (piece 2) toque el espejo
       if (!validation.touchesMirror) {
@@ -783,7 +754,6 @@ export class ChallengeGenerator {
         const piece0OffsetY = tempBbox0.top;
         playerPieces[0].y = piece1Bbox.top - piece0Height + piece0OffsetY;
 
-        console.log(`Positioned L-shape: piece0(${playerPieces[0].x},${playerPieces[0].y}), piece1(${playerPieces[1].x},${playerPieces[1].y}), piece2(${playerPieces[2].x},${playerPieces[2].y})`);
       }
 
       // Ajustar solapamientos si los hay
@@ -816,7 +786,6 @@ export class ChallengeGenerator {
       attempts++;
     }
 
-    console.log(`Challenge 4 final validation:`, validation);
 
     return {
       id: 4,
@@ -883,12 +852,10 @@ export class ChallengeGenerator {
 
     // Si tenemos desafíos embebidos, usarlos como fallback
     if (this.embeddedChallenges && this.embeddedChallenges.length > 0) {
-      console.log("Usando desafíos embebidos como fallback");
       return this.embeddedChallenges;
     }
 
     // Si no hay desafíos cargados ni embebidos, generar los predefinidos
-    console.log("No hay desafíos cargados, generando predefinidos...");
     const predefinedChallenges = [
       this.generateHeartChallenge(),
       this.generateHorizontalBlockChallenge(),
@@ -917,19 +884,16 @@ export class ChallengeGenerator {
   async getAvailableChallenges(): Promise<Challenge[]> {
     // Si ya tenemos desafíos personalizados cargados, devolverlos inmediatamente
     if (this.customChallenges && this.customChallenges.length > 0) {
-      console.log('Usando desafíos personalizados previamente cargados');
       return this.customChallenges;
     }
 
     // Si ya tenemos desafíos por defecto cargados en esta instancia, devolverlos inmediatamente
     if (this.defaultChallenges && this.defaultChallenges.length > 0) {
-      console.log('Usando desafíos por defecto previamente cargados en esta instancia');
       return this.defaultChallenges;
     }
 
     // Si ya tenemos desafíos por defecto cargados en el cache estático, devolverlos inmediatamente
     if (ChallengeGenerator.cachedDefaultChallenges && ChallengeGenerator.cachedDefaultChallenges.length > 0) {
-      console.log('Usando desafíos por defecto del cache estático');
       this.defaultChallenges = ChallengeGenerator.cachedDefaultChallenges;
       return this.defaultChallenges;
     }
@@ -937,7 +901,6 @@ export class ChallengeGenerator {
     // Si ya intentamos cargar los desafíos antes, no volver a intentarlo
     // Esto evita múltiples intentos de carga en caso de fallos
     if (this.hasTriedLoading) {
-      console.log('Ya se intentó cargar los desafíos anteriormente, usando fallback');
       const fallbackChallenges = this.generateAllChallenges();
       ChallengeGenerator.cachedDefaultChallenges = fallbackChallenges;
       return fallbackChallenges;
@@ -949,11 +912,9 @@ export class ChallengeGenerator {
       // Intentar cargar los desafíos solo desde la ubicación más probable
       const primaryPath = window.location.origin + '/challenges.json';
 
-      console.log(`Intentando cargar desafíos desde la ubicación principal: ${primaryPath}`);
       const loadedChallenges = await this.loadChallengesFromFile(primaryPath);
 
       if (loadedChallenges && loadedChallenges.length > 0) {
-        console.log(`Desafíos cargados correctamente`);
         // Guardar en el cache estático
         ChallengeGenerator.cachedDefaultChallenges = loadedChallenges;
         return loadedChallenges;
@@ -963,11 +924,9 @@ export class ChallengeGenerator {
       // pero solo si es diferente a la primera
       const fallbackPath = '/challenges.json';
       if (primaryPath !== fallbackPath) {
-        console.log(`Intentando cargar desde ubicación alternativa: ${fallbackPath}`);
         const fallbackChallenges = await this.loadChallengesFromFile(fallbackPath);
 
         if (fallbackChallenges && fallbackChallenges.length > 0) {
-          console.log(`Desafíos cargados correctamente desde ubicación alternativa`);
           // Guardar en el cache estático
           ChallengeGenerator.cachedDefaultChallenges = fallbackChallenges;
           return fallbackChallenges;
@@ -979,7 +938,6 @@ export class ChallengeGenerator {
       console.warn('Error al cargar los desafíos:', error);
     }
 
-    console.log('Usando desafíos embebidos o generando predefinidos como fallback');
     // Si no se pudieron cargar, usar los embebidos o generar los predefinidos
     const fallbackChallenges = this.generateAllChallenges();
     // Guardar en el cache estático
@@ -1153,9 +1111,7 @@ export class ChallengeGenerator {
     // Verificación final: si aún hay solapamiento, ajustar manualmente
     const finalOverlap = this.geometry.doPiecesOverlap(playerPieces[0], playerPieces[1]);
     if (finalOverlap) {
-      const distance = this.geometry.getMinDistanceBetweenPieces(playerPieces[0], playerPieces[1]);
       playerPieces[0].y -= 50; // Mover más arriba para evitar solapamiento
-      console.log(`Final overlap adjustment: moved piece 0 up by 50. Distance now: ${this.geometry.getMinDistanceBetweenPieces(playerPieces[0], playerPieces[1])}`);
     }
 
     return {

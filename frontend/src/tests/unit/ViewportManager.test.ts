@@ -1,5 +1,5 @@
 import { ViewportManager, ViewportConfig, WorldConfig } from '../../utils/rendering/ViewportManager';
-import { PiecePosition } from '../../utils/geometry/GameGeometry';
+import { PiecePosition } from '@reto/geometry';
 
 describe('ViewportManager', () => {
   let viewportManager: ViewportManager;
@@ -212,7 +212,7 @@ describe('ViewportManager', () => {
       const piece: PiecePosition = {
         type: 'A',
         face: 'front',
-        x: 330, // Piece touching mirror at x=700
+        x: 330,
         y: 300,
         rotation: 0
       };
@@ -228,8 +228,9 @@ describe('ViewportManager', () => {
       const renderArea = viewportManager.createFullGameRenderArea(viewport);
       const reflectedPiece = viewportManager.getReflectedPiecePosition(piece, renderArea);
 
-      // Reflected position: 2*700 - 330 - 100 = 970
-      expect(reflectedPiece.x).toBe(970);
+      // piece.x es el centro: reflejo = 2*700 - 330 = 1070 (misma fórmula que
+      // GameGeometry.reflectPieceAcrossMirror, sin restar pieceSize).
+      expect(reflectedPiece.x).toBe(1070);
       expect(reflectedPiece.y).toBe(300);
       expect(reflectedPiece.type).toBe('A');
     });

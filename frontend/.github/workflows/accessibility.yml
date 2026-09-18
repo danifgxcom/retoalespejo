@@ -2,9 +2,9 @@ name: Accessibility Tests
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ master, dev ]
   pull_request:
-    branches: [ main, develop ]
+    branches: [ master, dev ]
 
 jobs:
   a11y-tests:
@@ -29,10 +29,10 @@ jobs:
       run: cd frontend && npm run build
 
     - name: Start server for Lighthouse
-      run: cd frontend && npm run preview & npx wait-on http://localhost:5173
+      run: cd frontend && npm run preview -- --host 127.0.0.1 & npx wait-on http://127.0.0.1:5173/
 
     - name: Run Lighthouse CI
-      run: cd frontend && npx lhci autorun
+      run: cd frontend && npx lhci autorun --config=src/tests/a11y/lighthouse-ci-config.js
       env:
         LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
 

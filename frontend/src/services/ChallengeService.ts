@@ -1,7 +1,7 @@
 import { Challenge } from '../components/ChallengeCard';
 import { ChallengeGenerator } from '../utils/challenges/ChallengeGenerator';
-import { GameGeometry } from '../utils/geometry/GameGeometry';
-import { ValidationService } from './ValidationService';
+import { GameGeometry } from '@reto/geometry';
+import { migrateLegacyAnchor } from '@reto/geometry';
 import { ChallengeMigration, RelativeChallengeFile } from '../utils/challenges/ChallengeMigration';
 
 /**
@@ -29,7 +29,6 @@ export interface ChallengeLoadResult {
  */
 export class ChallengeService {
   private generator: ChallengeGenerator;
-  private validationService: ValidationService;
   private geometry: GameGeometry;
   private config: ChallengeServiceConfig;
   private migration: ChallengeMigration;
@@ -41,7 +40,6 @@ export class ChallengeService {
   ) {
     this.geometry = geometry;
     this.generator = new ChallengeGenerator(geometry);
-    this.validationService = new ValidationService(geometry);
     this.migration = new ChallengeMigration(700, 300, 100); // mirrorLineX, centerY, pieceSize
     this.config = {
       defaultChallengesPath: '/challenges.json',
@@ -158,7 +156,6 @@ export class ChallengeService {
       // Primero intentar cargar archivo con coordenadas relativas
       const relativeResult = await this.tryLoadRelativeFile('/challenges-relative.json');
       if (relativeResult.success) {
-        console.log('✅ Cargado archivo con coordenadas relativas');
         return relativeResult;
       }
 
@@ -169,7 +166,6 @@ export class ChallengeService {
 
       const validatedChallenges = this.validateAndFilterChallenges(challenges);
 
-      console.log('✅ Cargado archivo con coordenadas absolutas');
       return {
         challenges: validatedChallenges,
         source: 'file',
@@ -228,13 +224,12 @@ export class ChallengeService {
           targetPattern: "simple",
           objective: {
             playerPieces: [{
-              type: 'A',
-              face: 'front',
-              x: 330,
-              y: 300,
-              rotation: 0
-            }],
-            symmetricPattern: []
+              ...migrateLegacyAnchor(
+                { type: 'A', face: 'front', x: 330, y: 300, rotation: 0 },
+                this.geometry.getConfig().pieceSize
+              ),
+              anchor: 'center' as const
+            }]
           },
           targetPieces: [{
             type: 'A',
@@ -274,13 +269,6 @@ export class ChallengeService {
       }
       return isValid;
     });
-  }
-
-  /**
-   * Obtiene el servicio de validación (para casos especiales)
-   */
-  getValidationService(): ValidationService {
-    return this.validationService;
   }
 
   /**

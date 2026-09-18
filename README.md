@@ -1,6 +1,6 @@
-# Reto al Espejo (Mirror Challenge) - Mono-repo
+# Desafía al reflejo - Mono-repo
 
-> Digital implementation of the "Reto al Espejo" puzzle game, originally by Educa. A React-based interactive web application that simulates a physical geometric puzzle game involving symmetry and mirror reflection, now with multiplayer support through a Node.js backend.
+> Juego de puzles de simetría con espejo inspirado en un clásico del género. Aplicación web interactiva con React y multijugador mediante un backend de Node.js.
 
 ## 🎮 Game Overview
 
@@ -60,8 +60,8 @@ For more detailed information about each part of the application:
 - **Color combinations**: Yellow center with red triangles, or inverted
 - **Face system**: Front/back faces with inverted color schemes
 - **Real-time reflection**: Pieces placed in the game area automatically appear reflected
-- **Challenge system**: 4+ predefined patterns with increasing difficulty
-- **Piece manipulation**: Rotation (90° increments), face flipping, and drag-and-drop
+- **Challenge system**: 16 retos validados en `frontend/public/challenges.json`
+- **Piece manipulation**: Rotation (45° increments), face flipping, and drag-and-drop
 
 ## 🏗️ Architecture & Structure
 
@@ -142,7 +142,7 @@ The game enforces 6 core validation rules for valid challenge patterns:
 ```typescript
 // Game state centralized in custom hooks
 const gameLogic = useGameLogic(challenges, geometry);
-const mouseHandlers = useMouseHandlers(gameLogic, canvasRef);
+const pointerHandlers = usePointerHandlers(gameLogic, canvasRef);
 
 // State flows unidirectionally
 pieces → validation → rendering → user interaction → state update
@@ -151,9 +151,8 @@ pieces → validation → rendering → user interaction → state update
 #### Service Layer
 ```typescript
 // Dependency injection pattern
-const validationService = new ValidationService(geometry);
-const challengeService = new ChallengeService(generator, validationService);
-const renderingService = new RenderingService(theme);
+const geometry = new GameGeometry({ width: 700, height: 500, mirrorLineX: 700, pieceSize: 100 });
+const challengeService = new ChallengeService(generator, geometry);
 ```
 
 ### Challenge System
@@ -214,8 +213,8 @@ const renderingService = new RenderingService(theme);
 #### Unit Tests
 - **ViewportManager**: 17 tests covering coordinate transformations
 - **GameGeometry**: Collision detection, piece validation, mirror calculations
-- **ValidationService**: All 6 game rules tested independently
-- **VisualGeometryTest**: Verification of calculation-to-rendering consistency
+- **PieceShape.golden**: geometría canónica de las piezas
+- **Winnable**: los 16 retos son alcanzables desde la retícula
 
 #### Test Categories
 - **Precision Tests**: Sub-pixel accuracy verification
@@ -273,7 +272,7 @@ npm test                   # Run test suite
 ## 📐 Mathematical Foundations
 
 ### Coordinate Transformations
-- **Mirror Reflection**: `reflectedX = 2 * mirrorLine - pieceX - pieceWidth`
+- **Mirror Reflection**: `reflectedX = 2 * mirrorLine - pieceX`; invierte A↔B y el signo de giro porque `pieceX` es el centro.
 - **Rotation Mathematics**: Standard 2D rotation matrices
 - **Scaling Algorithms**: Proportional viewport fitting
 - **Collision Detection**: Vector mathematics and polygon intersection

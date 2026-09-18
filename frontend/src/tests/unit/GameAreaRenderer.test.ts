@@ -10,7 +10,7 @@ import { drawPiece } from '../../components/GamePiece';
 const mockDrawPiece = drawPiece as jest.MockedFunction<typeof drawPiece>;
 
 // Mock canvas context
-const createMockContext = () => ({
+const createMockContext = (): jest.Mocked<CanvasRenderingContext2D> => ({
   fillStyle: '',
   strokeStyle: '',
   lineWidth: 0,
@@ -44,7 +44,8 @@ const createMockContext = () => ({
   createLinearGradient: jest.fn(() => ({
     addColorStop: jest.fn()
   }))
-});
+// El renderer sólo usa los miembros definidos arriba; jsdom no implementa un canvas real.
+} as unknown as jest.Mocked<CanvasRenderingContext2D>);
 
 describe('GameAreaRenderer', () => {
   let renderer: GameAreaRenderer;
@@ -70,7 +71,7 @@ describe('GameAreaRenderer', () => {
 
   describe('drawBackgroundAreas', () => {
     test('should draw all background areas', () => {
-      renderer.drawBackgroundAreas(mockCtx as any);
+      renderer.drawBackgroundAreas(mockCtx);
 
       // Should create gradients for different areas
       expect(mockCtx.createRadialGradient).toHaveBeenCalled();
@@ -88,7 +89,7 @@ describe('GameAreaRenderer', () => {
       mockCtx.createRadialGradient.mockReturnValue(mockGradient);
       mockCtx.createLinearGradient.mockReturnValue(mockGradient);
 
-      renderer.drawBackgroundAreas(mockCtx as any);
+      renderer.drawBackgroundAreas(mockCtx);
 
       // Should set various gradient color stops
       expect(mockGradient.addColorStop).toHaveBeenCalledWith(0, '#ffffff');
@@ -99,7 +100,7 @@ describe('GameAreaRenderer', () => {
 
   describe('drawMirrorFrameAndDivisions', () => {
     test('should draw mirror line with dashed effect', () => {
-      renderer.drawMirrorFrameAndDivisions(mockCtx as any);
+      renderer.drawMirrorFrameAndDivisions(mockCtx);
 
       // Should set dashed line style
       expect(mockCtx.setLineDash).toHaveBeenCalledWith([15, 10]);
@@ -118,7 +119,7 @@ describe('GameAreaRenderer', () => {
     });
 
     test('should draw horizontal division', () => {
-      renderer.drawMirrorFrameAndDivisions(mockCtx as any);
+      renderer.drawMirrorFrameAndDivisions(mockCtx);
 
       // Should draw horizontal division
       expect(mockCtx.moveTo).toHaveBeenCalledWith(0, config.gameAreaHeight);
@@ -131,7 +132,7 @@ describe('GameAreaRenderer', () => {
 
   describe('drawAreaLabels', () => {
     test('should draw area labels with text and emojis', () => {
-      renderer.drawAreaLabels(mockCtx as any);
+      renderer.drawAreaLabels(mockCtx);
 
       // Font ends at the subtitle font (set last)
       expect(mockCtx.font).toBe('13px "Segoe UI", sans-serif');
@@ -150,7 +151,7 @@ describe('GameAreaRenderer', () => {
 
   describe('drawDebugInfo', () => {
     test('should draw debug boundaries and labels', () => {
-      renderer.drawDebugInfo(mockCtx as any);
+      renderer.drawDebugInfo(mockCtx);
 
       // Should draw debug rectangles
       expect(mockCtx.strokeRect).toHaveBeenCalledWith(0, config.gameAreaHeight, config.gameAreaWidth, config.bottomAreaHeight);
@@ -194,7 +195,7 @@ describe('GameAreaRenderer', () => {
     ];
 
     test('should draw all pieces using drawPiece function', () => {
-      renderer.drawGamePieces(mockCtx as any, mockPieces, null, false);
+      renderer.drawGamePieces(mockCtx, mockPieces, null, false);
 
       expect(mockDrawPiece).toHaveBeenCalledTimes(2);
       expect(mockDrawPiece).toHaveBeenCalledWith(mockCtx, mockPieces[0], 100, 200, config.pieceSize);
@@ -202,7 +203,7 @@ describe('GameAreaRenderer', () => {
     });
 
     test('should draw debug info for unplaced pieces when debug mode is on', () => {
-      renderer.drawGamePieces(mockCtx as any, mockPieces, null, true);
+      renderer.drawGamePieces(mockCtx, mockPieces, null, true);
 
       // Should draw debug rectangle for unplaced piece (first piece is placed: false)
       expect(mockCtx.strokeRect).toHaveBeenCalled();
@@ -213,7 +214,7 @@ describe('GameAreaRenderer', () => {
     test('should draw border for dragged piece', () => {
       const draggedPiece = mockPieces[0];
 
-      renderer.drawGamePieces(mockCtx as any, mockPieces, draggedPiece, false);
+      renderer.drawGamePieces(mockCtx, mockPieces, draggedPiece, false);
 
       // Should save and restore context for border drawing
       expect(mockCtx.save).toHaveBeenCalled();
@@ -226,15 +227,15 @@ describe('GameAreaRenderer', () => {
     });
 
     test('should handle empty pieces array gracefully', () => {
-      renderer.drawGamePieces(mockCtx as any, [], null, false);
+      renderer.drawGamePieces(mockCtx, [], null, false);
 
       expect(mockDrawPiece).not.toHaveBeenCalled();
     });
 
     test('should handle null pieces in array', () => {
-      const piecesWithNull = [mockPieces[0], null, mockPieces[1]] as any[];
+      const piecesWithNull: Array<Piece | null> = [mockPieces[0], null, mockPieces[1]];
       
-      renderer.drawGamePieces(mockCtx as any, piecesWithNull, null, false);
+      renderer.drawGamePieces(mockCtx, piecesWithNull, null, false);
 
       // Should only draw valid pieces
       expect(mockDrawPiece).toHaveBeenCalledTimes(2);
@@ -268,14 +269,14 @@ describe('GameAreaRenderer', () => {
     ];
 
     test('should clip to mirror area', () => {
-      renderer.drawMirrorReflections(mockCtx as any, mockPieces);
+      renderer.drawMirrorReflections(mockCtx, mockPieces);
 
       expect(mockCtx.rect).toHaveBeenCalledWith(config.mirrorLine, 0, config.gameAreaWidth, config.gameAreaHeight);
       expect(mockCtx.clip).toHaveBeenCalled();
     });
 
     test('should draw reflections for pieces in game area', () => {
-      renderer.drawMirrorReflections(mockCtx as any, mockPieces);
+      renderer.drawMirrorReflections(mockCtx, mockPieces);
 
       // Should save/restore context for transformations
       expect(mockCtx.save).toHaveBeenCalled();
@@ -287,7 +288,7 @@ describe('GameAreaRenderer', () => {
     });
 
     test('should add distortion gradient effect', () => {
-      renderer.drawMirrorReflections(mockCtx as any, mockPieces);
+      renderer.drawMirrorReflections(mockCtx, mockPieces);
 
       expect(mockCtx.createLinearGradient).toHaveBeenCalledWith(
         config.mirrorLine, 
@@ -299,11 +300,41 @@ describe('GameAreaRenderer', () => {
     });
 
     test('should handle empty pieces array', () => {
-      renderer.drawMirrorReflections(mockCtx as any, []);
+      renderer.drawMirrorReflections(mockCtx, []);
 
       // Should still set up clipping and effects
       expect(mockCtx.clip).toHaveBeenCalled();
       expect(mockCtx.restore).toHaveBeenCalled();
+    });
+
+    test('should flip type B pieces too, reflected to the other side of the mirror', () => {
+      // Bug fix: type B pieces were never flipped ("ya tienen flip interno"), so
+      // their reflection appeared unmirrored and 100px off, crossing the mirror
+      // line. Any type must get translate(2*mirrorLine, 0) + scale(-1, 1), and
+      // the piece is drawn at its own (x, y) since the context does the mirroring.
+      const typeBPiece: Piece = {
+        id: 3,
+        type: 'B',
+        face: 'front',
+        centerColor: '#FFD700',
+        triangleColor: '#FF4444',
+        x: 100,
+        y: 200,
+        rotation: 0,
+        placed: true
+      };
+
+      renderer.drawMirrorReflections(mockCtx, [typeBPiece]);
+
+      expect(mockCtx.translate).toHaveBeenCalledWith(2 * config.mirrorLine, 0);
+      expect(mockCtx.scale).toHaveBeenCalledWith(-1, 1);
+      expect(mockDrawPiece).toHaveBeenCalledWith(
+        mockCtx,
+        expect.objectContaining({ type: 'B' }),
+        typeBPiece.x,
+        typeBPiece.y,
+        config.pieceSize
+      );
     });
   });
 });

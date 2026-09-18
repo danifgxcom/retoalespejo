@@ -1,10 +1,10 @@
 import React from 'react';
 import { Piece } from './GamePiece';
 import { Challenge } from './ChallengeCard';
-import { RotateCw, RotateCcw, FlipVertical, Package } from 'lucide-react';
-import PieceInventoryItem from './PieceInventoryItem';
+import { RotateCw, RotateCcw, FlipVertical } from 'lucide-react';
 import { VisuallyHidden } from '../components/accessibility';
 import { PieceColors } from '../utils/piece/PieceColors';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface LeftSidebarProps {
   pieces: Piece[];
@@ -18,13 +18,12 @@ interface LeftSidebarProps {
 
 const LeftSidebar: React.FC<LeftSidebarProps> = ({
   pieces,
-  challenges,
-  currentChallenge,
   onRotatePiece,
   onRotatePieceCounterClockwise,
   onFlipPiece,
   setControlEffect
 }) => {
+  const { highContrast } = useTheme();
   // Sort placed pieces by the time they were placed (newest at the bottom)
   // We'll use the piece ID as a proxy for placement time since higher IDs are likely placed later
   const placedPieces = pieces
@@ -33,7 +32,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({
 
   return (
     <div 
-      className="w-full h-full rounded-lg shadow-lg p-2 sm:p-3 space-y-2 sm:space-y-3 flex flex-col"
+      className="w-full h-full min-h-0 rounded-2xl shadow-lg p-3 space-y-3 flex flex-col"
       style={{
         backgroundColor: 'var(--card-bg)',
         color: 'var(--text-primary)',
@@ -48,14 +47,19 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({
 
       <div className="flex-1 overflow-y-auto" role="region" aria-label="Lista de controles de piezas">
         {placedPieces.length === 0 ? (
-          <div className="text-center text-sm py-8" style={{ color: 'var(--text-tertiary)' }} role="status" aria-live="polite">
-            <p>Coloca piezas en el área de juego</p>
-            <p>para ver los controles aquí</p>
+          <div
+            className="flex flex-col items-center gap-2 rounded-xl px-3 py-8 text-center text-sm"
+            style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-tertiary)' }}
+            role="status"
+            aria-live="polite"
+          >
+            <span aria-hidden="true" className="text-3xl">🧩</span>
+            <p>Arrastra una pieza al área de juego y sus controles aparecerán aquí.</p>
           </div>
         ) : (
           <div className="space-y-3">
             {placedPieces.map((piece) => {
-              const identificationColor = PieceColors.getIdentificationColor(piece.id);
+              const identificationColor = PieceColors.getIdentificationColor(piece.id, highContrast);
               return (
             <div key={piece.id} className="rounded-lg p-3" 
                  style={{ 
@@ -102,7 +106,13 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({
                   onMouseOver={(e) => {
                     e.currentTarget.style.backgroundColor = 'var(--button-primary-hover)';
                   }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--button-primary-hover)';
+                  }}
                   onMouseOut={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--button-primary-bg)';
+                  }}
+                  onBlur={(e) => {
                     e.currentTarget.style.backgroundColor = 'var(--button-primary-bg)';
                   }}
                   title="Rotar a la izquierda"
@@ -126,7 +136,13 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({
                   onMouseOver={(e) => {
                     e.currentTarget.style.backgroundColor = 'var(--button-primary-hover)';
                   }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--button-primary-hover)';
+                  }}
                   onMouseOut={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--button-primary-bg)';
+                  }}
+                  onBlur={(e) => {
                     e.currentTarget.style.backgroundColor = 'var(--button-primary-bg)';
                   }}
                   title="Rotar a la derecha"
@@ -150,7 +166,13 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({
                   onMouseOver={(e) => {
                     e.currentTarget.style.backgroundColor = 'var(--button-success-hover)';
                   }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--button-success-hover)';
+                  }}
                   onMouseOut={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--button-success-bg)';
+                  }}
+                  onBlur={(e) => {
                     e.currentTarget.style.backgroundColor = 'var(--button-success-bg)';
                   }}
                   title="Voltear pieza"

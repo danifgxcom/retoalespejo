@@ -1,4 +1,7 @@
 import { Challenge } from '../components/ChallengeCard';
+import { migrateLegacyAnchor } from '@reto/geometry';
+
+const PIECE_SIZE = 100;
 
 export class ChallengeEditorService {
   private static instance: ChallengeEditorService;
@@ -152,6 +155,14 @@ export class ChallengeEditorService {
               throw new Error('Formato de reto inválido en el archivo');
             }
           }
+
+          // Los ficheros guardados antes de la reforma de geometría usan el ancla
+          // antigua (esquina superior izquierda); migrarlos al ancla nueva (centro).
+          challenges.forEach((challenge: Challenge) => {
+            challenge.objective.playerPieces = challenge.objective.playerPieces.map(piece =>
+              piece.anchor === 'center' ? piece : { ...migrateLegacyAnchor(piece, PIECE_SIZE), anchor: 'center' as const }
+            );
+          });
 
           resolve(challenges);
         } catch (error) {

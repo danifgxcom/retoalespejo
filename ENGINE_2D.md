@@ -21,11 +21,9 @@ Un motor gráfico especializado en operaciones algebraicas 2D para juegos de geo
 Engine2D/
 ├── 🧮 Geometry/          # Operaciones algebraicas 2D
 │   ├── GameGeometry      # Motor principal de cálculos
-│   ├── MirrorSystem      # Sistema de reflexiones
-│   └── CollisionSystem   # Detección de colisiones
+│   └── PieceShape        # Forma canónica, vértices y transformaciones
 ├── 🎨 Rendering/         # Sistema de dibujado
 │   ├── GameAreaRenderer  # Renderizado del área de juego
-│   ├── ChallengeCardRenderer # Renderizado de objetivos
 │   └── ResponsiveCanvas  # Canvas adaptativo
 ├── ✅ Validation/        # Reglas y validaciones
 │   └── GameRules         # Lógica de reglas del juego
@@ -89,7 +87,7 @@ const scaledPosition = geometry.scalePosition(piece, scaleFactor);
 ```typescript
 const renderer = new GameAreaRenderer({
   gameAreaWidth: 700,
-  gameAreaHeight: 600,
+  gameAreaHeight: 500,
   mirrorLine: 700,
   pieceSize: 100
 });
@@ -101,15 +99,7 @@ renderer.drawGamePieces(ctx, pieces, draggedPiece, debugMode);
 renderer.drawMirrorReflections(ctx, pieces);
 ```
 
-### ChallengeCardRenderer
-
-**Responsabilidad**: Dibuja tarjetas de objetivos
-
-```typescript
-const cardRenderer = new ChallengeCardRenderer(config, geometry);
-
-cardRenderer.render(ctx, challenge, validation, debugMode);
-```
+Las miniaturas de objetivos se dibujan con `components/ui/ChallengeThumbnail.tsx`.
 
 ## ✅ Sistema de Validación
 
@@ -148,7 +138,7 @@ import { GameAreaRenderer } from './rendering/GameAreaRenderer';
 // 1. Configurar geometría
 const geometry = new GameGeometry({
   width: 700,
-  height: 600,
+  height: 500,
   mirrorLineX: 700,
   pieceSize: 100
 });
@@ -156,7 +146,7 @@ const geometry = new GameGeometry({
 // 2. Configurar renderizado
 const renderer = new GameAreaRenderer({
   gameAreaWidth: 700,
-  gameAreaHeight: 600,
+  gameAreaHeight: 500,
   bottomAreaHeight: 400,
   mirrorLine: 700,
   canvasWidth: 1400,
@@ -252,7 +242,7 @@ const bbox = geometry.getPieceBoundingBox({
 ##### `reflectPieceAcrossMirror(piece: PiecePosition): PiecePosition`
 Calcula la reflexión de una pieza a través del espejo.
 
-**Algoritmo:** `reflected_x = 2 * mirror_line - original_x - piece_width`
+**Algoritmo:** `reflected_x = 2 * mirror_line - original_x`. `x` es el centro: además se invierte A↔B y el signo de la rotación.
 
 ##### `doPiecesOverlap(piece1: PiecePosition, piece2: PiecePosition): boolean`
 Detecta si dos piezas se superponen usando SAT (Separating Axes Theorem).

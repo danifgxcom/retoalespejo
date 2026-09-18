@@ -145,17 +145,13 @@ label {
   font-weight: 500;
 }
 
-[role="status"],
-[role="alert"],
-[aria-live] {
-  border: 0;
-  clip: rect(0 0 0 0);
-  height: auto;
-  margin: 0;
-  overflow: hidden;
-  padding: 0;
-  position: absolute;
-  width: 1px;
+/* Las regiones vivas sólo se ocultan cuando se pide explícitamente con
+   .sr-only (o el componente VisuallyHidden); ocultarlas todas dejaba
+   invisible texto real: mensajes de estado, errores de formulario o la
+   cuenta atrás del multijugador. */
+.sr-only[role="status"],
+.sr-only[role="alert"],
+.sr-only[aria-live] {
   white-space: nowrap;
 }
 /* Skip link - allows keyboard users to bypass navigation */

@@ -1,5 +1,5 @@
 import { MirrorCoordinateSystem, MirrorCoordinateConfig, MirrorRelativePiecePosition } from '../../utils/geometry/MirrorCoordinateSystem';
-import { PiecePosition, GameGeometry } from '../../utils/geometry/GameGeometry';
+import { PiecePosition, GameGeometry } from '@reto/geometry';
 
 describe('MirrorCoordinateSystem', () => {
   let mirrorSystem: MirrorCoordinateSystem;

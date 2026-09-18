@@ -3,7 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 
 // Mock UI components to avoid ESM/lucide-react issues
 jest.mock('../../components/ui/Modal', () => {
-  const MockModal = ({ isOpen, onClose, title, children }: any) => {
+  const MockModal = ({ isOpen, onClose, title, children }: { isOpen: boolean; onClose: () => void; title: string; children?: React.ReactNode }) => {
     if (!isOpen) return null;
     return React.createElement('div', { role: 'dialog', 'aria-label': title },
       React.createElement('button', { onClick: onClose, 'aria-label': 'Cerrar modal' }, 'X'),
@@ -16,14 +16,13 @@ jest.mock('../../components/ui/Modal', () => {
 jest.mock('../../components/ui/Button', () => {
   return {
     __esModule: true,
-    default: ({ onClick, children, disabled, ...props }: any) =>
+    default: ({ onClick, children, disabled, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) =>
       React.createElement('button', { onClick, disabled, ...props }, children)
   };
 });
 
 describe('Focus Management Tests', () => {
   test('Modal renders with dialog role when open', () => {
-    const onClose = jest.fn();
 
     render(React.createElement('div', null,
       React.createElement('button', { 'data-testid': 'outside-button' }, 'Outside'),

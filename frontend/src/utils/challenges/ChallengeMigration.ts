@@ -1,6 +1,6 @@
 import { MirrorCoordinateSystem, MirrorRelativeChallenge } from '../geometry/MirrorCoordinateSystem';
-import { Challenge } from '../components/ChallengeCard';
-import { GameGeometry } from '../geometry/GameGeometry';
+import { Challenge } from '../../components/ChallengeCard';
+import { GameGeometry } from '@reto/geometry';
 
 /**
  * Formato de archivo JSON con challenges en coordenadas relativas
@@ -26,7 +26,7 @@ export interface RelativeChallengeFile {
       comment?: string;
     }>;
   }>;
-  coordinate_examples?: any;
+  coordinate_examples?: Record<string, unknown>;
   validation_notes?: string[];
 }
 

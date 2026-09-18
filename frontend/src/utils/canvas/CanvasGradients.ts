@@ -42,7 +42,6 @@ export class CanvasGradients {
     
     // Get colors from theme variables
     const styles = getComputedStyle(document.body);
-    const canvasBg = styles.getPropertyValue('--canvas-bg-light').trim() || '#f8fafc';
     const cardBg = styles.getPropertyValue('--card-bg').trim() || '#ffffff';
     const bgSecondary = styles.getPropertyValue('--bg-secondary').trim() || '#e2e8f0';
     const bgTertiary = styles.getPropertyValue('--bg-tertiary').trim() || '#d6eaf8';

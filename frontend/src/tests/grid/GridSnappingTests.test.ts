@@ -9,7 +9,7 @@
  * 5. Piece-to-piece connections work regardless of rotation
  */
 
-import { GameGeometry, PiecePosition, GameAreaConfig } from '../../utils/geometry/GameGeometry';
+import { GameGeometry, PiecePosition, GameAreaConfig } from '@reto/geometry';
 
 describe('Grid Snapping for Rotated Pieces', () => {
   let geometry: GameGeometry;
@@ -56,15 +56,14 @@ describe('Grid Snapping for Rotated Pieces', () => {
       const piece: PiecePosition = { type: 'A', face: 'front', x: 100, y: 100, rotation: 0 };
       const bbox = geometry.getPieceBoundingBox(piece);
 
-      // At 0° rotation, Type A shape extends RIGHT from centerX (piece.x + 50 = 150)
-      // bbox.left = centerX + minRotX = 150 + 0 = 150
-      // bbox.right = centerX + maxRotX = 150 + 320 = 470 (unit=128, 2.5*128=320)
-      // bbox.top = centerY + minRotY = 150 + (-192) = -42
-      // bbox.bottom = centerY + 0 = 150
-      expect(bbox.left).toBeCloseTo(150, 1);
-      expect(bbox.right).toBeCloseTo(470, 1);
-      expect(bbox.top).toBeCloseTo(-42, 1);
-      expect(bbox.bottom).toBeCloseTo(150, 1);
+      // piece.x/y es el centro (ver PieceShape.ts). Con unit=128, Type A sin rotar
+      // se extiende de -192 a +128 en X y de -128 a +64 en Y respecto al centro.
+      // bbox.left = 100 - 192 = -92; bbox.right = 100 + 128 = 228
+      // bbox.top = 100 - 128 = -28; bbox.bottom = 100 + 64 = 164
+      expect(bbox.left).toBeCloseTo(-92, 1);
+      expect(bbox.right).toBeCloseTo(228, 1);
+      expect(bbox.top).toBeCloseTo(-28, 1);
+      expect(bbox.bottom).toBeCloseTo(164, 1);
     });
 
     test('should calculate correct bounding box for piece type A at 45°', () => {
@@ -74,7 +73,6 @@ describe('Grid Snapping for Rotated Pieces', () => {
       // At 45° rotation, bounding box should be larger due to diagonal orientation
       const originalWidth = 178;
       const originalHeight = 128;
-      const diagonal = Math.sqrt(originalWidth * originalWidth + originalHeight * originalHeight);
       
       expect(bbox.right - bbox.left).toBeGreaterThan(originalWidth);
       expect(bbox.bottom - bbox.top).toBeGreaterThan(originalHeight);
@@ -185,7 +183,7 @@ describe('Grid Snapping for Rotated Pieces', () => {
 
   describe('Boundary Validation', () => {
     test('should keep pieces at rotation=270 within game area bounds', () => {
-      // At rotation=270, Type A bbox.right = piece.x+50. For x=300: right=350 << 700 (in bounds)
+      // At rotation=270, Type A bbox.right = piece.x+64. For x=300: right=364 << 700 (in bounds)
       // Only testing rotation=270 since other rotations extend far to the right
       const piece: PiecePosition = {
         type: 'A',
@@ -243,9 +241,10 @@ describe('Grid Snapping for Rotated Pieces', () => {
     });
 
     test('should validate a simple single-piece challenge 5 style position', () => {
-      // A single piece touching the mirror at rotation=270 is always valid
+      // A single piece touching the mirror at rotation=270 is always valid.
+      // x=636: bbox.right = mirrorLineX exactamente (getPositionTouchingMirror(300,270,'A').x)
       const targetPositions: PiecePosition[] = [
-        { type: 'A', face: 'front', x: 650, y: 300, rotation: 270 }
+        { type: 'A', face: 'front', x: 636, y: 300, rotation: 270 }
       ];
 
       targetPositions.forEach((piece) => {
@@ -381,7 +380,13 @@ describe('Grid Snapping Performance', () => {
     const endTime = performance.now();
     const duration = endTime - startTime;
     
-    // Should complete in reasonable time even when the full suite is contending for CPU.
-    expect(duration).toBeLessThan(500);
+    // Umbral holgado a propósito: esto NO mide si el código es rápido, mide si
+    // alguien ha metido una regresión de ORDEN DE MAGNITUD. En reposo tarda
+    // ~150ms; con la suite completa compitiendo por CPU se han visto 637ms, y
+    // con el umbral anterior (500ms) el test fallaba por carga de la máquina,
+    // no por el código. Un rojo que no señala un fallo real enseña a ignorar
+    // los rojos. Si vuelve a dar falsos positivos, muévelo a una suite aparte
+    // ejecutada bajo demanda en vez de subir el número otra vez.
+    expect(duration).toBeLessThan(2000);
   });
 });

@@ -6,7 +6,7 @@
  * based on piece geometry and rotation to ensure proper connections.
  */
 
-import { GameGeometry, PiecePosition } from '../geometry/GameGeometry';
+import { GameGeometry, PiecePosition } from '@reto/geometry';
 
 export interface SnapResult {
   x: number;
@@ -22,6 +22,13 @@ export interface GridConfig {
   mirrorSnapDistance: number;
   enableIntelligentSnap: boolean;
 }
+
+/**
+ * Hasta dónde se busca un contacto exacto alrededor de donde el jugador soltó
+ * la pieza. Es el margen de puntería a mano; más allá entran las heurísticas de
+ * largo alcance, que sí pueden mover la pieza lejos.
+ */
+const CONTACT_REACH_PX = 25;
 
 export class RotationAwareGrid {
   private geometry: GameGeometry;
@@ -46,29 +53,106 @@ export class RotationAwareGrid {
     piece: PiecePosition, 
     otherPieces: PiecePosition[] = []
   ): SnapResult {
-    const originalX = piece.x;
-    const originalY = piece.y;
-    
-    // Try different snap strategies in order of priority
-    
-    // 1. High priority: Snap to nearby pieces for connections
+    // 0. El espejo primero: es un contacto que manda sobre los demás y el resto
+    //    del encaje ya lo respeta (no mueve la pieza en horizontal si lo toca).
+    const mirrorSnap = this.snapToMirror(piece);
+    const start: PiecePosition = mirrorSnap.snapped
+      ? { ...piece, x: mirrorSnap.x, y: mirrorSnap.y }
+      : piece;
+
+    /*
+      1. El contacto exacto MÁS CERCA DE DONDE SE SOLTÓ.
+
+      Esto va antes que las heurísticas a propósito. En un puzle de teselas, dos
+      piezas que comparten un borde de 45° pueden encajar deslizadas a lo largo
+      de ese borde: todas esas posiciones tienen hueco cero y ninguna es "más
+      exacta" que otra. Lo que las distingue es cuál quiso el jugador, y eso lo
+      dice dónde soltó la pieza. Las heurísticas de abajo alinean por centro de
+      borde o por caja envolvente, así que podían deslizarla varios píxeles
+      antes de que nadie mirase el contacto — y la figura resultante ya no era
+      la de la carta aunque encajara perfecta.
+    */
+    const seated = this.geometry.refineToExactContact(start, otherPieces, CONTACT_REACH_PX);
+    if (seated.x !== start.x || seated.y !== start.y) {
+      return this.asResult(piece, seated, mirrorSnap.snapped ? 'mirror' : 'piece');
+    }
+
+    // 2. Nada que tocar cerca: las heurísticas de siempre, con más alcance.
     if (this.config.enableIntelligentSnap && otherPieces.length > 0) {
-      const pieceSnap = this.snapToPieces(piece, otherPieces);
+      const pieceSnap = this.snapToPieces(start, otherPieces);
       if (pieceSnap.snapped) {
-        return pieceSnap;
+        return this.refine(piece, pieceSnap, otherPieces);
       }
     }
-    
-    // 2. Medium priority: Snap to mirror line
-    const mirrorSnap = this.snapToMirror(piece);
+
     if (mirrorSnap.snapped) {
-      return mirrorSnap;
+      return this.refine(piece, mirrorSnap, otherPieces);
     }
-    
-    // 3. Low priority: Snap to grid
-    const gridSnap = this.snapToGrid(piece);
-    
-    return gridSnap;
+
+    // 3. Última opción: la retícula.
+    return this.refine(piece, this.snapToGrid(piece), otherPieces);
+  }
+
+  /** Empaqueta una posición ya decidida como resultado de encaje. */
+  private asResult(
+    original: PiecePosition,
+    placed: PiecePosition,
+    snapType: SnapResult['snapType']
+  ): SnapResult {
+    return {
+      x: placed.x,
+      y: placed.y,
+      snapped: true,
+      snapType,
+      adjustment: { x: placed.x - original.x, y: placed.y - original.y }
+    };
+  }
+
+  /**
+   * Afinado final de una posición elegida por las heurísticas de largo alcance:
+   * cierra el hueco que dejan (alinean por centro de borde o por caja
+   * envolvente, y la retícula de 10px no es conmensurable con la geometría de
+   * la pieza). Sólo se llega aquí cuando no había nada que tocar cerca de donde
+   * se soltó, así que el riesgo de deslizar por el borde ya no existe.
+   */
+  private refine(original: PiecePosition, result: SnapResult, otherPieces: PiecePosition[]): SnapResult {
+    const placed: PiecePosition = { ...original, x: result.x, y: result.y };
+    const exact = this.geometry.refineToExactContact(placed, otherPieces);
+
+    if (exact.x === placed.x && exact.y === placed.y) return result;
+
+    return this.asResult(original, exact, result.snapType);
+  }
+
+  /**
+   * Asienta la figura entera después de soltar: cada pieza ya colocada se pega
+   * a contacto exacto con sus vecinas.
+   *
+   * Hace falta además de afinar la pieza soltada porque la PRIMERA que se
+   * coloca no tiene contra qué alinearse: aterriza en la retícula de 10px y se
+   * queda con ese error. Si luego la siguiente toca el espejo, ya no puede
+   * moverse para alcanzarla (mover en horizontal cambiaría la figura compuesta
+   * con el reflejo), así que la ranura no la cierra nadie. Asentando el
+   * conjunto, es la pieza libre la que cede.
+   *
+   * El margen es el de contacto, no el de afinado: esto PERFECCIONA contactos
+   * que ya existen, no atrae piezas que el jugador dejó separadas a propósito.
+   * Dos pasadas porque cada pieza se asienta contra las que ya estaban, así que
+   * la primera deja un resto que reparte la segunda. Más pasadas no mejoran: se
+   * llega a un óptimo local y ahí se queda.
+   */
+  settlePlacedPieces(pieces: PiecePosition[]): PiecePosition[] {
+    const margen = 10 * Math.SQRT1_2;
+    const settled = pieces.map(piece => ({ ...piece }));
+
+    for (let pass = 0; pass < 2; pass++) {
+      for (let i = 0; i < settled.length; i++) {
+        const others = settled.filter((_, index) => index !== i);
+        settled[i] = this.geometry.refineToExactContact(settled[i], others, margen);
+      }
+    }
+
+    return settled;
   }
 
   /**
@@ -79,11 +163,7 @@ export class RotationAwareGrid {
     
     // For rotated pieces, we need to find grid positions that work well
     // with the piece's actual geometry, not just its center position
-    
-    const bbox = this.geometry.getPieceBoundingBox(piece);
-    const centerX = piece.x + 50; // pieceSize / 2
-    const centerY = piece.y + 50;
-    
+
     // Calculate grid-aligned positions
     const gridX = Math.round(piece.x / baseGridSize) * baseGridSize;
     const gridY = Math.round(piece.y / baseGridSize) * baseGridSize;

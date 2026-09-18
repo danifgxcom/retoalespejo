@@ -1,4 +1,4 @@
-import { GameGeometry, PiecePosition, GameAreaConfig } from '../../utils/geometry/GameGeometry';
+import { GameGeometry, PiecePosition, GameAreaConfig } from '@reto/geometry';
 
 describe('GameGeometry', () => {
   let geometry: GameGeometry;
@@ -26,10 +26,11 @@ describe('GameGeometry', () => {
 
       const reflected = geometry.reflectPieceAcrossMirror(piece);
 
-      // La posición X reflejada debería ser: 2 * 700 - 500 - 100 = 800
-      expect(reflected.x).toBe(800);
+      // Con el centro como ancla: x' = 2 * 700 - 500 = 900. La forma es quiral,
+      // así que el reflejo de un tipo A es un tipo B.
+      expect(reflected.x).toBe(900);
       expect(reflected.y).toBe(300); // Y permanece igual
-      expect(reflected.type).toBe('A'); // Tipo permanece igual
+      expect(reflected.type).toBe('B');
       expect(reflected.face).toBe('front'); // Cara permanece igual
       expect(reflected.rotation).toBe(0); // Rotación permanece igual
     });
@@ -45,31 +46,31 @@ describe('GameGeometry', () => {
 
       const reflected = geometry.reflectPieceForChallengeCard(piece);
 
-      // La posición X reflejada debería ser: 2 * 700 - 500 - 100 = 800
-      expect(reflected.x).toBe(800);
+      // x' = 2 * 700 - 500 = 900; tipo invertido a B; rotación (360-90)%360=270
+      expect(reflected.x).toBe(900);
       expect(reflected.y).toBe(300); // Y permanece igual
-      expect(reflected.type).toBe('A'); // Tipo permanece igual
+      expect(reflected.type).toBe('B');
       expect(reflected.face).toBe('front'); // Cara permanece igual
-      expect(reflected.rotation).toBe(90); // Rotación permanece igual
+      expect(reflected.rotation).toBe(270);
     });
 
     test('reflectPieceAcrossMirror - pieza tocando el espejo', () => {
       const piece: PiecePosition = {
         type: 'B',
         face: 'back',
-        x: 600, // Tocando el espejo (mirrorLineX - pieceSize = 700 - 100 = 600)
+        x: 600,
         y: 200,
         rotation: 270
       };
 
       const reflected = geometry.reflectPieceAcrossMirror(piece);
 
-      // La posición X reflejada debería ser: 2 * 700 - 600 - 100 = 700
-      expect(reflected.x).toBe(700);
+      // x' = 2 * 700 - 600 = 800; tipo invertido a A; rotación (360-270)%360=90
+      expect(reflected.x).toBe(800);
       expect(reflected.y).toBe(200);
-      expect(reflected.type).toBe('B');
+      expect(reflected.type).toBe('A');
       expect(reflected.face).toBe('back');
-      expect(reflected.rotation).toBe(270);
+      expect(reflected.rotation).toBe(90);
     });
   });
 
@@ -140,20 +141,21 @@ describe('GameGeometry', () => {
 
   describe('Posicionamiento y geometría', () => {
     test('getPositionTouchingMirror', () => {
-      // Uses bbox to find where bbox.right = mirrorLineX; for Type A at rotation=0,
-      // bbox.right = centerX + 320 = x+370. Setting x+370=700 gives x=330.
+      // Type A, rotation=0: el borde derecho del bbox está 128px a la derecha del
+      // centro (unit=128, ver PieceShape). Para que bbox.right=700: x=700-128=572.
       const position = geometry.getPositionTouchingMirror(200);
 
-      expect(position.x).toBe(330);
+      expect(position.x).toBe(572);
       expect(position.y).toBe(200);
     });
 
     test('getHorizontalTouchingPositions', () => {
+      // Separación = ancho real de la pieza (getPieceExtent), no pieceSize.
       const [left, right] = geometry.getHorizontalTouchingPositions(200, 100);
 
       expect(left.x).toBe(100);
       expect(left.y).toBe(200);
-      expect(right.x).toBe(200); // 100 + 100 (sin gap)
+      expect(right.x).toBe(420); // 100 + 320 (extensión real: 2.5 * 128)
       expect(right.y).toBe(200);
     });
 
@@ -163,24 +165,28 @@ describe('GameGeometry', () => {
       expect(top.x).toBe(100);
       expect(top.y).toBe(200);
       expect(bottom.x).toBe(100);
-      expect(bottom.y).toBe(300); // 200 + 100 (sin gap)
+      expect(bottom.y).toBe(392); // 200 + 192 (extensión real: 1.5 * 128)
     });
 
     test('isPositionInGameArea - posición válida', () => {
-      const position = { x: 300, y: 400 };
+      // isPositionInGameArea ahora exige una pieza completa (tipo/rotación) para
+      // poder calcular su bounding box real.
+      const piece: PiecePosition = { type: 'A', face: 'front', x: 300, y: 400, rotation: 0 };
 
-      expect(geometry.isPositionInGameArea(position)).toBe(true);
+      expect(geometry.isPositionInGameArea(piece)).toBe(true);
     });
 
     test('isPositionInGameArea - posición fuera del área', () => {
-      const position = { x: 650, y: 400 }; // Más allá del límite del espejo
+      // bbox.right = 650 + 128 = 778 > mirrorLineX (700)
+      const piece: PiecePosition = { type: 'A', face: 'front', x: 650, y: 400, rotation: 0 };
 
-      expect(geometry.isPositionInGameArea(position)).toBe(false);
+      expect(geometry.isPositionInGameArea(piece)).toBe(false);
     });
 
     test('doPiecesTouch - piezas que se solapan masivamente (no es contacto válido)', () => {
-      // Type A extends right, Type B extends left; at x=100 and x=200 with rotation=0 they
-      // massively overlap (penetration >> 15px), so doPiecesTouch returns false
+      // Type A se extiende a la derecha, Type B a la izquierda; en x=100 y x=200 con
+      // rotation=0 se solapan más de 100px de penetración (>> OVERLAP_TOLERANCE_PX),
+      // así que doPiecesTouch devuelve false: es solape real, no contacto.
       const piece1: PiecePosition = { type: 'A', face: 'front', x: 100, y: 100, rotation: 0 };
       const piece2: PiecePosition = { type: 'B', face: 'front', x: 200, y: 100, rotation: 0 };
 
@@ -190,16 +196,16 @@ describe('GameGeometry', () => {
     test('doPiecesTouch - piezas separadas', () => {
       const piece1: PiecePosition = { type: 'A', face: 'front', x: 100, y: 100, rotation: 0 };
       const piece2: PiecePosition = { type: 'B', face: 'front', x: 300, y: 100, rotation: 0 };
-      
+
       expect(geometry.doPiecesTouch(piece1, piece2)).toBe(false);
     });
   });
 
   describe('Validación de challenge cards', () => {
     test('validateChallengeCard - carta válida con una pieza tocando el espejo', () => {
-      // Type A at rotation=270: bbox.right = piece.x+50 = 700. Touches mirror correctly.
+      // Type A, rotation=270, x=636: bbox.right = mirrorLineX exactamente (ver getPositionTouchingMirror).
       const pieces: PiecePosition[] = [
-        { type: 'A', face: 'front', x: 650, y: 300, rotation: 270 }
+        { type: 'A', face: 'front', x: 636, y: 300, rotation: 270 }
       ];
 
       const validation = geometry.validateChallengeCard(pieces);
@@ -247,9 +253,9 @@ describe('GameGeometry', () => {
     });
 
     test('validateChallengeCard - una pieza válida con validación completa', () => {
-      // Single piece at rotation=270: touches mirror at x=650, all validations pass
+      // Pieza única en rotation=270, x=636: toca el espejo, todas las validaciones pasan
       const pieces: PiecePosition[] = [
-        { type: 'A', face: 'front', x: 650, y: 300, rotation: 270 }
+        { type: 'A', face: 'front', x: 636, y: 300, rotation: 270 }
       ];
 
       const validation = geometry.validateChallengeCard(pieces);
@@ -287,9 +293,8 @@ describe('GameGeometry', () => {
     });
 
     test('validateChallengeCard - carta válida: pieza tocando espejo con rotación correcta', () => {
-      // Use rotation=270, y=300: shape top = centerY-320 = 350-320 = 30 ≥ -50 (in bounds)
       const pieces: PiecePosition[] = [
-        { type: 'A', face: 'front', x: 650, y: 300, rotation: 270 } // Toca el espejo
+        { type: 'A', face: 'front', x: 636, y: 300, rotation: 270 } // Toca el espejo
       ];
 
       const validation = geometry.validateChallengeCard(pieces);
@@ -303,7 +308,7 @@ describe('GameGeometry', () => {
     });
 
     test('validateChallengeCard - carta inválida: pieza fuera del área de juego', () => {
-      // Type A at x=-200, rotation=0: bbox.left = -150 < -50 (permissive minX) → out of bounds
+      // Type A at x=-200, rotation=0: bbox.left = -392 < -50 (permissive minX) → out of bounds
       const pieces: PiecePosition[] = [
         { type: 'A', face: 'front', x: -200, y: 300, rotation: 0 }
       ];
@@ -315,9 +320,8 @@ describe('GameGeometry', () => {
     });
 
     test('arePiecesConnected - una sola pieza debe tocar el espejo', () => {
-      // Use rotation=270: bbox.right = piece.x+50 = 700 → touching mirror
       const pieces: PiecePosition[] = [
-        { type: 'A', face: 'front', x: 650, y: 300, rotation: 270 }
+        { type: 'A', face: 'front', x: 636, y: 300, rotation: 270 }
       ];
 
       expect(geometry.arePiecesConnected(pieces)).toBe(true);
@@ -331,17 +335,15 @@ describe('GameGeometry', () => {
       expect(geometry.arePiecesConnected(pieces)).toBe(false);
     });
 
-    test('arePiecesConnected - múltiples piezas en la misma posición (se solapan → conectadas)', () => {
-      // Two pieces that overlap (overlap counts as connected for this function)
+    test('arePiecesConnected - múltiples piezas casi idénticas (solape masivo, no cuenta como contacto)', () => {
+      // Dos piezas casi en la misma posición se solapan de más (penetración >> OVERLAP_TOLERANCE_PX),
+      // así que doPiecesTouch las considera "solapadas", no "en contacto": no están conectadas.
       const pieces: PiecePosition[] = [
         { type: 'A', face: 'front', x: 500, y: 300, rotation: 0 },
-        { type: 'A', face: 'front', x: 502, y: 300, rotation: 0 } // Casi idéntica → se toca
+        { type: 'A', face: 'front', x: 502, y: 300, rotation: 0 }
       ];
 
-      // doPiecesTouch checks penetration 0.05-15: for near-identical pieces, penetration is huge
-      // So they don't "touch" by the game definition, arePiecesConnected returns false
-      const result = geometry.arePiecesConnected(pieces);
-      expect(typeof result).toBe('boolean');
+      expect(geometry.arePiecesConnected(pieces)).toBe(false);
     });
 
     test('arePiecesConnected - múltiples piezas no conectadas', () => {
@@ -401,11 +403,11 @@ describe('GameGeometry', () => {
 
   describe('Detección de interacción con espejo', () => {
     test('isPieceTouchingMirror - pieza tocando exactamente el espejo', () => {
-      // At rotation=270: bbox.right = piece.x + 50 = 700 (touching mirror)
+      // rotation=270: bbox.right = mirrorLineX cuando x=636 (getPositionTouchingMirror(300,270,'A').x)
       const piece: PiecePosition = {
         type: 'A',
         face: 'front',
-        x: 650,
+        x: 636,
         y: 300,
         rotation: 270
       };
@@ -426,12 +428,12 @@ describe('GameGeometry', () => {
     });
 
     test('isPieceTouchingReflection - devuelve un booleano', () => {
-      // The reflection formula with simple mirror formula places reflected pieces differently
-      // depending on shape extent. Test verifies function works without errors.
+      // Verifica que la función funciona sin errores; la geometría exacta del
+      // reflejo depende de la extensión de la forma.
       const piece: PiecePosition = {
         type: 'A',
         face: 'front',
-        x: 650,
+        x: 636,
         y: 300,
         rotation: 270
       };
@@ -452,11 +454,11 @@ describe('GameGeometry', () => {
     });
 
     test('getDistanceToMirror - pieza tocando el espejo', () => {
-      // At rotation=270: bbox.right = piece.x+50 = 700 → distance = 0
+      // rotation=270, x=636: bbox.right = mirrorLineX exactamente → distance = 0
       const piece: PiecePosition = {
         type: 'A',
         face: 'front',
-        x: 650,
+        x: 636,
         y: 300,
         rotation: 270
       };
@@ -466,11 +468,11 @@ describe('GameGeometry', () => {
     });
 
     test('getDistanceToMirror - pieza alejada del espejo', () => {
-      // At rotation=270: bbox.right = piece.x+50 = 550+50 = 600 → distance = 100
+      // Misma pieza 100px más a la izquierda que la posición que toca el espejo
       const piece: PiecePosition = {
         type: 'A',
         face: 'front',
-        x: 550,
+        x: 536,
         y: 300,
         rotation: 270
       };
@@ -497,8 +499,8 @@ describe('GameGeometry', () => {
     });
 
     test('constrainPiecePosition - pieza tipo B fuera del límite izquierdo', () => {
-      // Type B at rotation=0: bbox.left = centerX - 320 = piece.x+50-320 = piece.x-270
-      // At x=-50: bbox.left = -320 < 0 → constraint fires, newX = -50+320 = 270
+      // Type B (volteada) se extiende de -128 a +192 respecto al centro.
+      // bbox.left = -50 - 128 = -178 (< 0) → overlap = 178, newX = -50 + 178 = 128.
       const piece: PiecePosition = {
         type: 'B',
         face: 'front',
@@ -509,7 +511,7 @@ describe('GameGeometry', () => {
 
       const constrained = geometry.constrainPiecePosition(piece, 1400, 1000);
 
-      expect(constrained.x).toBeGreaterThanOrEqual(0);
+      expect(constrained.x).toBe(128);
     });
 
     test('constrainPiecePosition - pieza que cruza el espejo', () => {
@@ -590,7 +592,7 @@ describe('GameGeometry', () => {
 
       // Debe tener el número correcto de vértices (8, incluyendo el punto de cierre)
       expect(vertices.length).toBe(8);
-      
+
       // Todos los vértices deben ser arrays de 2 números
       vertices.forEach(vertex => {
         expect(vertex.length).toBe(2);
@@ -598,10 +600,11 @@ describe('GameGeometry', () => {
         expect(typeof vertex[1]).toBe('number');
       });
 
-      // Los vértices deben estar alrededor del centro de la pieza
-      // With unit=1.28*pieceSize, the shape extends up to 2.5 units = 320px from center
-      const centerX = piece.x + 50; // pieceSize / 2
-      const centerY = piece.y + 50;
+      // Los vértices deben estar alrededor del centro de la pieza: piece.x/y YA ES
+      // el centro (ver PieceShape.ts). Con unit=128, la figura se extiende hasta
+      // 2.5 unidades (320px) del centro.
+      const centerX = piece.x;
+      const centerY = piece.y;
 
       vertices.forEach(vertex => {
         const distanceFromCenter = Math.sqrt(
@@ -651,9 +654,9 @@ describe('GameGeometry', () => {
       expect(geometry.doPiecesOverlap(piece1, piece2)).toBe(true);
     });
 
-    test('doPiecesOverlap preciso - piezas adyacentes se detectan como solapadas (tolerancia 5px)', () => {
-      // Two Type A pieces at x=100 and x=260 overlap in x=[310,470]
-      // doPolygonsOverlap uses 5px tolerance → they're detected as overlapping
+    test('doPiecesOverlap preciso - piezas adyacentes se detectan como solapadas', () => {
+      // Two Type A pieces at x=100 and x=260 overlap: la extensión real de 320px
+      // hace que se solapen de verdad, no un simple contacto de borde.
       const piece1: PiecePosition = { type: 'A', face: 'front', x: 100, y: 100, rotation: 0 };
       const piece2: PiecePosition = { type: 'A', face: 'front', x: 260, y: 100, rotation: 0 };
 
@@ -666,14 +669,14 @@ describe('GameGeometry', () => {
     });
 
     test('doPiecesTouch preciso - piezas que se solapan masivamente no cuentan como touching', () => {
-      // Two Type A pieces at x=100 and x=260: massive overlap → penetration >> 15 → touching=false
+      // Two Type A pieces at x=100 and x=260: massive overlap → penetration >> OVERLAP_TOLERANCE_PX → touching=false
       const piece1: PiecePosition = { type: 'A', face: 'front', x: 100, y: 100, rotation: 0 };
       const piece2: PiecePosition = { type: 'A', face: 'front', x: 260, y: 100, rotation: 0 };
 
       const touching = geometry.doPiecesTouch(piece1, piece2);
       const overlapping = geometry.doPiecesOverlap(piece1, piece2);
 
-      // Massive overlap → penetration > 15 → not a valid connection
+      // Massive overlap → penetration > OVERLAP_TOLERANCE_PX → not a valid connection
       expect(touching).toBe(false);
       expect(overlapping).toBe(true);
     });

@@ -1,5 +1,6 @@
 import React from 'react';
 import { User, Users, Play } from 'lucide-react';
+import { GAME_NAME, GAME_TAGLINE } from '../branding';
 
 interface StartupMenuProps {
   onStartOffline: () => void;
@@ -13,15 +14,21 @@ const StartupMenu: React.FC<StartupMenuProps> = ({
   isMultiplayerEnabled
 }) => {
   return (
-    <div className="h-screen bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 flex items-center justify-center p-4">
-      <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl p-8 max-w-md w-full">
+    <div
+      className="min-h-[100dvh] flex items-center justify-center p-4"
+      style={{ background: 'var(--bg-primary)' }}
+    >
+      <div
+        className="rounded-2xl shadow-2xl p-8 max-w-md w-full"
+        style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-light)' }}
+      >
         {/* Title */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">
-            🪞 Reto al Espejo
+          <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
+            🪞 {GAME_NAME}
           </h1>
-          <p className="text-gray-600 text-sm">
-            Basado en el juego original de Educa
+          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+            {GAME_TAGLINE}
           </p>
         </div>
 
@@ -30,14 +37,15 @@ const StartupMenu: React.FC<StartupMenuProps> = ({
           {/* Offline Mode */}
           <button
             onClick={onStartOffline}
-            className="w-full bg-blue-500 hover:bg-blue-600 text-white p-4 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center justify-center gap-3"
+            className="w-full p-4 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center justify-center gap-3"
+            style={{ backgroundColor: 'var(--button-primary-bg)', color: 'var(--text-on-primary)' }}
           >
-            <User size={24} />
+            <User size={24} aria-hidden="true" />
             <div className="text-left">
               <div className="font-bold text-lg">Jugar Solo</div>
               <div className="text-sm opacity-90">Modo individual clásico</div>
             </div>
-            <Play size={20} className="ml-auto" />
+            <Play size={20} className="ml-auto" aria-hidden="true" />
           </button>
 
           {/* Multiplayer Mode */}
@@ -45,12 +53,14 @@ const StartupMenu: React.FC<StartupMenuProps> = ({
             onClick={isMultiplayerEnabled ? onStartMultiplayer : undefined}
             disabled={!isMultiplayerEnabled}
             className={`w-full p-4 rounded-xl transition-all duration-200 flex items-center justify-center gap-3 ${
-              isMultiplayerEnabled
-                ? 'bg-purple-500 hover:bg-purple-600 text-white shadow-lg hover:shadow-xl transform hover:scale-105'
-                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              isMultiplayerEnabled ? 'shadow-lg hover:shadow-xl transform hover:scale-105' : 'cursor-not-allowed opacity-60'
             }`}
+            style={{
+              backgroundColor: isMultiplayerEnabled ? 'var(--button-secondary-bg)' : 'var(--bg-disabled)',
+              color: isMultiplayerEnabled ? 'var(--text-on-secondary)' : 'var(--text-disabled)',
+            }}
           >
-            <Users size={24} />
+            <Users size={24} aria-hidden="true" />
             <div className="text-left">
               <div className="font-bold text-lg">Multijugador</div>
               <div className="text-sm opacity-90">
@@ -58,20 +68,22 @@ const StartupMenu: React.FC<StartupMenuProps> = ({
               </div>
             </div>
             {isMultiplayerEnabled ? (
-              <Play size={20} className="ml-auto" />
+              <Play size={20} className="ml-auto" aria-hidden="true" />
             ) : (
-              <div className="ml-auto text-xs bg-gray-400 px-2 py-1 rounded">SOON</div>
+              <div
+                className="ml-auto text-xs px-2 py-1 rounded"
+                style={{ backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-tertiary)' }}
+              >
+                SOON
+              </div>
             )}
           </button>
         </div>
 
         {/* Footer */}
-        <div className="text-center mt-8 pt-6 border-t border-gray-200">
-          <p className="text-xs text-gray-500">
-            Puzzle de geometría y simetría
-          </p>
-          <p className="text-xs text-gray-400 mt-1">
-            Desarrolla tu visión espacial
+        <div className="text-center mt-8 pt-6" style={{ borderTop: '1px solid var(--border-light)' }}>
+          <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+            Inspirado en un clásico de puzles de simetría
           </p>
         </div>
       </div>

@@ -34,6 +34,10 @@ Para que un challenge sea válido, debe cumplir TODAS las siguientes reglas:
 - **Implementación**: `GameGeometry.doPiecesFitInChallengeArea(pieces)`
 - **Áreas**: Área de juego (0-700px) y área de espejo (700-1400px)
 
+### 7. Los objetivos deben ser alcanzables en la retícula
+- **Regla**: Las coordenadas objetivo deben caer en la retícula de colocación de 10 px.
+- **Motivo**: el jugador sólo puede soltar piezas en esa retícula; un objetivo fuera de ella no es resoluble.
+
 ## Validación Completa
 
 La validación se realiza mediante la función `GameGeometry.validateChallengeCard(pieces)` que retorna:
@@ -62,7 +66,7 @@ La validación se realiza mediante la función `GameGeometry.validateChallengeCa
 ```typescript
 const gameAreaConfig: GameAreaConfig = {
   width: 700,          // Ancho del área de juego
-  height: 600,         // Alto del área de juego
+  height: 500,         // Alto del área de juego
   mirrorLineX: 700,    // Posición X de la línea del espejo
   pieceSize: 100       // Tamaño base de las piezas
 };

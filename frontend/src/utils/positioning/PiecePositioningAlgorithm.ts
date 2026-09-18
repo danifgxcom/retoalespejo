@@ -1,4 +1,4 @@
-import { GameGeometry, PiecePosition } from '../geometry/GameGeometry';
+import { GameGeometry, PiecePosition } from '@reto/geometry';
 
 export interface PositioningArea {
   x: number;
@@ -17,7 +17,6 @@ export class PiecePositioningAlgorithm {
   private geometry: GameGeometry;
   private pieceSize: number;
   private minSpacing: number; // Espacio mínimo entre piezas
-  private readonly preferredRotations = [45, 225, 135, 315, 90, 270, 0, 180];
 
   constructor(geometry: GameGeometry, pieceSize: number = 100, minSpacing: number = 20) {
     this.geometry = geometry;
@@ -165,168 +164,11 @@ export class PiecePositioningAlgorithm {
    * Estrategia determinista: genera posiciones de bbox dentro del área y usa backtracking
    * con la geometría real de las piezas. Funciona para cualquier número razonable de fichas.
    */
-  private tryDeterministicPacking(
-    numPieces: number, 
-    area: PositioningArea, 
-    pieceTypes: Array<'A' | 'B'>,
-    spacing: number
-  ): PositioningResult {
-    const candidatesByIndex = pieceTypes.map(type =>
-      this.generateCandidatesForType(type, area, spacing)
-    );
-
-    if (candidatesByIndex.some(candidates => candidates.length === 0)) {
-      return {
-        success: false,
-        positions: [],
-        error: 'No valid candidate positions fit inside the area'
-      };
-    }
-
-    const order = pieceTypes
-      .map((_, index) => index)
-      .sort((a, b) => candidatesByIndex[a].length - candidatesByIndex[b].length || a - b);
-
-    const placedByIndex = new Array<PiecePosition | null>(numPieces).fill(null);
-    const placedPieces: PiecePosition[] = [];
-    let visitedNodes = 0;
-    const maxVisitedNodes = 3000;
-
-    const search = (orderIndex: number): boolean => {
-      visitedNodes++;
-      if (visitedNodes > maxVisitedNodes) {
-        return false;
-      }
-
-      if (orderIndex === order.length) {
-        return true;
-      }
-
-      const pieceIndex = order[orderIndex];
-      const candidates = candidatesByIndex[pieceIndex];
-
-      for (const candidate of candidates) {
-        if (placedPieces.some(piece => this.doPiecesConflict(candidate, piece, spacing))) {
-          continue;
-        }
-
-        placedByIndex[pieceIndex] = candidate;
-        placedPieces.push(candidate);
-
-        if (search(orderIndex + 1)) {
-          return true;
-        }
-
-        placedPieces.pop();
-        placedByIndex[pieceIndex] = null;
-      }
-
-      return false;
-    };
-
-    if (!search(0)) {
-      return {
-        success: false,
-        positions: [],
-        error: `Could not position ${numPieces} pieces without overlap inside ${area.width}x${area.height}`
-      };
-    }
-
-    return {
-      success: true,
-      positions: placedByIndex.map(piece => ({
-        x: piece!.x,
-        y: piece!.y,
-        rotation: piece!.rotation
-      }))
-    };
-  }
 
   /**
    * Crea candidatos alineando la bounding box real de una pieza dentro del área.
    */
-  private generateCandidatesForType(
-    type: 'A' | 'B',
-    area: PositioningArea,
-    spacing: number
-  ): PiecePosition[] {
-    const candidates: PiecePosition[] = [];
-    const paddedArea = {
-      x: area.x + spacing,
-      y: area.y + spacing,
-      width: area.width - spacing * 2,
-      height: area.height - spacing * 2
-    };
 
-    for (const rotation of this.preferredRotations) {
-      const originPiece: PiecePosition = { type, face: 'front', x: 0, y: 0, rotation };
-      const originBox = this.geometry.getPieceBoundingBox(originPiece);
-      const bboxWidth = originBox.right - originBox.left;
-      const bboxHeight = originBox.bottom - originBox.top;
-
-      if (bboxWidth > paddedArea.width || bboxHeight > paddedArea.height) {
-        continue;
-      }
-
-      const maxLeft = paddedArea.x + paddedArea.width - bboxWidth;
-      const maxTop = paddedArea.y + paddedArea.height - bboxHeight;
-      const stepX = Math.max(40, Math.floor(bboxWidth + spacing));
-      const stepY = Math.max(40, Math.floor(bboxHeight + spacing));
-      const leftValues = this.buildAxisPositions(paddedArea.x, maxLeft, stepX);
-      const topValues = this.buildAxisPositions(paddedArea.y, maxTop, stepY);
-
-      for (const top of topValues) {
-        for (const left of leftValues) {
-          const candidate: PiecePosition = {
-            type,
-            face: 'front',
-            x: left - originBox.left,
-            y: top - originBox.top,
-            rotation
-          };
-
-          if (this.isPieceCompletelyInArea(candidate, area)) {
-            candidates.push(candidate);
-          }
-        }
-      }
-    }
-
-    const centerX = area.x + area.width / 2;
-    const centerY = area.y + area.height / 2;
-
-    candidates.sort((a, b) => {
-      const boxA = this.geometry.getPieceBoundingBox(a);
-      const boxB = this.geometry.getPieceBoundingBox(b);
-      const centerAX = (boxA.left + boxA.right) / 2;
-      const centerAY = (boxA.top + boxA.bottom) / 2;
-      const centerBX = (boxB.left + boxB.right) / 2;
-      const centerBY = (boxB.top + boxB.bottom) / 2;
-      const distanceA = Math.abs(centerAX - centerX) + Math.abs(centerAY - centerY);
-      const distanceB = Math.abs(centerBX - centerX) + Math.abs(centerBY - centerY);
-
-      return distanceA - distanceB || boxA.top - boxB.top || boxA.left - boxB.left;
-    });
-
-    return candidates.slice(0, 80);
-  }
-
-  private buildAxisPositions(min: number, max: number, step: number): number[] {
-    if (max < min) {
-      return [];
-    }
-
-    const values: number[] = [];
-    for (let value = min; value <= max; value += step) {
-      values.push(value);
-    }
-
-    if (values[values.length - 1] !== max) {
-      values.push(max);
-    }
-
-    return values;
-  }
 
   private doPiecesConflict(pieceA: PiecePosition, pieceB: PiecePosition, spacing: number): boolean {
     if (this.geometry.doPiecesOverlap(pieceA, pieceB)) {

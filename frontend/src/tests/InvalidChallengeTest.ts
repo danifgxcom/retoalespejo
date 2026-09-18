@@ -1,4 +1,4 @@
-import { GameGeometry, GameAreaConfig, PiecePosition } from '../utils/geometry/GameGeometry';
+import { GameGeometry, GameAreaConfig, PiecePosition } from '@reto/geometry';
 import { Challenge, ObjectivePattern } from '../components/ChallengeCard.ts';
 
 // Create a test function to create and validate an invalid challenge

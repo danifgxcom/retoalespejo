@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Save, RotateCw, FlipHorizontal, Plus, Trash2, Check, X, Edit, Camera, Bug } from 'lucide-react';
+import { Save, RotateCw, FlipHorizontal, Plus, Trash2, Check, X, Edit, Bug } from 'lucide-react';
 import { Piece } from './GamePiece';
 import { Challenge, PiecePosition } from './ChallengeCard';
-import { GameGeometry } from '../utils/geometry/GameGeometry';
+import { GameGeometry } from '@reto/geometry';
 import EditorCanvas, { EditorCanvasRef } from './EditorCanvas';
-import { useMouseHandlers } from '../hooks/useMouseHandlers';
+import { usePointerHandlers } from '../hooks/usePointerHandlers';
 
 interface ChallengeEditorProps {
   onSave?: (challenge: Challenge) => void;
@@ -30,9 +30,9 @@ export const ChallengeEditor: React.FC<ChallengeEditorProps> = ({
   const [challengeName, setChallengeName] = useState(initialChallenge?.name || '');
   const [challengeDescription, setChallengeDescription] = useState(initialChallenge?.description || '');
   const [challengeDifficulty, setChallengeDifficulty] = useState<string>(initialChallenge?.difficulty || 'Fácil');
-  const [validationResult, setValidationResult] = useState<any>(null);
+  const [validationResult, setValidationResult] = useState<ReturnType<GameGeometry['validateChallengeCard']> | null>(null);
   const [debugMode, setDebugMode] = useState(false);
-  const [interactingPieceId, setInteractingPieceId] = useState<number | null>(null);
+  const [, setInteractingPieceId] = useState<number | null>(null);
 
   // Geometry configuration
   const geometry = new GameGeometry({
@@ -126,11 +126,11 @@ export const ChallengeEditor: React.FC<ChallengeEditorProps> = ({
 
   // Mouse handlers usando exactamente el mismo hook que el juego
   const {
-    handleMouseDown,
-    handleMouseMove,
-    handleMouseUp,
+    handlePointerDown: handleMouseDown,
+    handlePointerMove: handleMouseMove,
+    handlePointerUp: handleMouseUp,
     handleContextMenu,
-  } = useMouseHandlers({
+  } = usePointerHandlers({
     pieces,
     draggedPiece,
     dragOffset,
@@ -147,7 +147,6 @@ export const ChallengeEditor: React.FC<ChallengeEditorProps> = ({
   // Initialize pieces from existing challenge
   useEffect(() => {
     if (selectedChallenge) {
-      console.log(`🎯 EDITOR: Loading challenge ${selectedChallenge.id}:`, selectedChallenge.objective.playerPieces);
       const loadedPieces: Piece[] = selectedChallenge.objective.playerPieces.map((piecePos, index) => {
         const piece = {
           id: index + 1,
@@ -160,7 +159,6 @@ export const ChallengeEditor: React.FC<ChallengeEditorProps> = ({
           rotation: piecePos.rotation,
           placed: true
         };
-        console.log(`🧩 EDITOR: Created piece ${piece.id} (${piece.type}, ${piece.face}) - center: ${piece.centerColor}, triangle: ${piece.triangleColor}`);
         return piece;
       });
       setPieces(loadedPieces);
@@ -214,37 +212,7 @@ export const ChallengeEditor: React.FC<ChallengeEditorProps> = ({
       rotation: p.rotation % 360 // Normalizar rotación
     }));
 
-    console.log('Validating pieces:', piecePositions);
     const result = geometry.validateChallengeCard(piecePositions);
-    console.log('Validation result:', result);
-
-    // Debug the area validation specifically
-    if (!result.piecesInArea) {
-      console.log('🔍 DEBUGGING AREA VALIDATION:');
-      piecePositions.forEach((piece, index) => {
-        const bbox = geometry.getPieceBoundingBox(piece);
-        const isInGameArea = geometry.isPiecePositionInGameArea(piece);
-        const reflectedPiece = geometry.reflectPieceAcrossMirror(piece);
-        const reflectedBbox = geometry.getPieceBoundingBox(reflectedPiece);
-
-        console.log(`  Piece ${index + 1}:`);
-        console.log(`    Original bbox: left=${bbox.left}, right=${bbox.right}, top=${bbox.top}, bottom=${bbox.bottom}`);
-        console.log(`    Is in game area: ${isInGameArea}`);
-        console.log(`    Reflected bbox: left=${reflectedBbox.left}, right=${reflectedBbox.right}, top=${reflectedBbox.top}, bottom=${reflectedBbox.bottom}`);
-        console.log(`    Game area limits: 0 <= x <= ${geometry.getConfig().mirrorLineX}, 0 <= y <= ${geometry.getConfig().height}`);
-        console.log(`    Mirror area limits: ${geometry.getConfig().mirrorLineX} <= x <= ${2 * geometry.getConfig().mirrorLineX}, 0 <= y <= ${geometry.getConfig().height}`);
-      });
-    }
-
-    // Debug reflection overlap
-    if (result.hasReflectionOverlaps) {
-      piecePositions.forEach(piece => {
-        const reflectedPiece = geometry.reflectPieceAcrossMirror(piece);
-        console.log('Original piece:', piece);
-        console.log('Reflected piece:', reflectedPiece);
-        console.log('Overlap detected:', geometry.doPiecesOverlap(piece, reflectedPiece));
-      });
-    }
     setValidationResult(result);
     return result;
   };
@@ -258,10 +226,8 @@ export const ChallengeEditor: React.FC<ChallengeEditorProps> = ({
       return;
     }
 
-    const updatedPieces = pieces.map((piece, index) => {
+    const updatedPieces = pieces.map((piece) => {
       if (piece.placed && piece.y < 600) {
-        console.log(`\n=== Auto-positioning piece ${piece.id} (type: ${piece.type}, rotation: ${piece.rotation}) ===`);
-        console.log(`Original position: x=${piece.x}, y=${piece.y}`);
 
         // Find a position that touches mirror but doesn't overlap with reflection OR other pieces
         let bestX = piece.x;
@@ -279,11 +245,9 @@ export const ChallengeEditor: React.FC<ChallengeEditorProps> = ({
           y: piece.y,
           rotation: piece.rotation
         });
-        console.log(`Current bbox: left=${currentBbox.left}, right=${currentBbox.right}, width=${currentBbox.right - currentBbox.left}`);
 
         // Start from a position that's more likely to work - closer to mirror
         const startX = mirrorLine - (currentBbox.right - currentBbox.left) - 10; // Start with piece width + small margin
-        console.log(`Starting search at x=${startX}, searching until x=${mirrorLine + 5}`); // Allow slight overlap with mirror
 
         let foundValidPosition = false;
 
@@ -297,13 +261,10 @@ export const ChallengeEditor: React.FC<ChallengeEditorProps> = ({
           };
 
           // Get bounding box for this test position
-          const testBbox = geometry.getPieceBoundingBox(testPiece);
           const touchesMirror = geometry.isPieceTouchingMirror(testPiece);
-          const distanceToMirror = Math.abs(testBbox.right - mirrorLine);
 
           // Check if it touches mirror
           if (touchesMirror) {
-            console.log(`  ✓ Piece touches mirror at x=${testX} (bbox.right=${testBbox.right})`);
 
             const hasReflectionOverlap = geometry.detectPieceReflectionOverlap(testPiece);
             const isInGameArea = geometry.isPiecePositionInGameArea(testPiece);
@@ -317,15 +278,12 @@ export const ChallengeEditor: React.FC<ChallengeEditorProps> = ({
               // If pieces are too close (overlap threshold from useMouseHandlers)
               if (dx < pieceSize - 20 && dy < pieceSize - 20) {
                 hasPieceOverlap = true;
-                console.log(`  ✗ Position overlaps with piece ${otherPiece.id} at x=${testX}`);
                 break;
               }
             }
 
-            console.log(`  Overlap checks: reflection=${hasReflectionOverlap}, pieces=${hasPieceOverlap}, inArea=${isInGameArea}`);
 
             if (!hasReflectionOverlap && !hasPieceOverlap && isInGameArea) {
-              console.log(`  ✓ Found valid position: x=${testX}`);
               bestX = testX;
               foundValidPosition = true;
               break; // Take first valid position to avoid crowding
@@ -334,11 +292,8 @@ export const ChallengeEditor: React.FC<ChallengeEditorProps> = ({
         }
 
         if (!foundValidPosition) {
-          console.log(`  ❌ No valid position found for piece ${piece.id}. Keeping original position.`);
-          // Don't use alternative approach - keep original position to avoid forced overlaps
+          // Mantener la posición original para evitar solapamientos forzados.
         }
-
-        console.log(`Final position for piece ${piece.id}: x=${bestX} (moved ${Math.abs(bestX - piece.x).toFixed(2)} pixels)`);
 
         return {
           ...piece,
@@ -350,53 +305,6 @@ export const ChallengeEditor: React.FC<ChallengeEditorProps> = ({
     });
 
     setPieces(updatedPieces);
-  };
-
-  // Snapshot functionality for debugging
-  const handleSnapshotPieces = () => {
-    console.log('📸 SNAPSHOT DEL EDITOR DE RETOS:');
-    console.log('=====================================');
-
-    // Información del canvas y áreas
-    console.log('🖼️ INFORMACIÓN DEL CANVAS:');
-    console.log('Canvas interno: 1400x1000');
-    console.log('Línea del espejo: X=700 (centro horizontal)');
-    console.log('Área de juego: (0,0) a (700,600)');
-    console.log('Área de espejo: (700,0) a (1400,600)');
-    console.log('Área de piezas: (0,600) a (1400,1000)');
-    console.log('');
-
-    // Información de las piezas
-    console.log('🧩 PIEZAS EN EL EDITOR:');
-    pieces.forEach((piece, index) => {
-      const area = piece.y < 600 ? 'JUEGO' : 'PIEZAS';
-
-      console.log(`Pieza ${piece.id} (${piece.type}, ${piece.face}): x=${piece.x}, y=${piece.y}, rotation=${piece.rotation}, placed=${piece.placed}, área=${area}, CENTER=${piece.centerColor}, TRIANGLE=${piece.triangleColor}`);
-    });
-
-    // Información de validación si existe
-    if (validationResult) {
-      console.log('');
-      console.log('🔍 RESULTADO DE VALIDACIÓN:');
-      console.log(`Valid: ${validationResult.isValid}`);
-      console.log(`Touches Mirror: ${validationResult.touchesMirror}`);
-      console.log(`Pieces Connected: ${validationResult.piecesConnected}`);
-      console.log(`Pieces In Area: ${validationResult.piecesInArea}`);
-      console.log(`Has Piece Overlaps: ${validationResult.hasPieceOverlaps}`);
-      console.log(`Has Reflection Overlaps: ${validationResult.hasReflectionOverlaps}`);
-    }
-
-    console.log('');
-    console.log('=====================================');
-    console.log('📋 COORDENADAS PARA CÓDIGO:');
-    console.log(JSON.stringify(pieces.map(p => ({
-      x: p.x,
-      y: p.y,
-      rotation: p.rotation,
-      type: p.type,
-      face: p.face,
-      placed: p.placed
-    })), null, 2));
   };
 
   // Save challenge
@@ -429,8 +337,7 @@ export const ChallengeEditor: React.FC<ChallengeEditorProps> = ({
       difficulty: challengeDifficulty,
       targetPattern: 'custom',
       objective: {
-        playerPieces: piecePositions,
-        symmetricPattern: []
+        playerPieces: piecePositions
       },
       targetPieces: piecePositions
     };
@@ -458,9 +365,10 @@ export const ChallengeEditor: React.FC<ChallengeEditorProps> = ({
               <h3 className="text-sm font-medium mb-2 text-gray-700">Retos Existentes</h3>
               <div className="space-y-1 max-h-96 overflow-y-auto pr-1">
                 {existingChallenges.map(challenge => (
-                  <div
+                  <button
+                    type="button"
                     key={challenge.id}
-                    className={`p-3 border rounded-lg cursor-pointer hover:shadow-sm transition-all ${
+                    className={`w-full p-3 border rounded-lg text-left cursor-pointer hover:shadow-sm transition-all ${
                       selectedChallenge?.id === challenge.id 
                         ? 'border-l-4 border-indigo-500 bg-indigo-50' 
                         : 'border-gray-200 hover:border-l-4 hover:border-indigo-300'
@@ -529,7 +437,7 @@ export const ChallengeEditor: React.FC<ChallengeEditorProps> = ({
                         <div className="text-xs text-gray-500 mt-1 line-clamp-2">{challenge.description}</div>
                       </div>
                     </div>
-                  </div>
+                  </button>
                 ))}
                 <button
                   onClick={() => {
@@ -556,10 +464,11 @@ export const ChallengeEditor: React.FC<ChallengeEditorProps> = ({
                     <h3 className="text-lg font-semibold mb-4 text-gray-700 border-b pb-2">Información del Reto</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label htmlFor="challenge-name" className="block text-sm font-medium text-gray-700 mb-1">
                           Nombre del Reto
                         </label>
                         <input
+                          id="challenge-name"
                           type="text"
                           value={challengeName}
                           onChange={(e) => setChallengeName(e.target.value)}
@@ -568,10 +477,11 @@ export const ChallengeEditor: React.FC<ChallengeEditorProps> = ({
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label htmlFor="challenge-difficulty" className="block text-sm font-medium text-gray-700 mb-1">
                           Dificultad
                         </label>
                         <select
+                          id="challenge-difficulty"
                           value={challengeDifficulty}
                           onChange={(e) => setChallengeDifficulty(e.target.value)}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -584,10 +494,11 @@ export const ChallengeEditor: React.FC<ChallengeEditorProps> = ({
                         </select>
                       </div>
                       <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label htmlFor="challenge-description" className="block text-sm font-medium text-gray-700 mb-1">
                           Descripción
                         </label>
                         <textarea
+                          id="challenge-description"
                           value={challengeDescription}
                           onChange={(e) => setChallengeDescription(e.target.value)}
                           rows={2}
@@ -651,14 +562,6 @@ export const ChallengeEditor: React.FC<ChallengeEditorProps> = ({
                           >
                             <Save className="w-3 h-3" />
                             Guardar
-                          </button>
-                          <button
-                            onClick={handleSnapshotPieces}
-                            className="px-3 py-1 border border-indigo-600 text-indigo-600 bg-white rounded-md hover:bg-indigo-50 flex items-center gap-1 transition-colors text-sm"
-                            title="Snapshot de posiciones actuales"
-                          >
-                            <Camera className="w-3 h-3" />
-                            Snapshot
                           </button>
                           <button
                             onClick={() => setDebugMode(!debugMode)}
@@ -788,9 +691,9 @@ export const ChallengeEditor: React.FC<ChallengeEditorProps> = ({
                       <EditorCanvas
                         ref={canvasRef}
                         pieces={pieces}
-                        onMouseDown={handleMouseDown}
-                        onMouseMove={handleMouseMove}
-                        onMouseUp={handleMouseUp}
+                        onPointerDown={handleMouseDown}
+                        onPointerMove={handleMouseMove}
+                        onPointerUp={handleMouseUp}
                         onContextMenu={handleContextMenu}
                         geometry={geometry}
                         debugMode={debugMode}

@@ -1,13 +1,13 @@
-# Guía del Juego Original - Reto al Espejo
+# Guía del juego de referencia
 
 ## 🎯 Información del Juego Real
 
 ### 📋 Especificaciones Oficiales:
-- **Título:** Reto al Espejo - Actividades con Espejo
+- **Título:** Actividades con espejo
 - **Origen:** XIII Feria de la Ciencia Sevilla  
-- **Referencia:** Juego descatalogado de Educa
+- **Referencia:** Juego de puzles de simetría descatalogado
 - **Jugadores:** 1 ó 2 jugadores
-- **Edad:** Educativo (actividades de simetría)
+- **Edad:** Actividades de aprendizaje de la simetría
 
 ### 🎮 Material del Juego:
 - ✦ **4 piezas trapezoidales** idénticas
@@ -190,4 +190,4 @@ Piezas a colocar (solo lado izquierdo):
 - **Repetibilidad:** Infinitas partidas sin desgaste
 - **Adaptabilidad:** Niveles personalizables
 
-¡Una recreación digital fiel que preserva la esencia educativa del juego original! 🎮✨
+¡Una recreación digital que preserva la esencia didáctica del juego de referencia! 🎮✨

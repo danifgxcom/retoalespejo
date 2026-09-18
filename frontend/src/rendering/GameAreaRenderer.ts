@@ -1,6 +1,7 @@
 import { Piece, drawPiece } from '../components/GamePiece';
 import { drawPieceLabel } from '../components/PieceLabel';
 import { PieceColors } from '../utils/piece/PieceColors';
+import { PIECE_OUTLINE_UNITS, toLocalPoint, getPieceExtent, getPieceRadius } from '@reto/geometry';
 
 export interface GameAreaRenderConfig {
   gameAreaWidth: number;
@@ -100,11 +101,10 @@ export class GameAreaRenderer {
    * Draws mirror line and frame divisions
    */
   drawMirrorFrameAndDivisions(ctx: CanvasRenderingContext2D): void {
-    const { gameAreaHeight, mirrorLine, canvasWidth } = this.config;
 
     this.drawMirrorLine(ctx);
     this.drawHorizontalDivision(ctx);
-    this.drawVerticalDivision(ctx);
+    this.drawVerticalDivision();
   }
 
   /**
@@ -151,7 +151,7 @@ export class GameAreaRenderer {
   /**
    * Draws vertical division line in bottom area - removed since storage spans full width
    */
-  private drawVerticalDivision(ctx: CanvasRenderingContext2D): void {
+  private drawVerticalDivision(): void {
     // No longer drawing vertical division in storage area
     // Storage now spans the full width of both lower quadrants
   }
@@ -237,7 +237,7 @@ export class GameAreaRenderer {
   /**
    * Draws interactive game pieces
    */
-  drawGamePieces(ctx: CanvasRenderingContext2D, pieces: Piece[], draggedPiece: Piece | null, debugMode: boolean = false, showLabels: boolean = false, interactingPieceId?: number | null, temporaryDraggedPieceId?: number | null, animatingPieceId?: number | null): void {
+  drawGamePieces(ctx: CanvasRenderingContext2D, pieces: Array<Piece | null>, draggedPiece: Piece | null, debugMode: boolean = false, showLabels: boolean = false, _interactingPieceId?: number | null, temporaryDraggedPieceId?: number | null, animatingPieceId?: number | null, highContrast: boolean = false, highlightedPieceId?: number | null): void {
     if (!pieces || pieces.length === 0) return;
 
     // Removed all console.log statements for better performance during piece movement
@@ -263,18 +263,23 @@ export class GameAreaRenderer {
       // Removed debug logging for performance
 
       if (isDraggedPiece) {
-        this.drawDraggedPieceBorder(ctx, piece);
+        this.drawDraggedPieceBorder(ctx, piece, highContrast);
       }
 
       if (isAnimatingPiece) {
         this.drawAnimatingPieceEffect(ctx, piece);
       }
 
+      // F10: pieza señalada por la última validación fallida
+      if (highlightedPieceId !== null && highlightedPieceId !== undefined && piece.id === highlightedPieceId) {
+        this.drawMismatchHighlight(ctx, piece);
+      }
+
       // Draw piece label si: debug mode O si se está arrastrando (real o temporal)
       const shouldShowLabel = showLabels || isDraggedPiece;
 
       if (shouldShowLabel) {
-        drawPieceLabel(ctx, piece.id, piece.x, piece.y, this.config.pieceSize);
+        drawPieceLabel(ctx, piece.id, piece.x, piece.y, this.config.pieceSize, highContrast);
       }
     });
 
@@ -289,16 +294,16 @@ export class GameAreaRenderer {
     // Draw actual piece area (including extensions)
     ctx.strokeStyle = 'red';
     ctx.lineWidth = 2;
-    const realSize = pieceSize * 1.6;
-    const realX = piece.x - (realSize - pieceSize) / 2;
-    const realY = piece.y - (realSize - pieceSize) / 2;
-    ctx.strokeRect(realX, realY, realSize, realSize);
+    const { width, height } = getPieceExtent(pieceSize);
+    const realX = piece.x - width / 2;
+    const realY = piece.y - height / 2;
+    ctx.strokeRect(realX, realY, width, height);
 
     // Write coordinates and rotation
     ctx.fillStyle = 'red';
     ctx.font = '12px Arial';
     ctx.fillText(`(${Math.round(piece.x)}, ${Math.round(piece.y)})`, piece.x, piece.y - 5);
-    ctx.fillText(`R:${piece.rotation}°`, piece.x, piece.y + realSize + 15);
+    ctx.fillText(`R:${piece.rotation}°`, piece.x, realY + height + 15);
   }
 
   /**
@@ -314,10 +319,8 @@ export class GameAreaRenderer {
     ctx.shadowBlur = 6;
 
     // Draw subtle border around piece
-    const borderSize = pieceSize * 1.5;
-    const borderX = piece.x - (borderSize - pieceSize) / 2;
-    const borderY = piece.y - (borderSize - pieceSize) / 2;
-    ctx.strokeRect(borderX, borderY, borderSize, borderSize);
+    const radius = getPieceRadius(pieceSize);
+    ctx.strokeRect(piece.x - radius, piece.y - radius, radius * 2, radius * 2);
 
     ctx.restore();
   }
@@ -325,16 +328,54 @@ export class GameAreaRenderer {
   /**
    * Draws border around dragged piece using the piece's identification color
    */
-  private drawDraggedPieceBorder(ctx: CanvasRenderingContext2D, piece: Piece): void {
-    const { pieceSize } = this.config;
+  private drawDraggedPieceBorder(ctx: CanvasRenderingContext2D, piece: Piece, highContrast: boolean): void {
 
     ctx.save();
-    
+
     // Use the piece's identification color for the border
-    const identificationColor = PieceColors.getIdentificationColor(piece.id);
-    
+    const identificationColor = PieceColors.getIdentificationColor(piece.id, highContrast);
+
     // Draw the actual piece outline instead of a square
     this.drawPieceOutline(ctx, piece, identificationColor);
+
+    ctx.restore();
+  }
+
+  /**
+   * F10: resalta la pieza que señala la última validación fallida
+   * (`ValidationResult.pieceIndex`). Contorno discontinuo (no sólo un color)
+   * para que se distinga también en escala de grises.
+   */
+  private drawMismatchHighlight(ctx: CanvasRenderingContext2D, piece: Piece): void {
+    const { pieceSize } = this.config;
+    const color = typeof document !== 'undefined'
+      ? getComputedStyle(document.body).getPropertyValue('--button-danger-bg').trim() || '#dc2626'
+      : '#dc2626';
+
+    ctx.save();
+    ctx.translate(piece.x, piece.y);
+    ctx.rotate((piece.rotation * Math.PI) / 180);
+    if (piece.type === 'B') {
+      ctx.scale(-1, 1);
+    }
+
+    const coord = (unitX: number, unitY: number): [number, number] => toLocalPoint(unitX, unitY, pieceSize);
+
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 5;
+    ctx.setLineDash([8, 6]);
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+
+    ctx.beginPath();
+    const [startX, startY] = coord(...PIECE_OUTLINE_UNITS[0]);
+    ctx.moveTo(startX, startY);
+    for (let i = 1; i < PIECE_OUTLINE_UNITS.length; i++) {
+      ctx.lineTo(...coord(...PIECE_OUTLINE_UNITS[i]));
+    }
+    ctx.closePath();
+    ctx.stroke();
+    ctx.setLineDash([]);
 
     ctx.restore();
   }
@@ -344,10 +385,9 @@ export class GameAreaRenderer {
    */
   private drawPieceOutline(ctx: CanvasRenderingContext2D, piece: Piece, color: string): void {
     const { pieceSize } = this.config;
-    const size = pieceSize;
-    
+
     ctx.save();
-    ctx.translate(piece.x + size/2, piece.y + size/2);
+    ctx.translate(piece.x, piece.y);
     ctx.rotate((piece.rotation * Math.PI) / 180);
 
     // If it's piece type B, apply horizontal mirror
@@ -355,8 +395,7 @@ export class GameAreaRenderer {
       ctx.scale(-1, 1);
     }
 
-    const unit = size * 1.28;
-    const coord = (x: number, y: number): [number, number] => [x * unit, -y * unit];
+    const coord = (unitX: number, unitY: number): [number, number] => toLocalPoint(unitX, unitY, pieceSize);
 
     // Set outline style
     ctx.strokeStyle = color;
@@ -369,31 +408,11 @@ export class GameAreaRenderer {
 
     // Draw the complete piece outline as one continuous path
     ctx.beginPath();
-    
-    // Start from bottom-left corner
-    ctx.moveTo(...coord(0, 0));
-    
-    // Left triangle bottom edge
-    ctx.lineTo(...coord(1, 0));
-    
-    // Square bottom edge
-    ctx.lineTo(...coord(2, 0));
-    
-    // Right triangle to its point
-    ctx.lineTo(...coord(2.5, 0.5));
-    
-    // Right triangle top edge
-    ctx.lineTo(...coord(2, 1));
-    
-    // Top triangle right edge
-    ctx.lineTo(...coord(1.5, 1.5));
-    
-    // Top triangle left edge
-    ctx.lineTo(...coord(1, 1));
-    
-    // Left triangle left edge back to start
-    ctx.lineTo(...coord(0, 0));
-    
+    const [startX, startY] = coord(...PIECE_OUTLINE_UNITS[0]);
+    ctx.moveTo(startX, startY);
+    for (let i = 1; i < PIECE_OUTLINE_UNITS.length; i++) {
+      ctx.lineTo(...coord(...PIECE_OUTLINE_UNITS[i]));
+    }
     ctx.closePath();
     ctx.stroke();
 
@@ -423,31 +442,26 @@ export class GameAreaRenderer {
 
       // Only reflect pieces in game area or entering from below
       const entryMargin = 60;
-      const pieceBottomWithMargin = piece.y + pieceSize + entryMargin;
+      const pieceBottomWithMargin = piece.y + getPieceRadius(pieceSize) + entryMargin;
       const isEnteringFromBelow = pieceBottomWithMargin > gameAreaHeight;
       const isInsideGameArea = piece.y < gameAreaHeight;
 
       if (isEnteringFromBelow || isInsideGameArea) {
         ctx.save();
 
-        // Reflection transformation
-        const reflectedX = 2 * mirrorLine - piece.x - pieceSize;
-        ctx.translate(reflectedX + pieceSize, piece.y);
-        
-        // Only apply horizontal flip for type A pieces
-        // Type B pieces already have internal flip, so double flip would be incorrect
-        if (piece.type === 'A') {
-          ctx.scale(-1, 1);
-        }
+        // Reflexión real: cualquier tipo se refleja igual, la pieza se dibuja
+        // en su posición normal y es el contexto el que la espeja
+        ctx.translate(2 * mirrorLine, 0);
+        ctx.scale(-1, 1);
 
         // Create piece with slight transparency for mirror effect
-        const mirrorPiece = { 
-          ...piece, 
+        const mirrorPiece = {
+          ...piece,
           centerColor: piece.centerColor + 'E6', // 90% opacity
           triangleColor: piece.triangleColor + 'E6'
         };
 
-        drawPiece(ctx, mirrorPiece, 0, 0, pieceSize);
+        drawPiece(ctx, mirrorPiece, piece.x, piece.y, pieceSize);
         ctx.restore();
       }
     });

@@ -1,10 +1,64 @@
 import React, { useRef } from 'react';
-import { RotateCcw, SkipForward, SkipBack, HelpCircle, RotateCw, FlipHorizontal, CheckCircle, RefreshCw, Upload, Edit, Camera, Bug, Grid3x3 } from 'lucide-react';
+import { RotateCcw, SkipForward, SkipBack, HelpCircle, RotateCw, FlipHorizontal, CheckCircle, RefreshCw, Upload, Edit, Camera, Bug, Grid3x3, Undo2, Redo2, Clock } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { Piece } from './GamePiece';
 import { Challenge } from './ChallengeCard';
 import { PieceColors } from '../utils/piece/PieceColors';
-import { useTheme } from '../contexts/ThemeContext';
 import ThemeSwitcher from './accessibility/ThemeSwitcher';
+import { GAME_NAME } from '../branding';
+import { useTheme } from '../contexts/ThemeContext';
+import Modal from './ui/Modal';
+
+type ToolButtonVariant = 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'info' | 'gray';
+
+const TOOL_BUTTON_TEXT: Record<ToolButtonVariant, string> = {
+  primary: 'var(--text-on-primary)',
+  secondary: 'var(--text-on-secondary)',
+  success: 'var(--text-on-success)',
+  warning: 'var(--text-on-warning)',
+  danger: 'var(--text-on-danger)',
+  info: 'var(--text-on-info)',
+  gray: 'var(--text-on-dark)',
+};
+
+interface ToolButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  icon: LucideIcon;
+  label: string;
+  variant?: ToolButtonVariant;
+  /** A partir de qué anchura se ve el texto; debajo queda sólo el icono. */
+  labelFrom?: 'sm' | 'lg' | '2xl' | '1700';
+}
+
+/**
+ * '1700' es un breakpoint a medida (Tailwind sólo trae hasta 2xl=1536): la
+ * barra compacta comparte fila con el bloque de identidad (22rem mínimos) y,
+ * con 1600px de ancho de ventana, siete controles con etiqueta no caben aunque
+ * 1600 ya sea "2xl". Sin esto la botonera vuelve a saltar a una segunda fila
+ * en 1600×900 (ver medición en la tarea de altura de cabecera).
+ */
+const LABEL_VISIBILITY: Record<'sm' | 'lg' | '2xl' | '1700', string> = {
+  sm: 'hidden sm:inline',
+  lg: 'hidden lg:inline',
+  '2xl': 'hidden 2xl:inline',
+  '1700': 'hidden min-[1700px]:inline',
+};
+
+/**
+ * Botón de la barra de herramientas. El color sale de las variables de tema y
+ * el estado hover/activo del propio CSS, así que no hace falta repetir
+ * manejadores de ratón y foco en cada botón.
+ */
+const ToolButton: React.FC<ToolButtonProps> = ({ icon: Icon, label, variant = 'primary', labelFrom = '2xl', className = '', ...buttonProps }) => (
+  <button
+    type="button"
+    className={`inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold shadow-sm transition hover:brightness-110 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:brightness-100 ${className}`}
+    style={{ backgroundColor: `var(--button-${variant}-bg)`, color: TOOL_BUTTON_TEXT[variant] }}
+    {...buttonProps}
+  >
+    <Icon className="w-5 h-5 shrink-0" aria-hidden="true" />
+    <span className={LABEL_VISIBILITY[labelFrom]}>{label}</span>
+  </button>
+);
 
 interface GameControlsProps {
   pieces: Piece[];
@@ -13,11 +67,14 @@ interface GameControlsProps {
   showInstructions: boolean;
   onToggleInstructions: () => void;
   onResetLevel: () => void;
-  onNextChallenge: () => void;
-  onPreviousChallenge: () => void;
-  onRotatePiece: (pieceId: number) => void;
-  onRotatePieceCounterClockwise: (pieceId: number) => void;
-  onFlipPiece: (pieceId: number) => void;
+  onNextChallenge?: () => void;
+  onPreviousChallenge?: () => void;
+  canGoToPreviousChallenge?: boolean;
+  canGoToNextChallenge?: boolean;
+  isLastChallenge?: boolean;
+  onRotatePiece: (pieceId: number, fromControl?: boolean) => void;
+  onRotatePieceCounterClockwise: (pieceId: number, fromControl?: boolean) => void;
+  onFlipPiece: (pieceId: number, fromControl?: boolean) => void;
   onCheckSolution?: () => { isCorrect: boolean; message: string };
   onLoadCustomChallenges?: (file: File) => void;
   onOpenChallengeEditor?: () => void;
@@ -27,8 +84,17 @@ interface GameControlsProps {
   showGrid?: boolean;
   onToggleGrid?: () => void;
   setControlEffect?: (pieceId: number | null) => void;
+  onUndo?: () => void;
+  onRedo?: () => void;
+  canUndo?: boolean;
+  canRedo?: boolean;
   compact?: boolean;
   gameMode?: 'offline' | 'multiplayer';
+  /** F-mobile: cronómetro ya formateado ("MM:SS"), embebido en la cabecera
+   *  compacta sólo por debajo de xl (en xl el cronómetro grande de
+   *  RightSidebar ya es visible sin scroll). */
+  mobileTimerText?: string;
+  mobileTimerPaused?: boolean;
 }
 
 const GameControls: React.FC<GameControlsProps> = ({
@@ -40,6 +106,9 @@ const GameControls: React.FC<GameControlsProps> = ({
   onResetLevel,
   onNextChallenge,
   onPreviousChallenge,
+  canGoToPreviousChallenge = true,
+  canGoToNextChallenge = true,
+  isLastChallenge = false,
   onRotatePiece,
   onRotatePieceCounterClockwise,
   onFlipPiece,
@@ -52,54 +121,24 @@ const GameControls: React.FC<GameControlsProps> = ({
   showGrid,
   onToggleGrid,
   setControlEffect,
+  onUndo,
+  onRedo,
+  canUndo = false,
+  canRedo = false,
   compact = false,
   gameMode = 'offline',
+  mobileTimerText,
+  mobileTimerPaused,
 }) => {
   const [solutionMessage, setSolutionMessage] = React.useState<string | null>(null);
   const [isCorrectSolution, setIsCorrectSolution] = React.useState<boolean | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { theme } = useTheme();
-
-  // Get theme-appropriate colors for buttons using CSS variables
-  const getButtonColors = () => {
-    return {
-      primary: { 
-        bg: 'var(--button-primary-bg)', 
-        hover: 'var(--button-primary-hover)', 
-        text: 'var(--text-on-primary)' 
-      },
-      secondary: { 
-        bg: 'var(--button-secondary-bg)', 
-        hover: 'var(--button-secondary-hover)', 
-        text: 'var(--text-on-secondary)' 
-      },
-      success: { 
-        bg: 'var(--button-success-bg)', 
-        hover: 'var(--button-success-hover)', 
-        text: 'var(--text-on-success)' 
-      },
-      danger: { 
-        bg: 'var(--button-danger-bg)', 
-        hover: 'var(--button-danger-hover)', 
-        text: 'var(--text-on-danger)' 
-      },
-      info: { 
-        bg: 'var(--button-info-bg)', 
-        hover: 'var(--button-info-hover)', 
-        text: 'var(--text-on-info)' 
-      },
-      gray: { 
-        bg: 'var(--button-gray-bg)', 
-        hover: 'var(--button-gray-hover)', 
-        text: 'var(--text-on-dark)' 
-      }
-    };
-  };
+  const { highContrast } = useTheme();
 
   // Get piece-specific colors for individual piece controls
   const getPieceColors = (pieceId: number) => {
-    const identificationColor = PieceColors.getIdentificationColor(pieceId);
-    const pieceColors = PieceColors.getColorsForPieceId(pieceId);
+    const identificationColor = PieceColors.getIdentificationColor(pieceId, highContrast);
+    const pieceColors = PieceColors.getColorsForPieceId(pieceId, highContrast);
     
     return {
       rotate: { 
@@ -182,225 +221,220 @@ const GameControls: React.FC<GameControlsProps> = ({
     // Use browser dev tools for debugging if needed
     
     // Activate debug rendering without console spam
-    (window as any).debugPieceRendering = true;
+    window.debugPieceRendering = true;
 
     // Disable debug after 5 seconds
     setTimeout(() => {
-      (window as any).debugPieceRendering = false;
+      window.debugPieceRendering = false;
     }, 5000);
   };
   if (compact) {
-    return (
-      <div className="bg-card rounded-xl shadow-lg p-4 border border-card">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-3">
-              <div>
-                <h2 className="text-3xl font-bold" style={{ color: 'var(--text-primary)' }}>
-                  Desafío {currentChallenge + 1} de {challenges.length}
-                </h2>
-                <div className="text-lg" style={{ color: 'var(--text-secondary)' }}>
-                  {challenges[currentChallenge]?.name || 'Cargando...'}
-                </div>
-              </div>
-            </div>
+    const challengeName = challenges[currentChallenge]?.name || 'Cargando...';
 
-            {/* Multiplayer indicator */}
-            <div className="flex items-center">
-              <div className="px-3 py-1 rounded-lg text-base font-medium" style={{ backgroundColor: 'var(--button-primary-bg)', color: 'var(--text-on-primary)' }}>
-                {gameMode === 'multiplayer' ? 'Multijugador' : 'Modo offline'}
-              </div>
+    return (
+      <div className="bg-card rounded-2xl shadow-lg px-3 py-2.5 border border-card">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          {/*
+            La identidad conserva espacio para el nombre completo. La botonera
+            puede repartirse en más de una fila cuando muestra sus etiquetas.
+          */}
+          <div className="flex flex-1 items-center gap-3 min-w-[22rem]">
+            <span
+              className="grid place-items-center w-11 h-11 shrink-0 rounded-2xl text-lg font-black tabular-nums shadow-sm"
+              style={{ backgroundColor: 'var(--button-primary-bg)', color: 'var(--text-on-primary)' }}
+              aria-hidden="true"
+            >
+              {currentChallenge + 1}
+            </span>
+            <div className="min-w-0 flex-1">
+              <h2 className="text-base sm:text-lg font-bold leading-tight truncate" style={{ color: 'var(--text-primary)' }}>
+                {challengeName}
+              </h2>
+              <p className="flex flex-wrap items-center gap-2 text-xs leading-tight" style={{ color: 'var(--text-secondary)' }}>
+                <span className="whitespace-nowrap">Desafío {currentChallenge + 1} de {challenges.length}</span>
+                <span
+                  className="whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold"
+                  style={{ backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
+                >
+                  {gameMode === 'multiplayer' ? 'Multijugador' : 'Modo offline'}
+                </span>
+                {mobileTimerText && (
+                  <span
+                    className="xl:hidden inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold tabular-nums"
+                    style={{ backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
+                    aria-label={`Cronómetro: ${mobileTimerText}${mobileTimerPaused ? ', pausado' : ''}`}
+                  >
+                    <Clock className="h-3 w-3" aria-hidden="true" />
+                    {mobileTimerText}
+                  </span>
+                )}
+              </p>
             </div>
           </div>
 
-          <div className="flex gap-1 sm:gap-2 lg:gap-3 items-center">
+          {/* Botonera: envuelve en varias filas antes que desbordar el panel */}
+          <div className="flex flex-wrap items-center justify-end gap-1.5 sm:gap-2" role="toolbar" aria-label="Controles del desafío">
+            {onUndo && (
+              <ToolButton
+                icon={Undo2}
+                label="Deshacer"
+                labelFrom="1700"
+                variant="gray"
+                onClick={onUndo}
+                disabled={!canUndo}
+                title={canUndo ? 'Deshacer última acción (Ctrl+Z)' : 'No hay nada que deshacer'}
+                aria-label="Deshacer última acción"
+              />
+            )}
+            {onRedo && (
+              <ToolButton
+                icon={Redo2}
+                label="Rehacer"
+                labelFrom="1700"
+                variant="gray"
+                onClick={onRedo}
+                disabled={!canRedo}
+                title={canRedo ? 'Rehacer última acción (Ctrl+Y)' : 'No hay nada que rehacer'}
+                aria-label="Rehacer última acción"
+              />
+            )}
             {onPreviousChallenge && (
-              <button 
+              <ToolButton
+                icon={SkipBack}
+                label="Anterior"
+                labelFrom="1700"
+                variant="gray"
                 onClick={onPreviousChallenge}
-                className="px-2 sm:px-3 lg:px-4 py-2 sm:py-2.5 lg:py-3 rounded-lg sm:rounded-xl transition-all shadow-lg transform hover:scale-105"
-                style={{
-                  backgroundColor: getButtonColors().primary.bg,
-                  color: getButtonColors().primary.text
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.backgroundColor = getButtonColors().primary.hover;
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.backgroundColor = getButtonColors().primary.bg;
-                }}
-                title="Desafío anterior"
+                disabled={!canGoToPreviousChallenge}
+                title={canGoToPreviousChallenge ? 'Desafío anterior' : 'Ya estás en el primer desafío'}
                 aria-label="Ir al desafío anterior"
-              >
-                <SkipBack className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6" aria-hidden="true" />
-                <span className="hidden sm:inline ml-1 lg:ml-2">Anterior</span>
-              </button>
+              />
             )}
             {onNextChallenge && (
-              <button 
+              <ToolButton
+                icon={SkipForward}
+                label={isLastChallenge ? 'Fin de la campaña' : 'Siguiente'}
+                labelFrom="1700"
+                variant="primary"
                 onClick={onNextChallenge}
-                className="px-2 sm:px-3 lg:px-4 py-2 sm:py-2.5 lg:py-3 rounded-lg sm:rounded-xl transition-all shadow-lg transform hover:scale-105"
-                style={{
-                  backgroundColor: getButtonColors().danger.bg,
-                  color: getButtonColors().danger.text
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.backgroundColor = getButtonColors().danger.hover;
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.backgroundColor = getButtonColors().danger.bg;
-                }}
-                title="Siguiente desafío"
-                aria-label="Ir al siguiente desafío"
-              >
-                <SkipForward className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6" aria-hidden="true" />
-                <span className="hidden sm:inline ml-1 lg:ml-2">Siguiente</span>
-              </button>
+                disabled={!canGoToNextChallenge}
+                title={
+                  isLastChallenge
+                    ? 'Has llegado al último desafío de la campaña'
+                    : canGoToNextChallenge
+                      ? 'Siguiente desafío'
+                      : 'Completa el desafío actual para desbloquear el siguiente'
+                }
+                aria-label={isLastChallenge ? 'Último desafío de la campaña' : 'Ir al siguiente desafío'}
+              />
             )}
-            {onLoadCustomChallenges && (
-              <button 
-                onClick={handleUploadClick}
-                className="px-2 sm:px-3 lg:px-4 py-2 sm:py-2.5 lg:py-3 rounded-lg sm:rounded-xl transition-all shadow-lg transform hover:scale-105 disabled:opacity-50 disabled:transform-none"
-                style={{
-                  backgroundColor: getButtonColors().primary.bg,
-                  color: getButtonColors().primary.text
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.backgroundColor = getButtonColors().primary.hover;
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.backgroundColor = getButtonColors().primary.bg;
-                }}
-                title="Cargar retos personalizados"
-                aria-label="Cargar retos personalizados"
-                disabled={isLoading}
-              >
-                <Upload className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6" aria-hidden="true" />
-                <span className="hidden lg:inline ml-2">Cargar</span>
-              </button>
-            )}
-            {onOpenChallengeEditor && (
-              <button 
-                onClick={onOpenChallengeEditor}
-                className="px-2 sm:px-3 lg:px-4 py-2 sm:py-2.5 lg:py-3 rounded-lg sm:rounded-xl transition-all shadow-lg transform hover:scale-105"
-                style={{
-                  backgroundColor: getButtonColors().danger.bg,
-                  color: getButtonColors().danger.text
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.backgroundColor = getButtonColors().danger.hover;
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.backgroundColor = getButtonColors().danger.bg;
-                }}
-                title="Editor de retos"
-                aria-label="Abrir editor de retos"
-              >
-                <Edit className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6" aria-hidden="true" />
-                <span className="hidden lg:inline ml-2">Editor</span>
-              </button>
-            )}
-            {/* Solo mostrar snapshot si debug está activado */}
-            {debugMode && (
-              <button 
-                onClick={handleSnapshotPieces}
-                className="px-2 sm:px-3 lg:px-4 py-2 sm:py-2.5 lg:py-3 rounded-lg sm:rounded-xl transition-all shadow-lg transform hover:scale-105"
-                style={{
-                  backgroundColor: getButtonColors().info.bg,
-                  color: getButtonColors().info.text
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.backgroundColor = getButtonColors().info.hover;
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.backgroundColor = getButtonColors().info.bg;
-                }}
-                title="Snapshot de posiciones actuales"
-                aria-label="Capturar snapshot de posiciones actuales"
-              >
-                <Camera className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6" aria-hidden="true" />
-                <span className="hidden lg:inline ml-2">Snapshot</span>
-              </button>
-            )}
-            {onToggleDebugMode && (
-              <button 
-                onClick={onToggleDebugMode}
-                className="px-2 sm:px-3 lg:px-4 py-2 sm:py-2.5 lg:py-3 rounded-lg sm:rounded-xl transition-all shadow-lg transform hover:scale-105"
-                style={{
-                  backgroundColor: debugMode ? getButtonColors().danger.bg : getButtonColors().primary.bg,
-                  color: debugMode ? getButtonColors().danger.text : getButtonColors().primary.text
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.backgroundColor = debugMode ? getButtonColors().danger.hover : getButtonColors().primary.hover;
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.backgroundColor = debugMode ? getButtonColors().danger.bg : getButtonColors().primary.bg;
-                }}
-                title={debugMode ? "Desactivar modo debug" : "Activar modo debug"}
-                aria-label={debugMode ? "Desactivar modo debug" : "Activar modo debug"}
-              >
-                <Bug className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6" aria-hidden="true" />
-                <span className="hidden lg:inline ml-2">{debugMode ? 'Debug' : 'Debug'}</span>
-              </button>
-            )}
-            {/* Grid toggle - solo visible en modo debug */}
-            {debugMode && onToggleGrid && (
-              <button 
-                onClick={onToggleGrid}
-                className="px-2 sm:px-3 lg:px-4 py-2 sm:py-2.5 lg:py-3 rounded-lg sm:rounded-xl transition-all shadow-lg transform hover:scale-105"
-                style={{
-                  backgroundColor: showGrid ? getButtonColors().warning.bg : getButtonColors().secondary.bg,
-                  color: showGrid ? getButtonColors().warning.text : getButtonColors().secondary.text
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.backgroundColor = showGrid ? getButtonColors().warning.hover : getButtonColors().secondary.hover;
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.backgroundColor = showGrid ? getButtonColors().warning.bg : getButtonColors().secondary.bg;
-                }}
-                title={showGrid ? "Ocultar grid" : "Mostrar grid"}
-                aria-label={showGrid ? "Ocultar grid de posicionamiento" : "Mostrar grid de posicionamiento"}
-              >
-                <Grid3x3 className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6" aria-hidden="true" />
-                <span className="hidden lg:inline ml-2">{showGrid ? 'Grid' : 'Grid'}</span>
-              </button>
-            )}
-
-            {/* Botón de ayuda */}
-            <button 
+            {import.meta.env.DEV && <>
+              {onLoadCustomChallenges && (
+                <ToolButton
+                  icon={Upload}
+                  label="Cargar"
+                  variant="secondary"
+                  onClick={handleUploadClick}
+                  disabled={isLoading}
+                  title="Cargar retos personalizados"
+                  aria-label="Cargar retos personalizados"
+                />
+              )}
+              {onOpenChallengeEditor && (
+                <ToolButton
+                  icon={Edit}
+                  label="Editor"
+                  variant="secondary"
+                  onClick={onOpenChallengeEditor}
+                  title="Editor de retos"
+                  aria-label="Abrir editor de retos"
+                />
+              )}
+              {debugMode && (
+                <ToolButton
+                  icon={Camera}
+                  label="Snapshot"
+                  variant="info"
+                  onClick={handleSnapshotPieces}
+                  title="Snapshot de posiciones actuales"
+                  aria-label="Capturar snapshot de posiciones actuales"
+                />
+              )}
+              {onToggleDebugMode && (
+                <ToolButton
+                  icon={Bug}
+                  label="Debug"
+                  variant={debugMode ? 'danger' : 'gray'}
+                  onClick={onToggleDebugMode}
+                  aria-pressed={debugMode}
+                  title={debugMode ? 'Desactivar modo debug' : 'Activar modo debug'}
+                  aria-label={debugMode ? 'Desactivar modo debug' : 'Activar modo debug'}
+                />
+              )}
+              {debugMode && onToggleGrid && (
+                <ToolButton
+                  icon={Grid3x3}
+                  label="Grid"
+                  variant={showGrid ? 'warning' : 'gray'}
+                  onClick={onToggleGrid}
+                  aria-pressed={showGrid}
+                  title={showGrid ? 'Ocultar grid' : 'Mostrar grid'}
+                  aria-label={showGrid ? 'Ocultar grid de posicionamiento' : 'Mostrar grid de posicionamiento'}
+                />
+              )}
+            </>}
+            <ToolButton
+              icon={HelpCircle}
+              label="Ayuda"
+              variant="info"
               onClick={onToggleInstructions}
-              className="px-2 sm:px-3 lg:px-4 py-2 sm:py-2.5 lg:py-3 rounded-lg sm:rounded-xl transition-all shadow-lg transform hover:scale-105"
-              style={{
-                backgroundColor: getButtonColors().danger.bg,
-                color: getButtonColors().danger.text
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.backgroundColor = getButtonColors().danger.hover;
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.backgroundColor = getButtonColors().danger.bg;
-              }}
               title="Ayuda e instrucciones"
               aria-label="Mostrar ayuda e instrucciones"
-            >
-              <HelpCircle className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6" aria-hidden="true" />
-              <span className="hidden lg:inline ml-2">Ayuda</span>
-            </button>
-
-            {/* Tema Accesible - Ahora con el mismo estilo que los otros botones */}
-            <ThemeSwitcher 
-              className="px-2 sm:px-3 lg:px-4 py-2 sm:py-2.5 lg:py-3 rounded-lg sm:rounded-xl transition-all shadow-lg transform hover:scale-105 text-sm" 
             />
 
-            {/* Hidden file input */}
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              onChange={handleFileChange} 
-              accept=".json" 
-              className="hidden" 
-            />
+            <ThemeSwitcher className="px-3 py-2 text-sm" />
+
+            {import.meta.env.DEV && (
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                accept=".json"
+                className="hidden"
+              />
+            )}
           </div>
         </div>
+
+        {/* F08: modal de ayuda con Modal.tsx (gestiona Escape, foco y su devolución) */}
+        <Modal
+          isOpen={showInstructions}
+          onClose={onToggleInstructions}
+          title={`Cómo jugar a ${GAME_NAME}`}
+          subtitle="Domina la simetría y resuelve los desafíos geométricos"
+          maxWidth="4xl"
+        >
+          <div className="grid gap-4 text-sm sm:grid-cols-2" style={{ color: 'var(--text-secondary)' }}>
+            <p><strong style={{ color: 'var(--text-primary)' }}>🎯 Objetivo:</strong> recrea el patrón del reto usando las piezas y el reflejo del espejo.</p>
+            <p><strong style={{ color: 'var(--text-primary)' }}>🔄 Mover piezas:</strong> arrastra las piezas desde &quot;Piezas disponibles&quot; hasta el área de juego.</p>
+            <p><strong style={{ color: 'var(--text-primary)' }}>🪞 El espejo:</strong> cada pieza colocada se refleja automáticamente al otro lado.</p>
+            <p><strong style={{ color: 'var(--text-primary)' }}>⚙️ Controles:</strong> gira o voltea la cara de cada pieza con sus botones o con el teclado.</p>
+            <p className="sm:col-span-2"><strong style={{ color: 'var(--text-primary)' }}>🚫 Restricciones:</strong> las piezas no pueden atravesar el espejo ni salir de su área.</p>
+          </div>
+
+          <div className="mt-4 pt-3" style={{ borderTop: '1px solid var(--border-light)' }}>
+            <p className="font-bold mb-1" style={{ color: 'var(--text-primary)' }}>⌨️ Atajos de teclado en el área de juego</p>
+            <ul className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm md:grid-cols-3" style={{ color: 'var(--text-secondary)' }}>
+              <li><strong>Tab</strong> / <strong>Mayús+Tab</strong>: elegir pieza</li>
+              <li><strong>Flechas</strong>: mover la pieza</li>
+              <li><strong>Mayús+Flechas</strong>: mover 1px</li>
+              <li><strong>R</strong> / <strong>Mayús+R</strong>: girar</li>
+              <li><strong>F</strong>: voltear cara</li>
+              <li><strong>Espacio</strong> / <strong>Enter</strong>: seleccionar o soltar</li>
+              <li><strong>Escape</strong>: salir del área de juego</li>
+            </ul>
+          </div>
+        </Modal>
       </div>
     );
   }
@@ -411,7 +445,7 @@ const GameControls: React.FC<GameControlsProps> = ({
       <div className="bg-card rounded-lg shadow-lg p-6 mb-4">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-4xl font-bold text-gray-800 mb-2">🪞 Reto al Espejo</h1>
+            <h1 className="text-4xl font-bold text-gray-800 mb-2">🪞 {GAME_NAME}</h1>
             <p className="text-lg text-gray-600">Juego de simetría con piezas geométricas</p>
           </div>
           <div className="flex gap-2">
@@ -443,8 +477,9 @@ const GameControls: React.FC<GameControlsProps> = ({
             )}
             <button 
               onClick={onPreviousChallenge}
-              className="bg-gray-gradient hover:bg-gray-gradient-hover p-3 rounded-xl transition-all transform hover:scale-105 shadow-lg"
-              title="Desafío anterior"
+              disabled={!canGoToPreviousChallenge}
+              className={`bg-gray-gradient p-3 rounded-xl transition-all shadow-lg ${canGoToPreviousChallenge ? 'hover:bg-gray-gradient-hover transform hover:scale-105' : 'opacity-40 cursor-not-allowed'}`}
+              title={canGoToPreviousChallenge ? "Desafío anterior" : "Ya estás en el primer desafío"}
               aria-label="Ir al desafío anterior"
             >
               <SkipBack size={24} aria-hidden="true" />
@@ -457,72 +492,72 @@ const GameControls: React.FC<GameControlsProps> = ({
             >
               <SkipForward size={24} aria-hidden="true" />
             </button>
-            {onLoadCustomChallenges && (
+            {import.meta.env.DEV && <>
+              {onLoadCustomChallenges && (
+                <button 
+                  onClick={handleUploadClick}
+                  className="bg-warning-gradient hover:bg-warning-gradient-hover p-3 rounded-xl transition-all transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:transform-none"
+                  title="Cargar retos personalizados"
+                  aria-label="Cargar retos personalizados"
+                  disabled={isLoading}
+                >
+                  <Upload size={24} aria-hidden="true" />
+                </button>
+              )}
+              {onOpenChallengeEditor && (
+                <button 
+                  onClick={onOpenChallengeEditor}
+                  className="bg-info-gradient hover:bg-info-gradient-hover p-3 rounded-xl transition-all transform hover:scale-105 shadow-lg"
+                  title="Editor de retos"
+                  aria-label="Abrir editor de retos"
+                >
+                  <Edit className="w-6 h-6" aria-hidden="true" />
+                </button>
+              )}
               <button 
-                onClick={handleUploadClick}
-                className="bg-warning-gradient hover:bg-warning-gradient-hover p-3 rounded-xl transition-all transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:transform-none"
-                title="Cargar retos personalizados"
-                aria-label="Cargar retos personalizados"
-                disabled={isLoading}
+                onClick={handleSnapshotPieces}
+                className="bg-gray-gradient hover:bg-gray-gradient-hover p-3 rounded-xl transition-all transform hover:scale-105 shadow-lg"
+                title="Snapshot de posiciones actuales"
+                aria-label="Capturar snapshot de posiciones actuales"
               >
-                <Upload size={24} aria-hidden="true" />
+                <Camera size={24} aria-hidden="true" />
               </button>
-            )}
-            {onOpenChallengeEditor && (
-              <button 
-                onClick={onOpenChallengeEditor}
-                className="bg-info-gradient hover:bg-info-gradient-hover p-3 rounded-xl transition-all transform hover:scale-105 shadow-lg"
-                title="Editor de retos"
-                aria-label="Abrir editor de retos"
-              >
-                <Edit className="w-6 h-6" aria-hidden="true" />
-              </button>
-            )}
-            <button 
-              onClick={handleSnapshotPieces}
-              className="bg-gray-gradient hover:bg-gray-gradient-hover p-3 rounded-xl transition-all transform hover:scale-105 shadow-lg"
-              title="Snapshot de posiciones actuales"
-              aria-label="Capturar snapshot de posiciones actuales"
-            >
-              <Camera size={24} aria-hidden="true" />
-            </button>
-            {onToggleDebugMode && (
-              <button 
-                onClick={onToggleDebugMode}
-                className={`${
-                  debugMode 
-                    ? 'bg-danger-gradient hover:bg-danger-gradient-hover' 
-                    : 'bg-gray-gradient hover:bg-gray-gradient-hover'
-                }  p-3 rounded-xl transition-all transform hover:scale-105 shadow-lg`}
-                title={debugMode ? "Desactivar modo debug" : "Activar modo debug"}
-                aria-label={debugMode ? "Desactivar modo debug" : "Activar modo debug"}
-              >
-                <Bug size={24} aria-hidden="true" />
-              </button>
-            )}
-            {/* Grid toggle - solo visible en modo debug */}
-            {debugMode && onToggleGrid && (
-              <button 
-                onClick={onToggleGrid}
-                className={`${
-                  showGrid 
-                    ? 'bg-warning-gradient hover:bg-warning-gradient-hover' 
-                    : 'bg-gray-gradient hover:bg-gray-gradient-hover'
-                }  p-3 rounded-xl transition-all transform hover:scale-105 shadow-lg`}
-                title={showGrid ? "Ocultar grid" : "Mostrar grid"}
-                aria-label={showGrid ? "Ocultar grid de posicionamiento" : "Mostrar grid de posicionamiento"}
-              >
-                <Grid3x3 size={24} aria-hidden="true" />
-              </button>
-            )}
-            {/* Hidden file input */}
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              onChange={handleFileChange} 
-              accept=".json" 
-              className="hidden" 
-            />
+              {onToggleDebugMode && (
+                <button 
+                  onClick={onToggleDebugMode}
+                  className={`${
+                    debugMode 
+                      ? 'bg-danger-gradient hover:bg-danger-gradient-hover' 
+                      : 'bg-gray-gradient hover:bg-gray-gradient-hover'
+                  }  p-3 rounded-xl transition-all transform hover:scale-105 shadow-lg`}
+                  title={debugMode ? "Desactivar modo debug" : "Activar modo debug"}
+                  aria-label={debugMode ? "Desactivar modo debug" : "Activar modo debug"}
+                >
+                  <Bug size={24} aria-hidden="true" />
+                </button>
+              )}
+              {debugMode && onToggleGrid && (
+                <button 
+                  onClick={onToggleGrid}
+                  className={`${
+                    showGrid 
+                      ? 'bg-warning-gradient hover:bg-warning-gradient-hover' 
+                      : 'bg-gray-gradient hover:bg-gray-gradient-hover'
+                  }  p-3 rounded-xl transition-all transform hover:scale-105 shadow-lg`}
+                  title={showGrid ? "Ocultar grid" : "Mostrar grid"}
+                  aria-label={showGrid ? "Ocultar grid de posicionamiento" : "Mostrar grid de posicionamiento"}
+                >
+                  <Grid3x3 size={24} aria-hidden="true" />
+                </button>
+              )}
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleFileChange} 
+                accept=".json" 
+                className="hidden" 
+              />
+            </>}
           </div>
         </div>
 
@@ -577,6 +612,12 @@ const GameControls: React.FC<GameControlsProps> = ({
                       onMouseOut={(e) => {
                         e.currentTarget.style.backgroundColor = pieceButtonColors.rotateBack.bg;
                       }}
+                      onFocus={(e) => {
+                        e.currentTarget.style.backgroundColor = pieceButtonColors.rotateBack.hover;
+                      }}
+                      onBlur={(e) => {
+                        e.currentTarget.style.backgroundColor = pieceButtonColors.rotateBack.bg;
+                      }}
                       title="Rotar 45° antihorario"
                       aria-label={`Rotar pieza ${piece.id} 45 grados antihorario`}
                     >
@@ -598,6 +639,12 @@ const GameControls: React.FC<GameControlsProps> = ({
                       onMouseOut={(e) => {
                         e.currentTarget.style.backgroundColor = pieceButtonColors.flip.bg;
                       }}
+                      onFocus={(e) => {
+                        e.currentTarget.style.backgroundColor = pieceButtonColors.flip.hover;
+                      }}
+                      onBlur={(e) => {
+                        e.currentTarget.style.backgroundColor = pieceButtonColors.flip.bg;
+                      }}
                       title="Voltear pieza"
                       aria-label={`Voltear pieza ${piece.id}`}
                     >
@@ -617,6 +664,12 @@ const GameControls: React.FC<GameControlsProps> = ({
                         e.currentTarget.style.backgroundColor = pieceButtonColors.rotate.hover;
                       }}
                       onMouseOut={(e) => {
+                        e.currentTarget.style.backgroundColor = pieceButtonColors.rotate.bg;
+                      }}
+                      onFocus={(e) => {
+                        e.currentTarget.style.backgroundColor = pieceButtonColors.rotate.hover;
+                      }}
+                      onBlur={(e) => {
                         e.currentTarget.style.backgroundColor = pieceButtonColors.rotate.bg;
                       }}
                       title="Rotar 45° horario"
@@ -646,13 +699,21 @@ const GameControls: React.FC<GameControlsProps> = ({
 
       {/* Instructions Modal */}
       {showInstructions && (
-        <div className="fixed inset-0 bg-modal-overlay flex items-center justify-center z-50 p-4" onClick={onToggleInstructions}>
-          <div className="bg-modal rounded-2xl shadow-2xl max-w-4xl max-h-[85vh] overflow-y-auto border border-modal" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="fixed inset-0 bg-modal-overlay flex items-center justify-center z-50 p-4"
+          onClick={onToggleInstructions}
+          role="presentation"
+        >
+          <div
+            className="bg-modal rounded-2xl shadow-2xl max-w-4xl max-h-[85vh] overflow-y-auto border border-modal"
+            onClick={(e) => e.stopPropagation()}
+            role="presentation"
+          >
             {/* Header */}
             <div className="bg-modal-header  p-6 rounded-t-2xl">
               <div className="flex justify-between items-center">
                 <div>
-                  <h3 className="font-bold text-2xl mb-2">🪞 Cómo jugar al Reto al Espejo</h3>
+                  <h3 className="font-bold text-2xl mb-2">🪞 Cómo jugar a {GAME_NAME}</h3>
                   <p className="text-blue-100 text-sm">Domina la simetría y resuelve los desafíos geométricos</p>
                 </div>
                 <button

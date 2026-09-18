@@ -1,24 +1,9 @@
-import { ObjectivePattern, PiecePosition } from '../components/ChallengeCard';
+import { ObjectivePattern, PiecePosition } from '../../components/ChallengeCard';
 
-// Función para calcular el reflejo de una pieza
-export const calculateMirrorPiece = (piece: PiecePosition, mirrorLine: number = 700): PiecePosition => {
-  const reflectedX = 2 * mirrorLine - piece.x - 80; // 80 es PIECE_SIZE
-  return {
-    ...piece,
-    x: reflectedX
-  };
-};
-
-// Función para crear un objetivo simétrico completo a partir de las piezas del jugador
+// Función para crear un objetivo a partir de las piezas del jugador
 export const createSymmetricObjectiveFromPlayerPieces = (playerPieces: PiecePosition[]): ObjectivePattern => {
-  const mirrorPieces = playerPieces.map(piece => calculateMirrorPiece(piece));
-  
-  // El patrón simétrico incluye tanto las piezas del jugador como sus reflejos
-  const symmetricPattern = [...playerPieces, ...mirrorPieces];
-  
   return {
-    playerPieces,
-    symmetricPattern
+    playerPieces
   };
 };
 
@@ -61,26 +46,19 @@ export const importObjectiveFromJSON = (jsonString: string): ObjectivePattern =>
     
     throw new Error('Formato JSON no válido para objetivo');
   } catch (error) {
-    throw new Error(`Error al importar objetivo: ${error.message}`);
+    const message = error instanceof Error ? error.message : 'Error desconocido';
+    throw new Error(`Error al importar objetivo: ${message}`);
   }
 };
 
 // Función para validar un objetivo
 export const validateObjective = (objective: ObjectivePattern): { valid: boolean; errors: string[] } => {
   const errors: string[] = [];
-  
+
   if (!objective.playerPieces || !Array.isArray(objective.playerPieces)) {
     errors.push('playerPieces debe ser un array');
   }
-  
-  if (!objective.symmetricPattern || !Array.isArray(objective.symmetricPattern)) {
-    errors.push('symmetricPattern debe ser un array');
-  }
-  
-  if (objective.symmetricPattern?.length !== (objective.playerPieces?.length || 0) * 2) {
-    errors.push('symmetricPattern debe tener el doble de elementos que playerPieces (piezas + reflejos)');
-  }
-  
+
   // Validar cada pieza del jugador
   objective.playerPieces?.forEach((piece, index) => {
     if (!piece.type || !['A', 'B'].includes(piece.type)) {

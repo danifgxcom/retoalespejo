@@ -1,5 +1,7 @@
 import React from 'react';
 import { PieceColors } from '../utils/piece/PieceColors';
+import { useTheme } from '../contexts/ThemeContext';
+import { getPieceRadius } from '@reto/geometry';
 
 interface PieceLabelProps {
   pieceId: number;
@@ -16,10 +18,12 @@ export const PieceLabel: React.FC<PieceLabelProps> = ({
   isVisible, 
   size = 100 
 }) => {
+  const { highContrast } = useTheme();
+
   if (!isVisible) return null;
 
   // Get piece-specific identification color
-  const identificationColor = PieceColors.getIdentificationColor(pieceId);
+  const identificationColor = PieceColors.getIdentificationColor(pieceId, highContrast);
 
   const labelStyle: React.CSSProperties = {
     position: 'absolute',
@@ -54,18 +58,19 @@ export const PieceLabel: React.FC<PieceLabelProps> = ({
  * Función para renderizar etiquetas de piezas en canvas
  */
 export const drawPieceLabel = (
-  ctx: CanvasRenderingContext2D, 
-  pieceId: number, 
-  x: number, 
-  y: number, 
-  size: number = 100
+  ctx: CanvasRenderingContext2D,
+  pieceId: number,
+  x: number,
+  y: number,
+  size: number = 100,
+  highContrast: boolean = false
 ): void => {
-  const labelX = x + size / 2;
-  const labelY = y - 25; // Más separado de la pieza
+  const labelX = x;
+  const labelY = y - getPieceRadius(size) - 10; // Separado del contorno real de la pieza
   const labelRadius = 25; // Aún más grande para mejor visibilidad
 
   // Get piece-specific identification color
-  const identificationColor = PieceColors.getIdentificationColor(pieceId);
+  const identificationColor = PieceColors.getIdentificationColor(pieceId, highContrast);
 
   // Fondo del label con sombra
   ctx.save();

@@ -1,4 +1,4 @@
-import { GameGeometry, PiecePosition, GameAreaConfig } from '../../utils/geometry/GameGeometry';
+import { GameGeometry, PiecePosition, GameAreaConfig } from '@reto/geometry';
 
 describe('GameGeometry', () => {
   let geometry: GameGeometry;
@@ -32,13 +32,13 @@ describe('GameGeometry', () => {
 
       const reflected = geometry.reflectPieceAcrossMirror(piece);
 
-      // Original piece at x=600 should reflect to x=800 (700*2 - 600 = 800)
-      // But we need to account for the bounding box calculation
-      expect(reflected.type).toBe('A');
+      // La forma es quiral: un espejo convierte una pieza A en una B.
+      // Con el centro como ancla, x' = 2*700 - 600 = 800.
+      expect(reflected.type).toBe('B');
       expect(reflected.face).toBe('front');
       expect(reflected.y).toBe(300);
       expect(reflected.rotation).toBe(0);
-      expect(typeof reflected.x).toBe('number');
+      expect(reflected.x).toBe(800);
     });
 
     test('should preserve piece properties except position', () => {
@@ -52,10 +52,11 @@ describe('GameGeometry', () => {
 
       const reflected = geometry.reflectPieceAcrossMirror(piece);
 
-      expect(reflected.type).toBe('B');
+      // El reflejo también invierte el sentido de giro: (360 - 45) % 360 = 315.
+      expect(reflected.type).toBe('A');
       expect(reflected.face).toBe('back');
       expect(reflected.y).toBe(200);
-      expect(reflected.rotation).toBe(45);
+      expect(reflected.rotation).toBe(315);
     });
   });
 
@@ -71,10 +72,10 @@ describe('GameGeometry', () => {
 
       const reflected = geometry.reflectPieceForChallengeCard(piece);
 
-      // Challenge card reflection: 2 * 700 - 600 - 100 = 700
-      expect(reflected.x).toBe(700);
+      // Con el centro como ancla: x' = 2 * 700 - 600 = 800; y el tipo se invierte (A -> B).
+      expect(reflected.x).toBe(800);
       expect(reflected.y).toBe(300);
-      expect(reflected.type).toBe('A');
+      expect(reflected.type).toBe('B');
       expect(reflected.face).toBe('front');
       expect(reflected.rotation).toBe(0);
     });
@@ -130,11 +131,11 @@ describe('GameGeometry', () => {
 
       const bbox = geometry.getPieceBoundingBox(piece);
 
-      // For Type A at rotation=0: shape extends RIGHT from centerX (piece.x + pieceSize/2 = 150)
-      // bbox.left = centerX + minRotX = 150 + 0 = 150
-      expect(bbox.left).toBeCloseTo(150, 1);
-      // bbox.top = centerY + minRotY = 250 + (-192) = 58
-      expect(bbox.top).toBeCloseTo(58, 1);
+      // piece.x/y es el centro. Con unit = 100*1.28 = 128, la figura tipo A sin rotar
+      // se extiende de -192 a +128 en X y de -128 a +64 en Y respecto al centro.
+      // bbox.left = 100 - 192 = -92; bbox.top = 200 - 128 = 72
+      expect(bbox.left).toBeCloseTo(-92, 1);
+      expect(bbox.top).toBeCloseTo(72, 1);
       expect(bbox.right).toBeGreaterThan(bbox.left);
       expect(bbox.bottom).toBeGreaterThan(bbox.top);
     });
@@ -191,9 +192,9 @@ describe('GameGeometry', () => {
 
   describe('constrainPiecePosition', () => {
     test('should constrain piece within canvas bounds', () => {
-      // For Type A at rotation=0: shape extends RIGHT from center (piece.x + pieceSize/2)
-      // bbox.left = piece.x + 50 (not piece.x). So a piece at x=-50 has bbox.left=0 (in bounds)
-      // No constraining is applied since the shape itself is within bounds
+      // Tipo A sin rotar se extiende hasta -192 a la izquierda del centro.
+      // Con piece.x = -50, bbox.left = -50 - 192 = -242 (< 0): hay que empujarla
+      // overlap = 242 px hacia la derecha para que bbox.left llegue a 0.
       const piece: PiecePosition = {
         type: 'A',
         face: 'front',
@@ -204,8 +205,7 @@ describe('GameGeometry', () => {
 
       const constrained = geometry.constrainPiecePosition(piece, 1400, 1000, true);
 
-      // bbox.left = 0, not < 0, so piece.x stays at -50
-      expect(constrained.x).toBe(-50);
+      expect(constrained.x).toBe(192);
       expect(constrained.y).toBe(300);
     });
 

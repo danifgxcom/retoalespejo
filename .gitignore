@@ -34,3 +34,5 @@ yarn-error.log*
 # OS files
 .DS_Store
 Thumbs.db
+# Paquete de geometría compilado: lo genera `npm run shared:build`
+shared/dist

@@ -3,6 +3,7 @@ import { ChallengeEditor } from './components/ChallengeEditor';
 import { Challenge } from './components/ChallengeCard';
 import { ChallengeEditorService } from './services/ChallengeEditorService';
 import ChallengeThumbnail from './components/ui/ChallengeThumbnail';
+import { GAME_NAME } from './branding';
 
 interface ChallengeEditorAppProps {
   onClose?: () => void;
@@ -113,7 +114,7 @@ export const ChallengeEditorApp: React.FC<ChallengeEditorAppProps> = ({ onClose 
     return (
       <ChallengeEditor
         existingChallenges={challenges}
-        initialChallenge={selectedChallenge}
+        initialChallenge={selectedChallenge ?? undefined}
         onSave={handleSaveChallenge}
         onClose={() => {
           setShowEditor(false);
@@ -143,7 +144,7 @@ export const ChallengeEditorApp: React.FC<ChallengeEditorAppProps> = ({ onClose 
           <div className="flex justify-between items-center mb-6">
             <div>
               <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>🎯 Editor de Retos</h1>
-              <p style={{ color: 'var(--text-secondary)' }}>Crea y edita desafíos para el Reto al Espejo</p>
+              <p style={{ color: 'var(--text-secondary)' }}>Crea y edita desafíos para {GAME_NAME}</p>
             </div>
             <div className="flex flex-wrap gap-1 sm:gap-2">
               <input
@@ -163,7 +164,13 @@ export const ChallengeEditorApp: React.FC<ChallengeEditorAppProps> = ({ onClose 
                 onMouseOver={(e) => {
                   e.currentTarget.style.backgroundColor = 'var(--button-success-hover)';
                 }}
+                onFocus={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--button-success-hover)';
+                }}
                 onMouseOut={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--button-success-bg)';
+                }}
+                onBlur={(e) => {
                   e.currentTarget.style.backgroundColor = 'var(--button-success-bg)';
                 }}
               >
@@ -180,7 +187,13 @@ export const ChallengeEditorApp: React.FC<ChallengeEditorAppProps> = ({ onClose 
                 onMouseOver={(e) => {
                   e.currentTarget.style.backgroundColor = 'var(--button-primary-hover)';
                 }}
+                onFocus={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--button-primary-hover)';
+                }}
                 onMouseOut={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--button-primary-bg)';
+                }}
+                onBlur={(e) => {
                   e.currentTarget.style.backgroundColor = 'var(--button-primary-bg)';
                 }}
                 type="button"
@@ -198,7 +211,13 @@ export const ChallengeEditorApp: React.FC<ChallengeEditorAppProps> = ({ onClose 
                 onMouseOver={(e) => {
                   e.currentTarget.style.backgroundColor = 'var(--button-secondary-hover)';
                 }}
+                onFocus={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--button-secondary-hover)';
+                }}
                 onMouseOut={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--button-secondary-bg)';
+                }}
+                onBlur={(e) => {
                   e.currentTarget.style.backgroundColor = 'var(--button-secondary-bg)';
                 }}
                 type="button"
@@ -208,48 +227,16 @@ export const ChallengeEditorApp: React.FC<ChallengeEditorAppProps> = ({ onClose 
               </button>
               <button
                 onClick={() => {
-                  console.log('🔥 DEBUG SNAPSHOT ACTIVATED - Starting comprehensive gap analysis...');
                   
                   // Activar debug para renderizado de piezas
-                  (window as any).debugPieceRendering = true;
-                  
-                  // Información del editor
-                  const visibleChallenges = challenges.map(c => `Challenge ${c.id}: ${c.name} (${c.difficulty}) - ${c.piecesNeeded} pieces`);
-                  console.log(`
-📸 EDITOR SNAPSHOT:
-🎯 Total challenges: ${challenges.length}
-📋 Challenges list:
-${visibleChallenges.map(c => `  ${c}`).join('\n')}
-
-🔍 GAP ANALYSIS MODE ENABLED
-⚠️  All piece rendering will now log detailed coordinate and overlap information
-⚠️  Look for patterns in gap areas and overlap effectiveness
-⚠️  Check if overlaps are sufficient at different scales
-                  `);
-                  
-                  // Analizar cada challenge individualmente
-                  challenges.forEach(challenge => {
-                    const pieces = challenge.objective.playerPieces;
-                    console.log(`
-🎮 CHALLENGE ${challenge.id} ANALYSIS:
-  📏 Scale factor: 0.191 (fixed)
-  🧩 Pieces: ${pieces.length}
-  📊 Piece details:
-${pieces.map((p, i) => `    ${i+1}. Type ${p.type}, Face ${p.face}, Rot ${p.rotation}°, Pos (${p.x.toFixed(1)}, ${p.y.toFixed(1)})`).join('\n')}
-                    `);
-                  });
+                  window.debugPieceRendering = true;
                   
                   // Forzar re-render de thumbnails para capturar debug info
                   setTimeout(() => {
-                    console.log('🔄 Forcing thumbnail re-render to capture debug data...');
                     // Trigger re-render artificially
-                    const thumbnails = document.querySelectorAll('canvas');
-                    console.log(`📊 Found ${thumbnails.length} canvas elements for debug analysis`);
-                    
                     // Desactivar debug después de análisis
                     setTimeout(() => {
-                      (window as any).debugPieceRendering = false;
-                      console.log('✅ DEBUG SNAPSHOT COMPLETE - Analysis finished, debug mode disabled');
+                      window.debugPieceRendering = false;
                     }, 2000);
                   }, 100);
                 }}
@@ -261,7 +248,13 @@ ${pieces.map((p, i) => `    ${i+1}. Type ${p.type}, Face ${p.face}, Rot ${p.rota
                 onMouseOver={(e) => {
                   e.currentTarget.style.backgroundColor = 'var(--button-danger-hover)';
                 }}
+                onFocus={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--button-danger-hover)';
+                }}
                 onMouseOut={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--button-danger-bg)';
+                }}
+                onBlur={(e) => {
                   e.currentTarget.style.backgroundColor = 'var(--button-danger-bg)';
                 }}
                 type="button"
@@ -280,7 +273,13 @@ ${pieces.map((p, i) => `    ${i+1}. Type ${p.type}, Face ${p.face}, Rot ${p.rota
                   onMouseOver={(e) => {
                     e.currentTarget.style.backgroundColor = 'var(--button-gray-hover)';
                   }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--button-gray-hover)';
+                  }}
                   onMouseOut={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--button-gray-bg)';
+                  }}
+                  onBlur={(e) => {
                     e.currentTarget.style.backgroundColor = 'var(--button-gray-bg)';
                   }}
                   type="button"
@@ -305,7 +304,13 @@ ${pieces.map((p, i) => `    ${i+1}. Type ${p.type}, Face ${p.face}, Rot ${p.rota
                 onMouseOver={(e) => {
                   e.currentTarget.style.borderColor = 'var(--border-medium)';
                 }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--border-medium)';
+                }}
                 onMouseOut={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--border-light)';
+                }}
+                onBlur={(e) => {
                   e.currentTarget.style.borderColor = 'var(--border-light)';
                 }}
               >
@@ -370,7 +375,13 @@ ${pieces.map((p, i) => `    ${i+1}. Type ${p.type}, Face ${p.face}, Rot ${p.rota
                     onMouseOver={(e) => {
                       e.currentTarget.style.backgroundColor = 'var(--button-primary-hover)';
                     }}
+                    onFocus={(e) => {
+                      e.currentTarget.style.backgroundColor = 'var(--button-primary-hover)';
+                    }}
                     onMouseOut={(e) => {
+                      e.currentTarget.style.backgroundColor = 'var(--button-primary-bg)';
+                    }}
+                    onBlur={(e) => {
                       e.currentTarget.style.backgroundColor = 'var(--button-primary-bg)';
                     }}
                     type="button"
@@ -387,7 +398,13 @@ ${pieces.map((p, i) => `    ${i+1}. Type ${p.type}, Face ${p.face}, Rot ${p.rota
                     onMouseOver={(e) => {
                       e.currentTarget.style.backgroundColor = 'var(--button-danger-hover)';
                     }}
+                    onFocus={(e) => {
+                      e.currentTarget.style.backgroundColor = 'var(--button-danger-hover)';
+                    }}
                     onMouseOut={(e) => {
+                      e.currentTarget.style.backgroundColor = 'var(--button-danger-bg)';
+                    }}
+                    onBlur={(e) => {
                       e.currentTarget.style.backgroundColor = 'var(--button-danger-bg)';
                     }}
                     type="button"
@@ -414,7 +431,13 @@ ${pieces.map((p, i) => `    ${i+1}. Type ${p.type}, Face ${p.face}, Rot ${p.rota
                 onMouseOver={(e) => {
                   e.currentTarget.style.backgroundColor = 'var(--button-secondary-hover)';
                 }}
+                onFocus={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--button-secondary-hover)';
+                }}
                 onMouseOut={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--button-secondary-bg)';
+                }}
+                onBlur={(e) => {
                   e.currentTarget.style.backgroundColor = 'var(--button-secondary-bg)';
                 }}
                 type="button"

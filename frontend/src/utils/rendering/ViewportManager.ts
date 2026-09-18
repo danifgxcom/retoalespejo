@@ -1,4 +1,4 @@
-import { PiecePosition } from './geometry/GameGeometry';
+import { PiecePosition } from '@reto/geometry';
 
 /**
  * Configuración de un viewport (área de visualización)
@@ -59,8 +59,8 @@ export interface RenderArea {
   };
   /** Coordenadas del mundo que se mapean a esta área */
   world: {
-    left: number;
-    top: number;
+    x: number;
+    y: number;
     width: number;
     height: number;
   };
@@ -277,9 +277,11 @@ export class ViewportManager {
     piece: PiecePosition,
     renderArea: RenderArea
   ): PiecePosition & { scaledSize: number } {
-    // Calcular reflejo en coordenadas del mundo
-    const reflectedWorldX = 2 * this.worldConfig.mirrorLineX - piece.x - this.worldConfig.pieceSize;
-    
+    // Calcular reflejo en coordenadas del mundo. piece.x es el CENTRO de la pieza
+    // (ver PieceShape.ts), así que el reflejo es simplemente x' = 2*mirrorLineX - x
+    // (misma fórmula que GameGeometry.reflectPieceAcrossMirror), sin restar pieceSize.
+    const reflectedWorldX = 2 * this.worldConfig.mirrorLineX - piece.x;
+
     const reflectedPiece = {
       ...piece,
       x: reflectedWorldX

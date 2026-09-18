@@ -1,12 +1,13 @@
 import React, { useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { Piece, drawPiece, drawPieceDebugInfo } from './GamePiece';
-import { GameGeometry } from '../utils/geometry/GameGeometry';
+import { GameGeometry } from '@reto/geometry';
+import { getPieceRadius } from '@reto/geometry';
 
 interface EditorCanvasProps {
   pieces: Piece[];
-  onMouseDown: (e: React.MouseEvent<HTMLCanvasElement>) => void;
-  onMouseMove: (e: React.MouseEvent<HTMLCanvasElement>) => void;
-  onMouseUp: (e: React.MouseEvent<HTMLCanvasElement>) => void;
+  onPointerDown: (e: React.PointerEvent<HTMLCanvasElement>) => void;
+  onPointerMove: (e: React.PointerEvent<HTMLCanvasElement>) => void;
+  onPointerUp: (e: React.PointerEvent<HTMLCanvasElement>) => void;
   onContextMenu: (e: React.MouseEvent<HTMLCanvasElement>) => void;
   geometry: GameGeometry;
   debugMode?: boolean;
@@ -18,7 +19,7 @@ export interface EditorCanvasRef {
 }
 
 const EditorCanvas = forwardRef<EditorCanvasRef, EditorCanvasProps>(
-  ({ pieces, onMouseDown, onMouseMove, onMouseUp, onContextMenu, geometry, debugMode = false, draggedPiece }, ref) => {
+  ({ pieces, onPointerDown, onPointerMove, onPointerUp, onContextMenu, debugMode = false, draggedPiece }, ref) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const PIECE_SIZE = 100;
 
@@ -164,33 +165,32 @@ const EditorCanvas = forwardRef<EditorCanvasRef, EditorCanvasProps>(
           ctx.lineWidth = 4;
           ctx.shadowColor = '#00ff00';
           ctx.shadowBlur = 8;
-          
-          // Dibujar borde alrededor de la pieza
-          const borderSize = PIECE_SIZE * 1.7;
-          const borderX = piece.x - (borderSize - PIECE_SIZE) / 2;
-          const borderY = piece.y - (borderSize - PIECE_SIZE) / 2;
-          ctx.strokeRect(borderX, borderY, borderSize, borderSize);
-          
+
+          // Dibujar borde alrededor de la pieza, centrado en su ancla real
+          const borderRadius = getPieceRadius(PIECE_SIZE) * 1.15;
+          ctx.strokeRect(piece.x - borderRadius, piece.y - borderRadius, borderRadius * 2, borderRadius * 2);
+
           ctx.restore();
         }
-        
+
         // Dibujar pieza original
         drawPiece(ctx, piece, piece.x, piece.y, PIECE_SIZE);
-        
+
         // Dibujar info de debug encima de cada pieza
         drawPieceDebugInfo(ctx, piece, piece.x, piece.y, PIECE_SIZE, debugMode);
 
         // Si la pieza está en el área de juego, dibujar su reflejo
         if (piece.placed && piece.y < GAME_AREA_HEIGHT) {
-          const reflectedX = 2 * MIRROR_LINE - piece.x - PIECE_SIZE;
-          
+          const reflectedX = 2 * MIRROR_LINE - piece.x;
+
+          // Reflejo real: se dibuja la pieza en su posición original y es el
+          // contexto el que la espeja respecto a la línea del espejo
           ctx.save();
-          ctx.translate(reflectedX + PIECE_SIZE/2, piece.y + PIECE_SIZE/2);
+          ctx.translate(2 * MIRROR_LINE, 0);
           ctx.scale(-1, 1);
-          ctx.translate(-PIECE_SIZE/2, -PIECE_SIZE/2);
-          drawPiece(ctx, piece, 0, 0, PIECE_SIZE);
+          drawPiece(ctx, piece, piece.x, piece.y, PIECE_SIZE);
           ctx.restore();
-          
+
           // Dibujar info de debug también en el reflejo
           const reflectedPiece = { ...piece, id: piece.id + 100 }; // ID diferente para reflejo
           drawPieceDebugInfo(ctx, reflectedPiece, reflectedX, piece.y, PIECE_SIZE, debugMode);
@@ -238,12 +238,13 @@ const EditorCanvas = forwardRef<EditorCanvasRef, EditorCanvasProps>(
             inset 0 0 0 10px #8b5a3c,
             0 8px 25px rgba(0, 0, 0, 0.3),
             0 0 15px rgba(212, 175, 55, 0.2)
-          `
+          `,
+          touchAction: 'none'
         }}
-        onMouseDown={onMouseDown}
-        onMouseMove={onMouseMove}
-        onMouseUp={onMouseUp}
-        onMouseLeave={onMouseUp}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
         onContextMenu={onContextMenu}
       />
     );

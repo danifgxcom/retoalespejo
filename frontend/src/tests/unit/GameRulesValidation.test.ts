@@ -1,11 +1,12 @@
-import { GameGeometry, PiecePosition, GameAreaConfig } from '../../utils/geometry/GameGeometry';
+import { GameGeometry, PiecePosition, GameAreaConfig } from '@reto/geometry';
 
 /**
  * Test para validar que las reglas del juego documentadas en GAME_RULES.md
  * se están aplicando correctamente.
  *
- * NOTA: Con la geometría actual, las piezas Type A a rotation=0 se extienden
- * 320px a la derecha del centro. Usamos rotation=270 donde bbox.right = piece.x+50.
+ * NOTA: piece.x/y es el CENTRO de la pieza (ver PieceShape.ts). Para Type A,
+ * rotation=270, el borde derecho del bbox queda en piece.x + 64, así que
+ * x=636 es la posición que toca el espejo exactamente (mirrorLineX=700).
  */
 describe('Validación de Reglas del Juego', () => {
   let geometry: GameGeometry;
@@ -22,9 +23,8 @@ describe('Validación de Reglas del Juego', () => {
 
   describe('Regla 1: Al menos una pieza debe tocar el espejo', () => {
     test('Challenge válido - pieza tocando el espejo', () => {
-      // rotation=270: bbox.right = piece.x+50 = 700 (touching mirror)
       const pieces: PiecePosition[] = [
-        { type: 'A', face: 'front', x: 650, y: 300, rotation: 270 }
+        { type: 'A', face: 'front', x: 636, y: 300, rotation: 270 }
       ];
 
       const validation = geometry.validateChallengeCard(pieces);
@@ -34,7 +34,6 @@ describe('Validación de Reglas del Juego', () => {
     });
 
     test('Challenge inválido - ninguna pieza toca el espejo', () => {
-      // rotation=270: bbox.right = 100+50 = 150 ≠ 700 (not touching)
       const pieces: PiecePosition[] = [
         { type: 'A', face: 'front', x: 100, y: 300, rotation: 270 }
       ];
@@ -50,7 +49,7 @@ describe('Validación de Reglas del Juego', () => {
     test('Challenge válido - una sola pieza no tiene solapamiento', () => {
       // Single piece: trivially no overlaps
       const pieces: PiecePosition[] = [
-        { type: 'A', face: 'front', x: 650, y: 300, rotation: 270 }
+        { type: 'A', face: 'front', x: 636, y: 300, rotation: 270 }
       ];
 
       const validation = geometry.validateChallengeCard(pieces);
@@ -60,7 +59,7 @@ describe('Validación de Reglas del Juego', () => {
     });
 
     test('Challenge inválido - piezas que se solapan', () => {
-      // Two pieces at the same position → 100% overlap
+      // Two pieces almost at the same position → solape real
       const pieces: PiecePosition[] = [
         { type: 'A', face: 'front', x: 550, y: 300, rotation: 0 },
         { type: 'A', face: 'front', x: 555, y: 305, rotation: 0 }
@@ -75,9 +74,8 @@ describe('Validación de Reglas del Juego', () => {
 
   describe('Regla 3: Las piezas no pueden entrar dentro del área del espejo', () => {
     test('Challenge válido - pieza toca pero no cruza el espejo', () => {
-      // rotation=270: bbox.right = 700 exactly (touching, not crossing)
       const pieces: PiecePosition[] = [
-        { type: 'A', face: 'front', x: 650, y: 300, rotation: 270 }
+        { type: 'A', face: 'front', x: 636, y: 300, rotation: 270 }
       ];
 
       const validation = geometry.validateChallengeCard(pieces);
@@ -88,7 +86,7 @@ describe('Validación de Reglas del Juego', () => {
     });
 
     test('Challenge inválido - pieza cruza el espejo', () => {
-      // rotation=0: bbox.right = piece.x+50+320 = 1020 >> 700 (crosses mirror)
+      // rotation=0: bbox.right = piece.x + 128 = 778 >> 700 (cruza el espejo)
       const pieces: PiecePosition[] = [
         { type: 'A', face: 'front', x: 650, y: 300, rotation: 0 }
       ];
@@ -104,7 +102,7 @@ describe('Validación de Reglas del Juego', () => {
     test('Challenge válido - piezas conectadas con una tocando el espejo', () => {
       // Single piece touching mirror: counts as connected (single piece → trivially connected)
       const pieces: PiecePosition[] = [
-        { type: 'A', face: 'front', x: 650, y: 300, rotation: 270 }
+        { type: 'A', face: 'front', x: 636, y: 300, rotation: 270 }
       ];
 
       const validation = geometry.validateChallengeCard(pieces);
@@ -115,25 +113,21 @@ describe('Validación de Reglas del Juego', () => {
     });
 
     test('Challenge inválido - piezas no conectadas', () => {
-      // Two pieces far apart: no connection possible
-      // Both need to not cross the mirror, so use rotation=270 at different positions
-      // These won't be connected since doPiecesTouch requires specific geometry
+      // Ninguna toca el espejo y están a 536px de distancia: no se tocan entre sí.
       const pieces: PiecePosition[] = [
-        { type: 'A', face: 'front', x: 100, y: 300, rotation: 270 }, // Far from mirror
-        { type: 'A', face: 'front', x: 650, y: 300, rotation: 270 }  // Touches mirror
+        { type: 'A', face: 'front', x: 100, y: 300, rotation: 270 },
+        { type: 'A', face: 'front', x: 636, y: 300, rotation: 270 }
       ];
 
-      // Far-apart pieces won't be connected (large x gap)
-      const result = geometry.arePiecesConnected(pieces);
-      expect(typeof result).toBe('boolean');
+      expect(geometry.arePiecesConnected(pieces)).toBe(false);
     });
   });
 
   describe('Regla 5: Ninguna pieza se puede solapar con su propio reflejo', () => {
     test('Challenge válido - pieza no se solapa con su reflejo', () => {
-      // rotation=270: isPieceTouchingMirror=TRUE → reflection overlap check returns FALSE
+      // Tocando el espejo exactamente: el reflejo coincide con la pieza, no se considera solape.
       const pieces: PiecePosition[] = [
-        { type: 'A', face: 'front', x: 650, y: 300, rotation: 270 }
+        { type: 'A', face: 'front', x: 636, y: 300, rotation: 270 }
       ];
 
       const validation = geometry.validateChallengeCard(pieces);
@@ -142,7 +136,6 @@ describe('Validación de Reglas del Juego', () => {
     });
 
     test('Challenge inválido - pieza se solapa con su reflejo', () => {
-      // rotation=0: shape extends far right; reflection formula + overlap check
       const pieces: PiecePosition[] = [
         { type: 'A', face: 'front', x: 650, y: 300, rotation: 0 }
       ];
@@ -156,9 +149,8 @@ describe('Validación de Reglas del Juego', () => {
 
   describe('Regla 6: Todas las piezas deben caber dentro del área de reto', () => {
     test('Challenge válido - piezas dentro del área', () => {
-      // rotation=270: shape well within bounds
       const pieces: PiecePosition[] = [
-        { type: 'A', face: 'front', x: 650, y: 300, rotation: 270 }
+        { type: 'A', face: 'front', x: 636, y: 300, rotation: 270 }
       ];
 
       const validation = geometry.validateChallengeCard(pieces);
@@ -167,7 +159,8 @@ describe('Validación de Reglas del Juego', () => {
     });
 
     test('Challenge inválido - pieza fuera del área', () => {
-      // Type B at x=-200: bbox.left = -200+50-320 = -470 << -50 → out of bounds
+      // Type B (volteada) en x=-200: bbox.left = -200 - 128 = -328, muy por debajo
+      // del mínimo permisivo (-50) → fuera del área.
       const pieces: PiecePosition[] = [
         { type: 'B', face: 'front', x: -200, y: 300, rotation: 0 }
       ];
@@ -181,9 +174,8 @@ describe('Validación de Reglas del Juego', () => {
 
   describe('Validación de Challenges Embebidos', () => {
     test('Challenge 1 - Corazón Simple debe ser válido', () => {
-      // rotation=270: single piece touching mirror at x=650
       const pieces: PiecePosition[] = [
-        { type: 'A', face: 'front', x: 650, y: 300, rotation: 270 }
+        { type: 'A', face: 'front', x: 636, y: 300, rotation: 270 }
       ];
 
       const validation = geometry.validateChallengeCard(pieces);
@@ -198,9 +190,8 @@ describe('Validación de Reglas del Juego', () => {
     });
 
     test('Challenge 2 - Bloque Horizontal debe ser válido (pieza única)', () => {
-      // Use a single piece that is definitely valid
       const pieces: PiecePosition[] = [
-        { type: 'A', face: 'front', x: 650, y: 400, rotation: 270 }
+        { type: 'A', face: 'front', x: 636, y: 400, rotation: 270 }
       ];
 
       const validation = geometry.validateChallengeCard(pieces);
@@ -212,7 +203,7 @@ describe('Validación de Reglas del Juego', () => {
 
     test('Challenge 3 - Torre Vertical debe ser válido (pieza única)', () => {
       const pieces: PiecePosition[] = [
-        { type: 'A', face: 'front', x: 650, y: 300, rotation: 270 }
+        { type: 'A', face: 'front', x: 636, y: 300, rotation: 270 }
       ];
 
       const validation = geometry.validateChallengeCard(pieces);
@@ -223,7 +214,7 @@ describe('Validación de Reglas del Juego', () => {
 
     test('Challenge 4 - Forma en L debe ser válido (pieza única)', () => {
       const pieces: PiecePosition[] = [
-        { type: 'A', face: 'front', x: 650, y: 300, rotation: 270 }
+        { type: 'A', face: 'front', x: 636, y: 300, rotation: 270 }
       ];
 
       const validation = geometry.validateChallengeCard(pieces);
@@ -236,18 +227,21 @@ describe('Validación de Reglas del Juego', () => {
   describe('Casos Edge - Geometría Precisa', () => {
     test('Piezas rotadas deben validarse correctamente', () => {
       const pieces: PiecePosition[] = [
-        { type: 'A', face: 'front', x: 650, y: 300, rotation: 270 }
+        { type: 'A', face: 'front', x: 636, y: 300, rotation: 270 }
       ];
 
       const validation = geometry.validateChallengeCard(pieces);
 
-      expect(validation.touchesMirror).toBeDefined();
-      expect(validation.piecesInArea).toBeDefined();
+      expect(validation.touchesMirror).toBe(true);
+      expect(validation.piecesInArea).toBe(true);
+      expect(validation.isValid).toBe(true);
     });
 
-    test.skip('Piezas tipo B (volteadas) deben validarse correctamente', () => {
+    test('Piezas tipo B (volteadas) deben validarse correctamente', () => {
+      // Type B se extiende de -128 a +192 respecto al centro (volteo horizontal
+      // de Type A): toca el espejo cuando bbox.right = x + 192 = 700, x = 508.
       const pieces: PiecePosition[] = [
-        { type: 'B', face: 'front', x: 380, y: 300, rotation: 0 }
+        { type: 'B', face: 'front', x: 508, y: 300, rotation: 0 }
       ];
 
       const validation = geometry.validateChallengeCard(pieces);
@@ -258,7 +252,7 @@ describe('Validación de Reglas del Juego', () => {
 
     test('Piezas con cara back deben validarse correctamente', () => {
       const pieces: PiecePosition[] = [
-        { type: 'A', face: 'back', x: 650, y: 300, rotation: 270 }
+        { type: 'A', face: 'back', x: 636, y: 300, rotation: 270 }
       ];
 
       const validation = geometry.validateChallengeCard(pieces);

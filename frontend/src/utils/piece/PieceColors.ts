@@ -1,6 +1,13 @@
 
 /**
- * Utility functions for handling piece colors consistently across the application
+ * Utility functions for handling piece colors consistently across the application.
+ *
+ * F21: qué paleta usar (normal / alto contraste) llega siempre como
+ * parámetro explícito `highContrast`, nunca se lee de `localStorage` aquí.
+ * El estado del tema vive sólo en ThemeContext (fuente de verdad única); cada
+ * llamador lo obtiene con `useTheme()` y lo pasa. Antes cada método leía
+ * `localStorage.getItem('theme')` por su cuenta, así que el dibujo se
+ * desincronizaba de React (y era imposible de testear sin tocar el DOM real).
  */
 
 export interface PieceColorInfo {
@@ -60,32 +67,26 @@ export class PieceColors {
   /**
    * Gets the identification color for a specific piece (for borders and labels)
    */
-  static getIdentificationColor(pieceId: number): string {
-    const savedTheme = localStorage.getItem('theme') as 'accessible' | 'colorful' || 'colorful';
-    const isAccessibleTheme = savedTheme === 'accessible';
-
+  static getIdentificationColor(pieceId: number, highContrast: boolean): string {
     // Use modulo to cycle through the colors if there are more pieces than colors
-    const colorIndex = (pieceId - 1) % (isAccessibleTheme ? 
+    const colorIndex = (pieceId - 1) % (highContrast ?
       this.accessibleRainbowColors.length : this.rainbowColors.length);
 
-    return isAccessibleTheme ? 
-      this.accessibleRainbowColors[colorIndex] : 
+    return highContrast ?
+      this.accessibleRainbowColors[colorIndex] :
       this.rainbowColors[colorIndex];
   }
 
   /**
    * Gets colors for a specific piece based on its ID
    */
-  static getColorsForPieceId(pieceId: number): PieceColorInfo {
-    const savedTheme = localStorage.getItem('theme') as 'accessible' | 'colorful' || 'colorful';
-    const isAccessibleTheme = savedTheme === 'accessible';
-
+  static getColorsForPieceId(pieceId: number, highContrast: boolean): PieceColorInfo {
     // Use modulo to cycle through the color pairs if there are more pieces than colors
-    const colorIndex = (pieceId - 1) % (isAccessibleTheme ? 
+    const colorIndex = (pieceId - 1) % (highContrast ?
       this.accessibleColorPairs.length : this.colorPairs.length);
 
-    return isAccessibleTheme ? 
-      this.accessibleColorPairs[colorIndex] : 
+    return highContrast ?
+      this.accessibleColorPairs[colorIndex] :
       this.colorPairs[colorIndex];
   }
 
@@ -93,16 +94,17 @@ export class PieceColors {
    * Gets the colors for a piece based on its face - Cross-browser compatible
    * @deprecated Use getColorsForPieceId instead for unique colors per piece
    */
-  static getColorsForFace(face: 'front' | 'back'): PieceColorInfo {
-    // Try to get theme from localStorage for consistent detection
-    const savedTheme = localStorage.getItem('theme') as 'accessible' | 'colorful' || 'colorful';
-    const isAccessibleTheme = savedTheme === 'accessible';
-
-    if (isAccessibleTheme) {
-      // WCAG AA compliant colors with high contrast and distinctive symbols
+  static getColorsForFace(face: 'front' | 'back', highContrast: boolean): PieceColorInfo {
+    if (highContrast) {
+      // Ámbar / azul marino: el par seguro para dicromatismo y, sobre todo, el
+      // único que separa las dos caras POR LUMINANCIA (6.1:1). El azul y el
+      // rojo anteriores daban 1.14:1 desaturados, o sea que en escala de grises
+      // las dos caras eran la misma; lo tapaba la trama diagonal de la cara
+      // "back", que se quitó porque delataba la unión en el espejo.
+      // Lo comprueba tests/unit/PieceFaceContrast.test.ts.
       return {
-        centerColor: face === 'front' ? '#1565C0' : '#B71C1C', // Blue squares vs red squares  
-        triangleColor: face === 'front' ? '#B71C1C' : '#1565C0' // Red triangles vs blue triangles
+        centerColor: face === 'front' ? '#FFD54F' : '#0D47A1',
+        triangleColor: face === 'front' ? '#0D47A1' : '#FFD54F'
       };
     } else {
       // Standard colors for colorful theme (ORIGINAL COLORS PRESERVED)
@@ -123,15 +125,15 @@ export class PieceColors {
   /**
    * Creates a piece color object from face information
    */
-  static createPieceColors(face: 'front' | 'back'): PieceColorInfo {
-    return this.getColorsForFace(face);
+  static createPieceColors(face: 'front' | 'back', highContrast: boolean): PieceColorInfo {
+    return this.getColorsForFace(face, highContrast);
   }
 
   /**
    * Validates if colors match the expected face
    */
-  static validatePieceColors(centerColor: string, triangleColor: string, expectedFace: 'front' | 'back'): boolean {
-    const expectedColors = this.getColorsForFace(expectedFace);
+  static validatePieceColors(centerColor: string, triangleColor: string, expectedFace: 'front' | 'back', highContrast: boolean): boolean {
+    const expectedColors = this.getColorsForFace(expectedFace, highContrast);
     return expectedColors.centerColor === centerColor && expectedColors.triangleColor === triangleColor;
   }
 }

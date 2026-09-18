@@ -1,9 +1,9 @@
 /**
  * Posiciones de piezas en coordenadas relativas
- * Basadas en las coordenadas del snapshot que funcionan correctamente
+ * Basadas en coordenadas de referencia que funcionan correctamente
  */
 
-import { RelativeCoordinate } from './rendering/ResponsiveCanvas';
+import { RelativeCoordinate } from '../rendering/ResponsiveCanvas';
 
 export interface RelativePiecePosition {
   x: number;      // Coordenada X relativa (0-1)
@@ -20,7 +20,7 @@ export class RelativePiecePositions {
    * Convierte coordenadas absolutas válidas a relativas
    * Posiciones actualizadas que quedan dentro del área de piezas válida
    */
-  private convertSnapshotToRelative() {
+  private convertReferencePositionsToRelative() {
     const baseWidth = 1400;
     const baseHeight = 1000;
     
@@ -45,7 +45,7 @@ export class RelativePiecePositions {
    * Obtiene posiciones relativas para diferentes cantidades de piezas
    */
   getPositionsForPieceCount(count: number): RelativePiecePosition[] {
-    const allPositions = this.convertSnapshotToRelative();
+    const allPositions = this.convertReferencePositionsToRelative();
     
     // Devolver las primeras N posiciones según el número de piezas
     return allPositions.slice(0, count);

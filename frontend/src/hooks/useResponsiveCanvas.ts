@@ -4,7 +4,7 @@
 
 import { useState, useEffect, useCallback, RefObject } from 'react';
 import { ResponsiveCanvas, RelativeCoordinate, AbsoluteCoordinate } from '../utils/rendering/ResponsiveCanvas';
-import { RelativePiecePositions, RelativePiecePosition } from '../utils/geometry/RelativePiecePositions';
+import { RelativePiecePositions } from '../utils/geometry/RelativePiecePositions';
 
 interface UseResponsiveCanvasProps {
   canvasRef: RefObject<{ getCanvas: () => HTMLCanvasElement | null }>;

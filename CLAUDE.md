@@ -17,7 +17,7 @@ This is a digital implementation of the "Reto al Espejo" (Mirror Challenge) puzz
 
 ### Hooks Architecture
 - **useGameLogic**: `hooks/useGameLogic.ts` - Game state management and piece manipulation
-- **useMouseHandlers**: `hooks/useMouseHandlers.ts` - Mouse interaction handling for drag & drop
+- **usePointerHandlers**: `hooks/usePointerHandlers.ts` - Interacción de puntero para arrastrar y soltar
 
 ### State Management
 - React hooks (`useState`, `useEffect`) centralized in custom hooks
@@ -27,17 +27,20 @@ This is a digital implementation of the "Reto al Espejo" (Mirror Challenge) puzz
 ### Key Game Mechanics
 - **Piece System**: Two types of geometric pieces (A & B) with color combinations (yellow center + red triangles, or inverted)
 - **Mirror Logic**: Real-time reflection of pieces placed in the game area, with automatic coordinate transformation
-- **Challenge System**: 4 predefined challenge patterns with varying difficulty levels
+- **Challenge System**: 16 retos en `public/challenges.json`. Los objetivos NO están en la retícula de 10 px: están en contacto exacto (hueco 0 contra el espejo y entre piezas), porque la geometría de la pieza (lado 128 px, giros de 45°) es inconmensurable con esa retícula y el redondeo dejaba costuras visibles en las tarjetas. Siguen siendo alcanzables porque el juego pega la pieza al soltarla — lo comprueban `tests/unit/ChallengeData.test.ts` (contacto) y `tests/integration/Winnable.test.ts` (alcanzables)
 - **Piece Manipulation**: Rotation (45° increments), face flipping (color inversion), and drag-and-drop positioning
 - **Interactive Piece Numbering**: Dynamic piece identification system with context-aware visibility
 
 ### Canvas Layout
-- **Game Area** (0-350px width): Where players place pieces
-- **Mirror Area** (350-700px width): Automatic reflection display
+- **Game Area** (0-700px width, 500px high): Where players place pieces
+- **Mirror Area** (700-1400px width): Automatic reflection display
 - **Piece Storage Area** (bottom section): Available pieces inventory
 - **Challenge Card**: Visual target pattern display
 
 ## Development Commands
+
+### Despliegue
+- `./scripts/deploy.sh` — construye y despliega a producción. La infraestructura (contenedor, rutas, servicio, vuelta atrás) está en `DEPLOY.md`; no hace falta redescubrirla.
 
 ### Local Development
 - `npm install` - Install project dependencies
@@ -63,24 +66,28 @@ This is a digital implementation of the "Reto al Espejo" (Mirror Challenge) puzz
 ## Clean Architecture & Multiplayer
 
 ### Frontend Services
-- **MultiplayerManager**: Centralized multiplayer logic, state management
-- **ValidationService**: Pure functions for solution validation with relative positioning  
-- **SocketService**: Low-level socket communication wrapper
+- **GameGeometry** y `utils/geometry/PieceShape.ts`: fuente única de la forma, reflexión y validación geométrica.
+- **SocketService**: comunicación Socket.io de bajo nivel; `RightSidebar` conecta los eventos de la sala.
+- **ValidationService**: comprueba la solución del jugador contra el objetivo del reto (emparejamiento de piezas y tolerancias). Es la ruta real: `useGameLogic.checkSolutionWithMirrors` delega aquí, y ya no existe la copia duplicada que tenía el hook. Las reglas geométricas (contacto, solape, espejo, área) siguen en `GameGeometry`.
+  - Normaliza SÓLO en vertical: deslizar la figura arriba o abajo compone la misma figura, pero moverla en horizontal cambia su encaje con el reflejo, así que la X se compara tal cual.
+  - Tolerancias en `SOLUTION_TOLERANCE`: 20 px de posición y 22° de giro (medio paso), para que una pieza girada un paso entero falle.
 
 ### Backend Structure
-- **gameUtils.js**: Shared utilities (game state, statistics, notifications)
-- **index.js**: Main server with clean event handlers
+- **gameHelpers.js**: validación y utilidades del servidor.
+- **index.js**: servidor Socket.io y eventos autoritativos.
 
 ### Multiplayer Features
 - **Real-time Synchronization**: Timers, overlays, player elimination
 - **Game Statistics**: Completion times, winners, challenge progression
-- **Anti-cheat**: Full-screen overlays prevent interaction during pause
-- **Relative Validation**: Ignores absolute canvas position, checks piece relationships
+- **Anti-trampas**: el servidor es autoritativo (marcador, tiempo con pausas descontadas, anfitrión). Los overlays son sólo interfaz, no una defensa.
+- **Validación**: normaliza SÓLO en vertical. La X se compara tal cual porque mide la distancia al espejo: mover la figura en horizontal cambia la figura compuesta con su reflejo.
 
 ### Geometric Rendering
 - Custom canvas drawing with rotation support
-- Mirror reflection: `reflectedX = mirrorLine + (mirrorLine - pieceCenter)`
-- Validation uses piece relationships, not absolute positions
+- `piece.x` y `piece.y` son el **centro** de la pieza; la forma única vive en `utils/geometry/PieceShape.ts`.
+- Las **tarjetas de reto** (`ChallengeThumbnail`) no dibujan pieza a pieza: agrupan por color y contornean la figura entera con `drawColorRegions`, así la pieza y su reflejo se funden y la tarjeta no chiva dónde acaba cada pieza (como las tarjetas originales). El tablero sí dibuja pieza a pieza con `drawPiece`.
+- Reflexión: `x' = 2 · mirrorLineX − x`, cambiando A↔B y negando el giro. El espejo invierte la quiralidad, no sólo traslada.
+- **Encaje a contacto exacto**: al soltar, `GameGeometry.refineToExactContact` lleva la pieza a hueco CERO contra el espejo y sus vecinas, y `RotationAwareGrid.settlePlacedPieces` asienta además el resto de la figura (la primera pieza colocada no tiene contra qué alinearse y se queda con el error de la retícula de 10 px; si la segunda toca el espejo ya no puede ir a buscarla). Sin esto quedaban ranuras de hasta ~6 px que el jugador VE aunque la validación las dé por buenas — lo comprueba `tests/integration/SinRanuras.test.ts`.
 
 ### Multiplayer Rules
 - Timer sync via server commands (pause/resume/reset)

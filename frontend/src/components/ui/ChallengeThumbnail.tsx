@@ -1,9 +1,9 @@
 import React, { useRef, useEffect, useMemo } from 'react';
 import { Challenge } from '../ChallengeCard';
-import { drawPiece, Piece } from '../GamePiece';
+import { getPiecePartsInWorld, drawColorRegions } from '../GamePiece';
 import { useTheme } from '../../contexts/ThemeContext';
 import { PieceColors } from '../../utils/piece/PieceColors';
-import { GameGeometry, PiecePosition } from '../../utils/geometry/GameGeometry';
+import { GameGeometry, PiecePosition } from '@reto/geometry';
 
 interface ChallengeThumbnailProps {
   challenge: Challenge;
@@ -44,7 +44,9 @@ const ChallengeThumbnail: React.FC<ChallengeThumbnailProps> = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const isInteractive = interactive || !!onClick;
-  const { theme } = useTheme(); // Get current theme to force re-render on theme change
+  // F21: única fuente de verdad del tema - por contexto, no localStorage.
+  const { resolvedClarity, highContrast } = useTheme();
+  const isDarkClarity = resolvedClarity === 'dark';
   const thumbnailGeometry = useMemo(() => new GameGeometry({
     width: 700,
     height: 600,
@@ -67,8 +69,6 @@ const ChallengeThumbnail: React.FC<ChallengeThumbnailProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Use consistent theme detection - prioritize context over localStorage
-    const isAccessibleTheme = theme === 'accessible';
     // Debug logging disabled to prevent console spam
 
     // Clear canvas
@@ -123,96 +123,56 @@ const ChallengeThumbnail: React.FC<ChallengeThumbnailProps> = ({
     // Debug logging disabled to prevent console spam
     // Use browser dev tools for debugging if needed
 
+    // Sin marca del eje del espejo: la tarjeta es la figura acabada y dibujar
+    // ahí una línea es justo señalar la unión que no debe notarse (las tarjetas
+    // originales tampoco la llevan).
     const mirrorX = mirrorLine * scale + offsetX;
-    if (mirrorX >= 0 && mirrorX <= width) {
-      ctx.save();
-      ctx.strokeStyle = isAccessibleTheme ? '#f97316' : '#ef4444';
-      ctx.lineWidth = 2;
-      ctx.setLineDash([5, 4]);
-      ctx.beginPath();
-      ctx.moveTo(mirrorX, 8);
-      ctx.lineTo(mirrorX, height - 8);
-      ctx.stroke();
-      ctx.restore();
-    }
 
-    // Draw original pieces
-    playerPieces.forEach((piecePos) => {
-      const x = piecePos.x * scale + offsetX;
-      const y = piecePos.y * scale + offsetY;
-      const size = 100 * scale;
+    /**
+     * La figura se dibuja como UNA silueta con el contorno por regiones de
+     * color, igual que las tarjetas originales del juego: la pieza y su reflejo
+     * se funden en el espejo y la tarjeta no chiva dónde acaba cada pieza.
+     */
+    const colors = (face: 'front' | 'back') => PieceColors.getColorsForFace(face, highContrast);
+    const toScreen = ([x, y]: [number, number], flip: boolean): [number, number] => {
+      const sx = x * scale + offsetX;
+      return [flip ? 2 * mirrorX - sx : sx, y * scale + offsetY];
+    };
 
-      // Use the same color system as other components
-      const colors = PieceColors.getColorsForFace(piecePos.face);
-      const centerColor = colors.centerColor;
-      const triangleColor = colors.triangleColor;
-
-      const displayPiece = {
-        id: 999,
-        type: piecePos.type,
-        face: piecePos.face,
-        centerColor,
-        triangleColor,
-        x: 0,
-        y: 0,
-        rotation: piecePos.rotation,
-        placed: true
-      };
-
-      drawPiece(ctx, displayPiece, x, y, size);
+    const byColor = new Map<string, Array<Array<[number, number]>>>();
+    playerPieces.forEach(piecePos => {
+      const { centerColor, triangleColor } = colors(piecePos.face);
+      getPiecePartsInWorld(piecePos, 100).forEach(part => {
+        const color = part.kind === 'center' ? centerColor : triangleColor;
+        [false, true].forEach(flip => {
+          const group = byColor.get(color) ?? [];
+          group.push(part.points.map(point => toScreen(point, flip)));
+          byColor.set(color, group);
+        });
+      });
     });
 
+    drawColorRegions(
+      ctx,
+      [...byColor].map(([color, polygons]) => ({ color, polygons })),
+      isDarkClarity ? '#0f172a' : '#1f2937',
+      Math.max(0.75, 100 * scale * 0.012)
+    );
 
-    // Draw reflected pieces
-
-    playerPieces.forEach((piecePos) => {
-      const reflectedX = 2 * mirrorLine - piecePos.x - 100;
-      const x = reflectedX * scale + offsetX;
-      const y = piecePos.y * scale + offsetY;
-      const size = 100 * scale;
-
-      // Use the same color system as other components
-      const colors = PieceColors.getColorsForFace(piecePos.face);
-      const centerColor = colors.centerColor;
-      const triangleColor = colors.triangleColor;
-
-      const reflectedPiece = {
-        id: 998,
-        type: piecePos.type,
-        face: piecePos.face,
-        centerColor,
-        triangleColor,
-        x: 0,
-        y: 0,
-        rotation: piecePos.rotation,
-        placed: true
-      };
-
-      // Draw reflected piece with horizontal flip
-      ctx.save();
-      ctx.translate(x + size/2, y + size/2);
-      ctx.scale(-1, 1);
-      ctx.translate(-size/2, -size/2);
-      drawPiece(ctx, reflectedPiece, 0, 0, size);
-      ctx.restore();
-    });
-
-
-  }, [challenge, width, height, backgroundColor, theme, thumbnailGeometry]); // Include theme to force re-render on theme change
+  }, [challenge, width, height, backgroundColor, resolvedClarity, isDarkClarity, highContrast, thumbnailGeometry]); // Re-render when theme changes
 
   // Generate a description for screen readers
   const generateDescription = () => {
-    const { title, difficulty, objective } = challenge;
+    const { name, difficulty, objective } = challenge;
     const pieceCount = objective.playerPieces.length;
-    return `${title || 'Challenge'} - Difficulty: ${difficulty}. Contains ${pieceCount} pieces to arrange.`;
+    return `${name || 'Challenge'} - Difficulty: ${difficulty}. Contains ${pieceCount} pieces to arrange.`;
   };
 
   // Default alt text if none provided
   const accessibleAlt = alt || generateDescription();
 
   // Get theme-aware canvas background using consistent theme detection
-  const isAccessibleTheme = theme === 'accessible';
-  const canvasBackgroundColor = backgroundColor ? 'transparent' : (isAccessibleTheme ? '#1e293b' : '#f8fafc');
+  const canvasBackgroundColor = backgroundColor ? 'transparent' : (isDarkClarity ? '#1e293b' : '#f8fafc');
 
   return (
     <div 
@@ -229,8 +189,11 @@ const ChallengeThumbnail: React.FC<ChallengeThumbnailProps> = ({
         ref={canvasRef}
         width={width}
         height={height}
-        className="rounded-lg shadow-sm"
+        className="rounded-lg shadow-sm w-full h-auto"
         style={{ 
+          // El mapa de bits mantiene su tamaño; la caja se encoge con el panel
+          // (imprescindible con zoom, donde el panel es más estrecho).
+          maxWidth: `${width}px`,
           imageRendering: 'crisp-edges', 
           border: '1px solid var(--border-light)',
           backgroundColor: canvasBackgroundColor 

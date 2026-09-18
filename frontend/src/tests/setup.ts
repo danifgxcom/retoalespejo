@@ -34,6 +34,11 @@ expect.extend({
   // Puedes añadir matchers personalizados aquí si es necesario
 });
 
+declare global {
+  // eslint-disable-next-line no-var
+  var setComputedStyle: (element: Element, styles: Partial<CSSStyleDeclaration>) => void;
+}
+
 // Funciones auxiliares globales para pruebas
 global.setComputedStyle = (element: Element, styles: Partial<CSSStyleDeclaration>) => {
   Object.defineProperty(element, 'computedStyleMap', {
@@ -46,7 +51,8 @@ global.setComputedStyle = (element: Element, styles: Partial<CSSStyleDeclaration
       ...styles,
       getPropertyValue: (prop: string) => {
         const camelCaseProp = prop.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
-        return (styles as any)[camelCaseProp] || '';
+        const value = styles[camelCaseProp as keyof CSSStyleDeclaration];
+        return typeof value === 'string' ? value : '';
       }
     } as CSSStyleDeclaration;
   });

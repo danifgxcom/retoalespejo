@@ -1,4 +1,4 @@
-import { GameGeometry, GameAreaConfig } from '../utils/geometry/GameGeometry';
+import { GameGeometry, GameAreaConfig } from '@reto/geometry';
 import { ChallengeGenerator } from '../utils/challenges/ChallengeGenerator';
 
 // Create a test function to specifically check for piece overlaps in all challenges

@@ -1,5 +1,5 @@
 import { ChallengeService } from '../../services/ChallengeService';
-import { GameGeometry } from '../../utils/geometry/GameGeometry';
+import { GameGeometry } from '@reto/geometry';
 
 // Mock para fetch global
 global.fetch = jest.fn();
@@ -135,7 +135,7 @@ describe('ChallengeService', () => {
           {
             id: 1,
             name: 'Original Problem',
-            description: 'Converting x=330 from absolute',
+            description: 'Pieza tocando el espejo en coordenadas relativas',
             piecesNeeded: 1,
             difficulty: 'Easy',
             targetPattern: 'test',
@@ -143,8 +143,8 @@ describe('ChallengeService', () => {
               {
                 type: 'A' as const,
                 face: 'front' as const,
-                x: -270, // Original x=330 converted to relative (-270)
-                y: 0,    // Original y=300 converted to relative (0)
+                x: 0, // x=0 = tocando el espejo (una sola pieza debe tocarlo para ser válida)
+                y: 0,
                 rotation: 0
               }
             ]
@@ -162,10 +162,11 @@ describe('ChallengeService', () => {
 
       expect(result.success).toBe(true);
       const piece = result.challenges[0].objective.playerPieces[0];
-      
-      // Should convert back to something close to original absolute coordinates
-      // relative x=-270 should become absolute x=330 (600-270=330)
-      expect(piece.x).toBe(330);
+
+      // La posición absoluta de x=0 es la que toca exactamente el espejo con esa
+      // rotación (no un valor fijo: depende de la geometría real de la pieza).
+      const expectedTouchingX = geometry.getPositionTouchingMirror(300, 0, 'A').x;
+      expect(piece.x).toBe(expectedTouchingX);
       expect(piece.y).toBe(300);
     });
   });

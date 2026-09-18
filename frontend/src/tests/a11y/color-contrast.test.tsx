@@ -37,10 +37,11 @@ describe('Pruebas de contraste de color según APCA (WCAG 3.0)', () => {
       // Pass hex strings directly to calcAPCA (it uses colorParsley internally)
       const contrast = Math.abs(calcAPCA(foreground, background) as number);
 
-      expect(contrast).toBeGreaterThanOrEqual(
-        minContrast,
-        `El contraste entre ${foreground} y ${background} es ${contrast.toFixed(2)}, debería ser al menos ${minContrast}`
-      );
+      if (contrast < minContrast) {
+        throw new Error(
+          `El contraste entre ${foreground} y ${background} es ${contrast.toFixed(2)}, debería ser al menos ${minContrast}`
+        );
+      }
     });
   });
 });

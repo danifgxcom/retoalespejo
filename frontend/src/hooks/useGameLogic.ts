@@ -1,17 +1,23 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Piece } from '../components/GamePiece';
 import { Challenge, PiecePosition } from '../components/ChallengeCard';
-import { GameGeometry, GameAreaConfig } from '../utils/geometry/GameGeometry';
+import { GameGeometry, GameAreaConfig } from '@reto/geometry';
 import { ChallengeGenerator } from '../utils/challenges/ChallengeGenerator';
-import { RelativePiecePositions } from '../utils/geometry/RelativePiecePositions';
 import { ResponsiveCanvas } from '../utils/rendering/ResponsiveCanvas';
 import { PieceColors } from '../utils/piece/PieceColors';
 import { PiecePositioningAlgorithm, PositioningArea } from '../utils/positioning/PiecePositioningAlgorithm';
+import { getLocalVertices } from '@reto/geometry';
 import { useTheme } from '../contexts/ThemeContext';
+import { ValidationService, ValidationResult } from '@reto/geometry';
+import { loadGameProgress, saveGameProgress } from '../utils/progress/gameProgress';
+import { computeCampaignNavigation } from '../utils/progress/campaignNavigation';
+import { createHistory, pushSnapshot, undoStep, redoStep, HistoryState } from '../utils/progress/undoHistory';
 
 export const useGameLogic = () => {
-  // Get theme to trigger piece recreation when theme changes
-  const { theme } = useTheme();
+  // F21: la paleta (única propiedad de la que dependen los colores de pieza)
+  // llega por contexto, no se lee de localStorage aquí.
+  const { palette } = useTheme();
+  const highContrast = palette === 'high';
   
   // Configuración de geometría del juego
   const gameAreaConfig: GameAreaConfig = {
@@ -28,7 +34,6 @@ export const useGameLogic = () => {
 
   // Sistema de coordenadas responsive
   const [responsiveCanvas, setResponsiveCanvas] = useState<ResponsiveCanvas | null>(null);
-  const relativePiecePositions = useMemo(() => new RelativePiecePositions(), []);
 
   // Función para inicializar el sistema responsive
   const initializeResponsiveSystem = useCallback((canvasWidth: number, canvasHeight: number) => {
@@ -44,14 +49,46 @@ export const useGameLogic = () => {
   const [pieces, setPieces] = useState<Piece[]>([]);
   const [draggedPiece, setDraggedPiece] = useState<Piece | null>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const [showInstructions, setShowInstructions] = useState(true);
+  const [showInstructions, setShowInstructions] = useState(false); // la ayuda se abre con el botón: no debe robar altura al lienzo
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [interactingPieceId, setInteractingPieceId] = useState<number | null>(null);
   const [temporaryDraggedPieceId, setTemporaryDraggedPieceId] = useState<number | null>(null);
   const [animatingPieceId, setAnimatingPieceId] = useState<number | null>(null);
   const [completedChallenges, setCompletedChallenges] = useState<Set<number>>(new Set());
+  const [bestTimes, setBestTimes] = useState<Record<number, number>>({});
   const [showGrid, setShowGrid] = useState(false);
+
+  // F13: pila de deshacer/rehacer sobre `pieces`. La mecánica en sí
+  // (empujar, deshacer, rehacer, tope de 10) vive en undoHistory.ts, un
+  // módulo puro con su propio test - aquí sólo se conecta al estado React.
+  const [history, setHistory] = useState<HistoryState<Piece[]>>(() => createHistory<Piece[]>());
+
+  // Guarda el estado ANTERIOR a una acción discreta. Cualquier acción nueva
+  // invalida el rehacer pendiente (semántica estándar de undo/redo).
+  const pushHistory = useCallback((snapshot: Piece[]) => {
+    setHistory(prev => pushSnapshot(prev, snapshot));
+  }, []);
+
+  const undo = () => {
+    const result = undoStep(history, pieces);
+    if (!result) return;
+    setHistory(result.history);
+    setPieces(result.value);
+  };
+
+  const redo = () => {
+    const result = redoStep(history, pieces);
+    if (!result) return;
+    setHistory(result.history);
+    setPieces(result.value);
+  };
+
+  // Cambiar de reto vacía la pila: las posiciones de un reto no tienen
+  // sentido como deshacer/rehacer en otro.
+  useEffect(() => {
+    setHistory(createHistory<Piece[]>());
+  }, [currentChallenge]);
 
   // Función para activar efecto de control (llamada desde el componente de controles)
   const setControlEffect = (pieceId: number | null) => {
@@ -101,7 +138,7 @@ export const useGameLogic = () => {
   // Configuración de plantillas de piezas
   const createPieceTemplate = (type: 'A' | 'B', face: 'front' | 'back') => {
     // Use theme-aware colors instead of fixed colors
-    const colors = PieceColors.getColorsForFace(face);
+    const colors = PieceColors.getColorsForFace(face, highContrast);
     return {
       type,
       face,
@@ -110,16 +147,11 @@ export const useGameLogic = () => {
     };
   };
 
-  // Función helper para calcular el reflejo de una pieza usando la clase de geometría
-  const calculateMirrorPiece = (piece: PiecePosition): PiecePosition => {
-    return geometry.reflectPieceAcrossMirror(piece);
-  };
 
   // Función para cargar desafíos desde un archivo personalizado
   const loadCustomChallenges = useCallback(async (file: File) => {
     // Evitar cargar múltiples veces simultáneamente
     if (isLoadingChallengesRef.current) {
-      console.log('Ya se están cargando los desafíos, ignorando solicitud adicional');
       return;
     }
 
@@ -127,7 +159,6 @@ export const useGameLogic = () => {
     setIsLoading(true);
 
     try {
-      console.log('Cargando desafíos personalizados desde archivo subido por el usuario');
 
       // Cargar directamente desde el contenido del archivo en lugar de crear un blob URL
       const fileContent = await file.text();
@@ -148,7 +179,6 @@ export const useGameLogic = () => {
           );
 
           if (loadedChallenges.length > 0) {
-            console.log(`Cargados ${loadedChallenges.length} desafíos personalizados`);
             setChallenges(loadedChallenges);
             setCurrentChallenge(0); // Reiniciar al primer desafío
           } else {
@@ -169,60 +199,33 @@ export const useGameLogic = () => {
   }, [challengeGenerator]);
 
   // Función para alternar cara de la pieza
+  /**
+   * Da la vuelta a la pieza, como se le daría a una ficha física.
+   *
+   * No basta con intercambiar los colores: al voltearla se ve su otra cara, que
+   * es la forma ESPEJADA. Por eso cambia también el tipo (A↔B) y se invierte el
+   * sentido del giro, que es la misma transformación que aplica el espejo. El
+   * centro no se mueve, porque es el ancla de la pieza.
+   *
+   * Antes sólo cambiaban los colores, así que el juego mostraba una pieza que
+   * físicamente no puede existir: la misma forma con las caras invertidas.
+   */
   const togglePieceFace = (piece: Piece): Piece => {
     const isBack = piece.face === 'back';
     const newFace = isBack ? 'front' : 'back';
 
     // Use theme-aware colors for consistency
-    const colors = PieceColors.getColorsForFace(newFace);
+    const colors = PieceColors.getColorsForFace(newFace, highContrast);
     return {
       ...piece,
+      type: piece.type === 'A' ? 'B' : 'A',
+      rotation: (360 - (piece.rotation % 360)) % 360,
       face: newFace,
       centerColor: colors.centerColor,
       triangleColor: colors.triangleColor
     };
   };
 
-  // Nueva función responsive para crear piezas
-  const createResponsivePieces = (challenge: Challenge): Piece[] => {
-    if (!responsiveCanvas) {
-      // Fallback al método legacy si no hay sistema responsive
-      return createChallengeSpecificPieces(challenge);
-    }
-
-    const initialPieces: Piece[] = [];
-
-    // Obtener posiciones relativas y convertirlas a absolutas
-    const relativePositions = relativePiecePositions.getPositionsForPieceCount(challenge.piecesNeeded);
-
-    console.log(`📏 Creating ${challenge.piecesNeeded} responsive pieces`);
-
-    relativePositions.forEach((relPos, index) => {
-      const pieceType = index % 2 === 0 ? 'A' : 'B'; // Alternar A, B, A, B...
-      const template = createPieceTemplate(pieceType, 'front'); // SIEMPRE empezar con cara front
-
-      // Convertir coordenadas relativas a absolutas actuales
-      const absolutePos = responsiveCanvas.relativeToAbsolute({
-        x: relPos.x,
-        y: relPos.y
-      });
-
-      // Debug de conversión
-
-      const piece = {
-        ...template,
-        id: index + 1,
-        x: absolutePos.x,
-        y: absolutePos.y,
-        rotation: relPos.rotation,
-        placed: false
-      };
-
-      initialPieces.push(piece);
-    });
-
-    return initialPieces;
-  };
 
   const getStorageArea = (): PositioningArea => ({
     x: 0,
@@ -277,119 +280,70 @@ export const useGameLogic = () => {
     return buildPiecesFromPositions(challenge, fallbackPositions);
   };
 
-  // Función legacy para mantener compatibilidad
-  const createInitialPieces = (piecesCount: number): Piece[] => {
-    const currentChallengeData = challenges[currentChallenge];
-    if (currentChallengeData) {
-      return createChallengeSpecificPieces(currentChallengeData);
-    }
 
-    // Fallback al método original si no hay challenge
-    const availableAreaX = 0;
-    const availableAreaY = 600;
-    const availableAreaWidth = 700;
-    const pieceSize = 100;
-    const marginX = 50;
-    const absolutePieceY = 900;
-    const spacing = 120;
-
-    const initialPieces: Piece[] = [];
-    const positions = [];
-
-    for (let i = 0; i < piecesCount; i++) {
-      const x = availableAreaX + marginX + (i * spacing);
-      const y = absolutePieceY;
-      positions.push({ x: Math.min(x, availableAreaWidth - pieceSize), y });
-    }
-
-    for (let i = 0; i < piecesCount; i++) {
-      const pieceType = i % 2 === 0 ? 'A' : 'B';
-      const template = createPieceTemplate(pieceType, 'front');
-      const position = positions[i];
-
-      initialPieces.push({
-        ...template,
-        id: i + 1,
-        x: position.x,
-        y: position.y,
-        rotation: 0,
-        placed: false
-      });
-    }
-
-    return initialPieces;
-  };
-
-  // Verificar si un punto está dentro de una pieza
+  // Verificar si un punto está dentro de una pieza.
+  // Usa el mismo contorno que dibuja PieceShape (una sola fuente de verdad) y un
+  // test de punto-en-polígono por ray casting, en vez de reimplementar la forma
+  // a mano con cuatro tests de triángulo que podían desincronizarse del dibujo.
   const isPieceHit = (piece: Piece, x: number, y: number): boolean => {
-    const size = 100; // Tamaño base de la pieza (25% más grande)
-    const unit = size * 1.28; // Factor de escala
-
-    // La pieza se dibuja con translate(x + size/2, y + size/2) y luego rotate
-    // Necesitamos hacer la transformación inversa
-    const pieceDrawCenterX = piece.x + size/2;
-    const pieceDrawCenterY = piece.y + size/2;
-
-    // Traducir el punto al origen de la pieza
-    const translatedX = x - pieceDrawCenterX;
-    const translatedY = y - pieceDrawCenterY;
-
-    // Rotar en sentido contrario para "desrotar" el punto
-    const rad = (-piece.rotation * Math.PI) / 180;
+    // piece.x/y es el centro (y también el pivote de rotación): deshacemos la
+    // traslación y la rotación para llevar el punto al sistema local de la pieza.
+    const dx = x - piece.x;
+    const dy = y - piece.y;
+    const rad = (piece.rotation * Math.PI) / 180;
     const cos = Math.cos(rad);
     const sin = Math.sin(rad);
-    const rotatedX = translatedX * cos - translatedY * sin;
-    const rotatedY = translatedX * sin + translatedY * cos;
+    const localX = dx * cos + dy * sin;
+    const localY = -dx * sin + dy * cos;
 
-    // Si es pieza tipo B, compensar el volteo horizontal que se aplica en el dibujo
-    let finalRotatedX = rotatedX;
-    if (piece.type === 'B') {
-      finalRotatedX = -rotatedX;
+    // getLocalVertices ya aplica el volteo horizontal de las piezas tipo B.
+    const vertices = getLocalVertices(piece.type, gameAreaConfig.pieceSize);
+
+    let inside = false;
+    for (let i = 0, j = vertices.length - 1; i < vertices.length; j = i++) {
+      const [xi, yi] = vertices[i];
+      const [xj, yj] = vertices[j];
+      const intersects = (yi > localY) !== (yj > localY) &&
+        localX < ((xj - xi) * (localY - yi)) / (yj - yi) + xi;
+      if (intersects) inside = !inside;
     }
 
-    // Convertir a coordenadas unitarias de la pieza (el sistema coord(x,y))
-    const unitX = finalRotatedX / unit;
-    const unitY = -rotatedY / unit; // Invertir Y porque el canvas Y+ es hacia abajo
-
-    // Función para verificar si un punto está dentro de un triángulo
-    const isPointInTriangle = (px: number, py: number, x1: number, y1: number, x2: number, y2: number, x3: number, y3: number): boolean => {
-      const denom = (y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3);
-      const a = ((y2 - y3) * (px - x3) + (x3 - x2) * (py - y3)) / denom;
-      const b = ((y3 - y1) * (px - x3) + (x1 - x3) * (py - y3)) / denom;
-      const c = 1 - a - b;
-      return a >= 0 && b >= 0 && c >= 0;
-    };
-
-    // Verificar si está en el cuadrado central (1,0), (2,0), (2,1), (1,1)
-    const inSquare = unitX >= 1 && unitX <= 2 && unitY >= 0 && unitY <= 1;
-
-    // Verificar si está en el triángulo izquierdo (0,0), (1,0), (1,1)
-    const inLeftTriangle = isPointInTriangle(unitX, unitY, 0, 0, 1, 0, 1, 1);
-
-    // Verificar si está en el triángulo superior (1,1), (2,1), (1.5,1.5)
-    const inTopTriangle = isPointInTriangle(unitX, unitY, 1, 1, 2, 1, 1.5, 1.5);
-
-    // Verificar si está en el triángulo derecho (2,0), (2,1), (2.5,0.5)
-    const inRightTriangle = isPointInTriangle(unitX, unitY, 2, 0, 2, 1, 2.5, 0.5);
-
-    return inSquare || inLeftTriangle || inTopTriangle || inRightTriangle;
+    return inside;
   };
 
   // Ref para controlar si ya se han cargado los desafíos iniciales
   const initialChallengesLoadedRef = useRef(false);
+
+  // F03: restaura el progreso guardado (reto en curso, completados, mejores
+  // tiempos) una vez que se conoce el array real de retos - hace falta para
+  // traducir los IDs persistidos a índices del array cargado.
+  const restoreProgress = (loadedChallenges: Challenge[]) => {
+    const progress = loadGameProgress();
+
+    const lastIndex = loadedChallenges.findIndex(c => c.id === progress.lastChallenge);
+    if (lastIndex >= 0) {
+      setCurrentChallenge(lastIndex);
+    }
+
+    const completedIndices = new Set(
+      progress.completed
+        .map(id => loadedChallenges.findIndex(c => c.id === id))
+        .filter(index => index >= 0)
+    );
+    setCompletedChallenges(completedIndices);
+    setBestTimes(progress.bestTimes);
+  };
 
   // Cargar desafíos al iniciar - solo una vez
   useEffect(() => {
     const loadInitialChallenges = async () => {
       // Si ya se cargaron los desafíos inicialmente, no volver a cargarlos
       if (initialChallengesLoadedRef.current) {
-        console.log('Los desafíos ya fueron cargados inicialmente, no se volverán a cargar');
         return;
       }
 
       // Evitar cargar múltiples veces simultáneamente
       if (isLoadingChallengesRef.current) {
-        console.log('Ya se están cargando los desafíos, ignorando solicitud adicional');
         return;
       }
 
@@ -400,12 +354,15 @@ export const useGameLogic = () => {
         // Intentar cargar los desafíos desde el archivo por defecto
         const loadedChallenges = await challengeGenerator.getAvailableChallenges();
         setChallenges(loadedChallenges);
+        restoreProgress(loadedChallenges);
         // Marcar que ya se cargaron los desafíos iniciales
         initialChallengesLoadedRef.current = true;
       } catch (error) {
         console.error('Error al cargar los desafíos iniciales:', error);
         // Si falla, usar los desafíos predefinidos
-        setChallenges(challengeGenerator.generateAllChallenges());
+        const fallbackChallenges = challengeGenerator.generateAllChallenges();
+        setChallenges(fallbackChallenges);
+        restoreProgress(fallbackChallenges);
         // Marcar que ya se cargaron los desafíos iniciales (aunque sean los predefinidos)
         initialChallengesLoadedRef.current = true;
       } finally {
@@ -425,17 +382,18 @@ export const useGameLogic = () => {
     if (challenge) {
       // Usar siempre el sistema con posiciones fijas corregidas para mejor consistencia
       const newPieces = createChallengeSpecificPieces(challenge);
-      console.log('🔄 Setting pieces for challenge:', challenge.id, 'pieces count:', newPieces.length);
       setPieces(newPieces);
     }
   }, [currentChallenge, challenges, isLoading]);
 
-  // Update piece colors when theme changes (without resetting positions)
+  // Update piece colors when the palette changes (without resetting positions).
+  // La claridad (light/dark) no afecta a estos colores, así que no hace falta
+  // recrearlos cuando sólo cambia ese eje.
   useEffect(() => {
     if (pieces.length > 0) {
-      setPieces(prevPieces => 
+      setPieces(prevPieces =>
         prevPieces.map(piece => {
-          const colors = PieceColors.getColorsForFace(piece.face);
+          const colors = PieceColors.getColorsForFace(piece.face, highContrast);
           return {
             ...piece,
             centerColor: colors.centerColor,
@@ -444,12 +402,14 @@ export const useGameLogic = () => {
         })
       );
     }
-  }, [theme]);
+  }, [palette]);
 
   // Funciones de control - ROTACIÓN EN INCREMENTOS DE 45 GRADOS CON ANIMACIÓN
   const rotatePiece = (pieceId: number, fromControl: boolean = false) => {
     const piece = pieces.find(p => p.id === pieceId);
     if (!piece) return;
+
+    pushHistory(pieces);
 
     const targetRotation = (piece.rotation + 45) % 360;
     // Saltar animación visual si viene de control
@@ -471,6 +431,8 @@ export const useGameLogic = () => {
     const piece = pieces.find(p => p.id === pieceId);
     if (!piece) return;
 
+    pushHistory(pieces);
+
     const targetRotation = (piece.rotation - 45 + 360) % 360;
     // Saltar animación visual si viene de control
     const skipAnimation = fromControl;
@@ -488,6 +450,8 @@ export const useGameLogic = () => {
   };
 
   const flipPiece = (pieceId: number, fromControl: boolean = false) => {
+    pushHistory(pieces);
+
     setPieces(pieces.map(piece => {
       if (piece.id === pieceId) {
         // Aplicar volteo primero
@@ -524,25 +488,33 @@ export const useGameLogic = () => {
   const resetLevel = () => {
     const challenge = challenges[currentChallenge];
     if (challenge) {
+      pushHistory(pieces);
       // Usar siempre el sistema con posiciones fijas corregidas para mejor consistencia
       const newPieces = createChallengeSpecificPieces(challenge);
-      console.log('🔄 Setting pieces for challenge:', challenge.id, 'pieces count:', newPieces.length);
       setPieces(newPieces);
     }
   };
 
+  // F04 + D2: campaña libre entre los retos ya desbloqueados. Lógica pura en
+  // campaignNavigation.ts (con su propio test) para no volver a improvisarla.
+  const {
+    canGoToPreviousChallenge,
+    canGoToNextChallenge,
+    isLastChallenge,
+    isCampaignComplete
+  } = useMemo(
+    () => computeCampaignNavigation(currentChallenge, completedChallenges, challenges.length),
+    [currentChallenge, completedChallenges, challenges.length]
+  );
+
   const nextChallenge = () => {
-    setCurrentChallenge((currentChallenge + 1) % challenges.length);
+    if (!canGoToNextChallenge) return;
+    setCurrentChallenge(currentChallenge + 1);
   };
 
   const previousChallenge = () => {
-    // Si hay desafíos completados, no permitir volver atrás
-    if (completedChallenges.size > 0) {
-      console.log('⚠️ No se puede volver atrás después de completar un desafío');
-      return;
-    }
-
-    setCurrentChallenge((currentChallenge - 1 + challenges.length) % challenges.length);
+    if (!canGoToPreviousChallenge) return;
+    setCurrentChallenge(currentChallenge - 1);
   };
 
   // Helper para convertir Piece a PiecePosition
@@ -554,257 +526,57 @@ export const useGameLogic = () => {
     rotation: piece.rotation
   });
 
-  // Función helper para crear las piezas reflejadas actuales
-  const getCurrentMirrorPieces = (): PiecePosition[] => {
-    const placedPieces = pieces.filter(piece => piece.placed && piece.y < 600);
-    return placedPieces.map(piece => calculateMirrorPiece(pieceToPosition(piece)));
+  // F03: persiste el progreso (reto en curso, retos completados, mejores
+  // tiempos) por ID de reto, no por índice - sobrevive a un reordenamiento.
+  const persistProgress = (completedIndices: Set<number>, bestTimesById: Record<number, number>, lastChallengeIndex: number) => {
+    const completedIds = Array.from(completedIndices)
+      .map(index => challenges[index]?.id)
+      .filter((id): id is number => id !== undefined);
+
+    saveGameProgress({
+      lastChallenge: challenges[lastChallengeIndex]?.id ?? 0,
+      completed: completedIds,
+      bestTimes: bestTimesById
+    });
   };
 
-  // Función helper simplificada - solo verifica tipo, cara y rotación (no posición específica)
-  const isPieceMatch = (piece1: PiecePosition, piece2: PiecePosition, rotationTolerance: number = 45): boolean => {
-    const typeMatch = piece1.type === piece2.type;
-    const faceMatch = piece1.face === piece2.face;
+  /**
+   * Comprueba la solución del jugador.
+   *
+   * Toda la lógica vive en ValidationService: aquí había una segunda copia
+   * literal (centroide, emparejamiento, tolerancias) que era la que de verdad
+   * usaba el juego, mientras el servicio quedaba sin usar. Una sola copia.
+   *
+   * `elapsedSeconds` (cronómetro del reto actual) es opcional: si se aporta y
+   * mejora el mejor tiempo guardado para este reto, se actualiza (F03).
+   */
+  const checkSolutionWithMirrors = (elapsedSeconds?: number): ValidationResult => {
+    const challenge = challenges[currentChallenge];
+    if (!challenge) {
+      return { isCorrect: false, message: 'Todavía no hay ningún reto cargado.' };
+    }
 
-    const rotationDiff = Math.abs(piece1.rotation - piece2.rotation);
-    const normalizedRotationDiff = Math.min(rotationDiff, 360 - rotationDiff);
-    const rotationMatch = normalizedRotationDiff <= rotationTolerance;
+    const resultado = ValidationService.validateSolution(pieces, challenge, geometry);
 
-    return typeMatch && faceMatch && rotationMatch;
-  };
+    if (resultado.isCorrect) {
+      const nextCompleted = new Set(completedChallenges).add(currentChallenge);
+      setCompletedChallenges(nextCompleted);
 
-  // Función para obtener el patrón simétrico actual
-  const getCurrentSymmetricPattern = (): PiecePosition[] => {
-    const placedPieces = pieces.filter(piece => piece.placed && piece.y < 600).map(pieceToPosition);
-    const mirrorPieces = getCurrentMirrorPieces();
-    return [...placedPieces, ...mirrorPieces];
-  };
-
-  // Función para encontrar la asignación óptima de piezas por proximidad
-  const findOptimalPieceAssignment = (
-    placedPieces: PiecePosition[], 
-    targetPieces: PiecePosition[]
-  ): PiecePosition[] => {
-    const assignments: PiecePosition[] = new Array(targetPieces.length);
-    const usedIndices: boolean[] = new Array(placedPieces.length).fill(false);
-
-    // Para cada posición objetivo, encontrar la pieza colocada más cercana compatible
-    for (let i = 0; i < targetPieces.length; i++) {
-      const target = targetPieces[i];
-      let bestMatch: PiecePosition | null = null;
-      let bestDistance = Infinity;
-      let bestIndex = -1;
-
-      for (let j = 0; j < placedPieces.length; j++) {
-        if (usedIndices[j]) continue; // Ya asignada
-
-        const placed = placedPieces[j];
-
-        // Verificar compatibilidad de tipo y cara
-        if (placed.type === target.type && placed.face === target.face) {
-          // Priorizar tipo/cara y rotación sobre posición absoluta
-          const rotationDiff = Math.abs(placed.rotation - target.rotation);
-          const normalizedRotationDiff = Math.min(rotationDiff, 360 - rotationDiff);
-
-          // Usar solo rotación como criterio de distancia (posición no importa tanto)
-          const combinedDistance = normalizedRotationDiff;
-
-          // Performance optimized - removed excessive logging
-
-          if (combinedDistance < bestDistance) {
-            bestDistance = combinedDistance;
-            bestMatch = placed;
-            bestIndex = j;
-          }
+      let nextBestTimes = bestTimes;
+      if (elapsedSeconds !== undefined) {
+        const currentBest = bestTimes[challenge.id];
+        if (currentBest === undefined || elapsedSeconds < currentBest) {
+          nextBestTimes = { ...bestTimes, [challenge.id]: elapsedSeconds };
+          setBestTimes(nextBestTimes);
         }
       }
 
-      if (bestMatch && bestIndex !== -1) {
-        assignments[i] = bestMatch;
-        usedIndices[bestIndex] = true;
-        // Assignment successful - logging removed for performance
-      }
+      persistProgress(nextCompleted, nextBestTimes, currentChallenge);
     }
 
-    return assignments;
+    return resultado;
   };
 
-  // Función para calcular el centroide de un conjunto de piezas
-  const calculateCentroid = (pieces: PiecePosition[]): { x: number; y: number } => {
-    if (pieces.length === 0) return { x: 0, y: 0 };
-
-    const sumX = pieces.reduce((sum, piece) => sum + piece.x, 0);
-    const sumY = pieces.reduce((sum, piece) => sum + piece.y, 0);
-
-    return {
-      x: sumX / pieces.length,
-      y: sumY / pieces.length
-    };
-  };
-
-  // Función para normalizar piezas a posiciones relativas al centroide
-  const normalizePiecesToCentroid = (pieces: PiecePosition[]): PiecePosition[] => {
-    const centroid = calculateCentroid(pieces);
-
-    return pieces.map(piece => ({
-      ...piece,
-      x: piece.x - centroid.x,
-      y: piece.y - centroid.y
-    }));
-  };
-
-  // Función para verificar posiciones relativas entre piezas
-  const checkRelativePositions = (
-    placedPieces: PiecePosition[], 
-    targetPieces: PiecePosition[]
-  ): { success: boolean; message: string } => {
-    const RELATIVE_POSITION_TOLERANCE = 200; // Extra permissive for debugging
-    const ROTATION_TOLERANCE = 45; // Extra permissive for debugging
-
-    // Normalizar ambos conjuntos de piezas a sus centroides
-    const normalizedPlaced = normalizePiecesToCentroid(placedPieces);
-    const normalizedTarget = normalizePiecesToCentroid(targetPieces);
-
-    // Crear matching óptimo basado en las piezas normalizadas
-    const assignments = findOptimalPieceAssignment(normalizedPlaced, normalizedTarget);
-
-    // Verificar cada pieza individualmente con el matching óptimo
-    for (let i = 0; i < normalizedTarget.length; i++) {
-      const targetPiece = normalizedTarget[i];
-      const matchingPiece = assignments[i];
-
-      if (!matchingPiece) {
-        return {
-          success: false,
-          message: `Falta pieza ${targetPieces[i].type} con cara ${targetPieces[i].face}`
-        };
-      }
-
-      // Verificar posición relativa (con tolerancia)
-      const relativePositionDiff = Math.sqrt(
-        Math.pow(matchingPiece.x - targetPiece.x, 2) + 
-        Math.pow(matchingPiece.y - targetPiece.y, 2)
-      );
-
-      if (relativePositionDiff > RELATIVE_POSITION_TOLERANCE) {
-        return {
-          success: false,
-          message: `Pieza ${targetPieces[i].type} necesita estar en la posición correcta relativa a las otras piezas`
-        };
-      }
-
-      // Verificar rotación
-      const rotationDiff = Math.abs(matchingPiece.rotation - targetPiece.rotation);
-      const normalizedRotationDiff = Math.min(rotationDiff, 360 - rotationDiff);
-
-      if (normalizedRotationDiff > ROTATION_TOLERANCE) {
-        return {
-          success: false,
-          message: `Pieza ${targetPiece.type} necesita rotación diferente`
-        };
-      }
-
-    }
-
-    return {
-      success: true,
-      message: '¡Perfecto! La configuración de piezas es correcta.'
-    };
-  };
-
-  // Función para verificar si las piezas están dentro del área de juego válida
-  const checkPiecesInGameArea = (pieces: PiecePosition[]): boolean => {
-    const GAME_AREA_WIDTH = 350; // Área de juego (sin espejo)
-    const GAME_AREA_HEIGHT = 500; // Área de juego total (excluye almacenamiento)
-
-    return pieces.every(piece => {
-      return piece.x >= 0 && 
-             piece.x <= GAME_AREA_WIDTH && 
-             piece.y >= 0 && 
-             piece.y <= GAME_AREA_HEIGHT;
-    });
-  };
-
-  // Función de verificación de solución con espejos - NUEVA VERSIÓN CON POSICIONES RELATIVAS
-  const checkSolutionWithMirrors = (): { isCorrect: boolean; message: string } => {
-    const challenge = challenges[currentChallenge];
-    const placedPieces = pieces.filter(piece => piece.placed && piece.y < 600).map(pieceToPosition);
-
-
-    // Verificar si se han colocado todas las piezas necesarias
-    if (placedPieces.length !== challenge.piecesNeeded) {
-      return {
-        isCorrect: false,
-        message: `Necesitas colocar ${challenge.piecesNeeded} piezas. Has colocado ${placedPieces.length}.`
-      };
-    }
-
-    // Si no hay piezas colocadas, definitivamente no está resuelto
-    if (placedPieces.length === 0) {
-      return {
-        isCorrect: false,
-        message: "Debes colocar piezas en el área de juego para resolver el desafío."
-      };
-    }
-
-    // Verificar que las piezas estén conectadas usando la validación geométrica avanzada
-    const validation = geometry.validateChallengeCard(placedPieces);
-
-    if (!validation.isValid) {
-      if (!validation.piecesConnected) {
-        return {
-          isCorrect: false,
-          message: "Las piezas deben estar conectadas entre sí."
-        };
-      }
-      if (!validation.touchesMirror) {
-        return {
-          isCorrect: false,
-          message: "Al menos una pieza debe tocar el espejo."
-        };
-      }
-      if (validation.hasPieceOverlaps) {
-        return {
-          isCorrect: false,
-          message: "Las piezas no pueden solaparse."
-        };
-      }
-      if (validation.entersMirror) {
-        return {
-          isCorrect: false,
-          message: "Las piezas no pueden entrar en el área del espejo."
-        };
-      }
-      return {
-        isCorrect: false,
-        message: "La configuración de piezas no es válida."
-      };
-    }
-
-
-    // VALIDACIÓN ESTRICTA: Verificar posiciones exactas del challenge
-    const positionCheck = checkRelativePositions(placedPieces, challenge.objective.playerPieces);
-
-    if (!positionCheck.success) {
-      return {
-        isCorrect: false,
-        message: `Las piezas deben estar en las posiciones exactas del desafío. ${positionCheck.message}`
-      };
-    }
-
-    // Si pasa todas las validaciones, es válido
-
-    // Marcar el desafío como completado
-    setCompletedChallenges(prev => {
-      const newSet = new Set(prev);
-      newSet.add(currentChallenge);
-      return newSet;
-    });
-
-    return {
-      isCorrect: true,
-      message: "¡Excelente! Has completado el desafío correctamente."
-    };
-  };
 
   return {
     currentChallenge,
@@ -818,7 +590,9 @@ export const useGameLogic = () => {
     temporaryDraggedPieceId,
     animatingPieceId,
     showGrid,
+    bestTimes,
     setControlEffect,
+    setCurrentChallenge,
     setPieces,
     setDraggedPiece,
     setDragOffset,
@@ -830,11 +604,21 @@ export const useGameLogic = () => {
     resetLevel,
     nextChallenge,
     previousChallenge,
+    canGoToPreviousChallenge,
+    canGoToNextChallenge,
+    isLastChallenge,
+    isCampaignComplete,
     isPieceHit,
     checkSolutionWithMirrors,
     loadCustomChallenges,
     toggleGrid,
     geometry,
+    // F13: deshacer/rehacer
+    pushHistory,
+    undo,
+    redo,
+    canUndo: history.past.length > 0,
+    canRedo: history.future.length > 0,
     // Nuevas funciones responsive
     initializeResponsiveSystem,
     responsiveCanvas

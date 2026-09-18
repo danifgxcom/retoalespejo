@@ -1,18 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Clock, Users, User, Play, Pause, RotateCcw, Link } from 'lucide-react';
 import ValidationFeedback from './ValidationFeedback';
 import { Player } from '../services/SocketService';
 import socketService from '../services/SocketService';
-import ThemeSwitcher from './accessibility/ThemeSwitcher';
-import ChallengeThumbnail from './ui/ChallengeThumbnail';
+import ChallengeObjective from './ChallengeObjective';
 import { Challenge } from './ChallengeCard';
+import type { Piece } from '@reto/geometry';
 
 interface RightSidebarProps {
   currentChallenge: number;
   totalChallenges: number;
   challenges: Challenge[];
+  pieces?: Piece[];
   onResetLevel: () => void;
-  onCheckSolution: () => { isCorrect: boolean; message: string };
+  onCheckSolution: (elapsedSeconds?: number) => { isCorrect: boolean; message: string };
   isMultiplayerEnabled?: boolean;
   gameMode?: 'offline' | 'multiplayer';
   connectedPlayers?: Player[];
@@ -21,12 +22,21 @@ interface RightSidebarProps {
   isPaused?: boolean;
   onPauseChange?: (isPaused: boolean) => void;
   onPausedByChange?: (pausedBy: string | null) => void;
+  /** F-mobile: el cronómetro vive aquí; esto deja un espejo de sólo lectura
+   *  para el badge compacto de la cabecera móvil, sin duplicar el estado. */
+  onTimerChange?: (formattedTime: string, isPaused: boolean) => void;
+  /** F-mobile: expone la MISMA función que usa el botón "Verificar Solución"
+   *  de este panel (con su rama de multijugador y el tiempo transcurrido
+   *  correcto) para que la barra flotante de acciones en móvil la reutilice
+   *  en vez de reimplementar la comprobación. */
+  onExposeCheckSolution?: (checkSolution: () => void) => void;
 }
 
 const RightSidebar: React.FC<RightSidebarProps> = ({
   currentChallenge,
   totalChallenges,
   challenges,
+  pieces = [],
   onResetLevel,
   onCheckSolution,
   isMultiplayerEnabled = false,
@@ -36,7 +46,9 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
   isGameActive = false,
   isPaused = true,
   onPauseChange,
-  onPausedByChange
+  onPausedByChange,
+  onTimerChange,
+  onExposeCheckSolution
 }) => {
   const [time, setTime] = useState(0);
   const [isRunning, setIsRunning] = useState(false); // Start stopped
@@ -47,15 +59,41 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
 
   // Use props if provided, otherwise use internal state
   const effectiveIsPaused = onPauseChange ? isPaused : internalIsPaused;
+
+  const formatTime = useCallback((seconds: number): string => {
+    // Handle NaN, null, undefined, or negative values
+    if (!Number.isFinite(seconds) || seconds < 0) {
+      seconds = 0;
+    }
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  }, []);
+
+  // F-mobile: espejo de sólo lectura para el badge de cabecera en móvil.
+  useEffect(() => {
+    onTimerChange?.(formatTime(time), effectiveIsPaused);
+  }, [time, effectiveIsPaused, onTimerChange, formatTime]);
   const [validationResult, setValidationResult] = useState<{isCorrect: boolean; message: string} | null>(null);
   const [showJoinRoomDialog, setShowJoinRoomDialog] = useState(false);
   const [joinRoomId, setJoinRoomId] = useState('');
 
+  // Anfitrión de la sala y errores del servidor (acciones no autorizadas)
+  const [hostId, setHostId] = useState<string | null>(null);
+  const [socketErrorMessage, setSocketErrorMessage] = useState<string | null>(null);
+  const esAnfitrion = hostId !== null && hostId === socketService.getSocketId();
+
+  // Diálogo propio para pedir el nombre de usuario (sustituye a prompt())
+  const [showUsernameDialog, setShowUsernameDialog] = useState(false);
+  const [usernameDialogAction, setUsernameDialogAction] = useState<'join' | 'create' | null>(null);
+  const [usernameInput, setUsernameInput] = useState('');
+  const [usernameError, setUsernameError] = useState<string | null>(null);
+
   // Game state for multiplayer
   const [scores, setScores] = useState<Record<string, number>>({});
   const [currentWinner, setCurrentWinner] = useState<string | null>(null);
-  const [showSolution, setShowSolution] = useState(false);
-  const [pausedBy, setPausedBy] = useState<string | null>(null);
+  const [, setShowSolution] = useState(false);
+  const [, setPausedBy] = useState<string | null>(null);
   const [resetVoteData, setResetVoteData] = useState<{
     requesterUsername?: string;
     votes: number;
@@ -67,23 +105,11 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
   // Listen for game events
   useEffect(() => {
     if (gameMode === 'multiplayer') {
-      // Clear any existing listeners first
-      socketService.socketInstance?.off('gameStarted');
-      socketService.socketInstance?.off('scoreUpdated');
-      socketService.socketInstance?.off('timerStateChanged');
-      socketService.socketInstance?.off('timerReset');
-      socketService.socketInstance?.off('timerUpdate');
-      socketService.socketInstance?.off('startTimer');
-      socketService.socketInstance?.off('timerCommand');
-      socketService.socketInstance?.off('gameNotification');
-      socketService.socketInstance?.off('challengeSolved');
-      socketService.socketInstance?.off('playerEliminated');
-      socketService.socketInstance?.off('lastPlayerStanding');
-      socketService.socketInstance?.off('resetVoteUpdate');
-      socketService.socketInstance?.off('challengeReset');
+      // El estado de partida (sala, fase y overlays) también lo escucha el
+      // componente raíz. No eliminar listeners por nombre: Socket.io borraría
+      // los del raíz y el tablero dejaría de reflejar al servidor.
       // Game started event
       socketService.onGameStarted((data) => {
-        console.log('RightSidebar: Game started event received:', data);
         try {
           if (data && data.gameState) {
             setScores(data.gameState.scores || {});
@@ -94,9 +120,9 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
 
             // Update pause state based on whether we're using props or internal state
             if (onPauseChange) {
-              onPauseChange(data.gameState.isPaused || true);
+              onPauseChange(data.gameState.isPaused ?? true);
             } else {
-              setInternalIsPaused(data.gameState.isPaused || true);
+              setInternalIsPaused(data.gameState.isPaused ?? true);
             }
           } else if (data) {
             // Handle case where data is sent directly (fallback)
@@ -140,10 +166,28 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
         }
       });
 
-      // Score updated event
-      socketService.onScoreUpdated((data) => {
-        setScores(data.scores);
-        setCurrentWinner(data.winner);
+      // El marcador ya no llega por 'scoreUpdated' (el servidor eliminó ese
+      // evento). Los marcadores y el ganador se actualizan desde
+      // 'challengeSolved' y 'lastPlayerStanding', más abajo.
+
+      // Anfitrión: se asigna al primer jugador de la sala y solo él puede
+      // arrancar la partida o reiniciar el cronómetro.
+      socketService.onPlayerJoined((data) => {
+        setHostId(data.hostId);
+      });
+
+      socketService.onRoomHistory((data) => {
+        setHostId(data.hostId);
+      });
+
+      socketService.onHostChanged((data) => {
+        setHostId(data.hostId);
+      });
+
+      // El servidor rechaza acciones no autorizadas (p.ej. no ser anfitrión)
+      // con un evento 'error' que hay que mostrar al usuario.
+      socketService.onError((data) => {
+        setSocketErrorMessage(data.message);
       });
 
       // Timer state changed event
@@ -231,7 +275,7 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
         }, 5000);
       });
 
-      socketService.onChallengeReset((data) => {
+      socketService.onChallengeReset(() => {
         setResetVoteData(null);
         setShowResetVoting(false);
         // No mostramos mensaje local, viene del servidor como gameNotification
@@ -239,7 +283,6 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
 
       // New timer system
       socketService.onStartTimer((data) => {
-        console.log('Timer start command received:', data);
         setTime(data.startTime);
         setIsRunning(true);
         if (onPauseChange) {
@@ -250,10 +293,8 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
       });
 
       socketService.onTimerCommand((data) => {
-        console.log('📥 RightSidebar received timerCommand:', data);
         switch (data.command) {
           case 'pause':
-            console.log('🔄 Processing pause command');
             if (onPauseChange) {
               onPauseChange(true);
             } else {
@@ -265,7 +306,6 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
             }
             break;
           case 'resume':
-            console.log('🔄 Processing resume command');
             if (onPauseChange) {
               onPauseChange(false);
             } else {
@@ -277,7 +317,6 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
             }
             break;
           case 'reset':
-            console.log('🔄 Processing reset command');
             setTime(0);
             setIsRunning(true);
             if (onPauseChange) {
@@ -295,8 +334,6 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
 
       // Listen for synchronized game notifications
       socketService.onGameNotification((data) => {
-        console.log('Game notification received:', data);
-
         // Only show validation-style notifications for certain types
         const validationTypes = ['challengeReset', 'challengeSolved', 'playerEliminated'];
         if (validationTypes.includes(data.type)) {
@@ -353,25 +390,8 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
     }
   }, [currentChallenge, gameMode, isGameActive, onPauseChange, onPausedByChange]);
 
-  const formatTime = (seconds: number): string => {
-    // Handle NaN, null, undefined, or negative values
-    if (!Number.isFinite(seconds) || seconds < 0) {
-      seconds = 0;
-    }
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
-
   const handlePauseResume = () => {
     const newPausedState = !effectiveIsPaused;
-    console.log('🔄 handlePauseResume called:', { 
-      effectiveIsPaused, 
-      newPausedState, 
-      gameMode, 
-      isGameActive,
-      roomId: socketService.getRoomId() 
-    });
 
     // Ensure timer is running when we resume
     if (!isRunning && !newPausedState) {
@@ -387,22 +407,16 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
 
     // In multiplayer mode, synchronize with other players
     if (gameMode === 'multiplayer' && isGameActive) {
-      console.log('✅ Sending toggleTimer to server:', { newPausedState });
       socketService.toggleTimer(newPausedState);
-    } else {
-      console.log('❌ Not sending to server - gameMode:', gameMode, 'isGameActive:', isGameActive);
     }
   };
 
   const handleResetLevel = () => {
-    console.log('🔄 handleResetLevel called:', { gameMode, isGameActive });
     if (gameMode === 'multiplayer' && isGameActive) {
       // In multiplayer mode, request reset vote
-      console.log('✅ Requesting reset challenge vote');
       socketService.requestResetChallenge();
     } else {
       // In offline mode, call the provided reset function
-      console.log('❌ Calling local reset - gameMode:', gameMode, 'isGameActive:', isGameActive);
       onResetLevel();
       setTime(0);
       setIsRunning(true);
@@ -419,14 +433,11 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
   };
 
   const handleResetTimer = () => {
-    console.log('🔄 handleResetTimer called:', { gameMode, isGameActive });
     if (gameMode === 'multiplayer' && isGameActive) {
       // In multiplayer mode, let server handle the reset
-      console.log('✅ Sending resetTimer to server');
       socketService.resetTimer();
     } else {
       // In offline mode, handle locally
-      console.log('❌ Resetting timer locally - gameMode:', gameMode, 'isGameActive:', isGameActive);
       setTime(0);
       setIsRunning(true);
       if (onPauseChange) {
@@ -441,8 +452,19 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
     }
   };
 
-  const handleCheckSolution = () => {
-    const result = onCheckSolution();
+  const handleCheckSolution = useCallback(() => {
+    // En multijugador la respuesta del cliente no decide nada: el servidor
+    // valida la instantánea y emite el resultado o la eliminación para todos.
+    if (gameMode === 'multiplayer') {
+      if (isGameActive && !effectiveIsPaused) {
+        socketService.reportSolvedPiece(pieces);
+      }
+      return;
+    }
+
+    // El cronómetro offline vive aquí (`time`): se pasa para que useGameLogic
+    // pueda guardar el mejor tiempo del reto en localStorage (F03).
+    const result = onCheckSolution(gameMode === 'offline' ? time : undefined);
     setValidationResult(result);
 
     if (result.isCorrect) {
@@ -457,56 +479,116 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
         onPausedByChange('SYSTEM');
       }
     }
+  }, [gameMode, isGameActive, effectiveIsPaused, pieces, onCheckSolution, time, onPauseChange, onPausedByChange]);
 
-    // In multiplayer mode, report to server
-    if (gameMode === 'multiplayer' && isGameActive) {
-      if (result.isCorrect) {
-        // Report solved piece with current timer value
-        socketService.reportSolvedPiece(currentChallenge, time);
-      } else {
-        // Report wrong piece (player disqualified) with current time
-        socketService.reportWrongPiece(time);
-      }
-    }
-  };
+  // F-mobile: expone esta misma función (no una copia) al botón "Verificar
+  // Solución" flotante de móvil, así comparten rama de multijugador y tiempo.
+  useEffect(() => {
+    onExposeCheckSolution?.(handleCheckSolution);
+  }, [handleCheckSolution, onExposeCheckSolution]);
 
   const handleJoinRoom = () => {
     setShowJoinRoomDialog(true);
   };
 
+  // Pide el ID de sala y, si es válido, pasa al diálogo de nombre de usuario
   const handleJoinRoomSubmit = () => {
     if (joinRoomId.trim()) {
-      const username = prompt('Ingresa tu nombre de usuario:') || `Player_${Date.now().toString().slice(-4)}`;
-      socketService.joinRoom(joinRoomId.trim(), username);
       setShowJoinRoomDialog(false);
-      setJoinRoomId('');
+      setUsernameError(null);
+      setUsernameInput('');
+      setUsernameDialogAction('join');
+      setShowUsernameDialog(true);
     }
   };
 
   const handleCreateRoom = () => {
-    const username = prompt('Ingresa tu nombre de usuario:') || `Player_${Date.now().toString().slice(-4)}`;
-    socketService.createRoom(username);
+    setUsernameError(null);
+    setUsernameInput('');
+    setUsernameDialogAction('create');
+    setShowUsernameDialog(true);
+  };
+
+  // Misma validación que aplica el servidor: 1-32 caracteres tras recortar espacios
+  const validateUsername = (raw: string): string | null => {
+    const trimmed = raw.trim();
+    if (trimmed.length < 1 || trimmed.length > 32) {
+      return 'El nombre de usuario debe tener entre 1 y 32 caracteres.';
+    }
+    return null;
+  };
+
+  const handleUsernameDialogCancel = () => {
+    setShowUsernameDialog(false);
+    setUsernameDialogAction(null);
+    setUsernameInput('');
+    setUsernameError(null);
+  };
+
+  const handleUsernameDialogSubmit = () => {
+    const error = validateUsername(usernameInput);
+    if (error) {
+      setUsernameError(error);
+      return;
+    }
+
+    const username = usernameInput.trim();
+    if (usernameDialogAction === 'join') {
+      socketService.joinRoom(joinRoomId.trim(), username);
+      setJoinRoomId('');
+    } else if (usernameDialogAction === 'create') {
+      socketService.createRoom(username);
+    }
+
+    setShowUsernameDialog(false);
+    setUsernameDialogAction(null);
+    setUsernameInput('');
+    setUsernameError(null);
   };
 
   const handleStartGame = () => {
     socketService.startGame();
   };
 
-  // DEBUG: Check what CSS variables are resolving to
-  React.useEffect(() => {
-    const computedStyle = getComputedStyle(document.body);
-    console.log('🔍 RightSidebar CSS Variables Debug:', {
-      cardBg: computedStyle.getPropertyValue('--card-bg').trim(),
-      textPrimary: computedStyle.getPropertyValue('--text-primary').trim(),
-      buttonPrimaryBg: computedStyle.getPropertyValue('--button-primary-bg').trim(),
-      buttonSuccessBg: computedStyle.getPropertyValue('--button-success-bg').trim(),
-      bodyClass: document.body.className,
-      bodyClassList: Array.from(document.body.classList)
-    });
-  }, [gameMode]);
+  // Cierra el diálogo de nombre de usuario con Escape (como el Modal compartido)
+  useEffect(() => {
+    if (!showUsernameDialog) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setShowUsernameDialog(false);
+        setUsernameDialogAction(null);
+        setUsernameInput('');
+        setUsernameError(null);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showUsernameDialog]);
 
   return (
     <div className="w-full h-full rounded-lg shadow-lg p-4 space-y-6 flex flex-col" style={{ backgroundColor: 'var(--card-bg)', color: 'var(--text-primary)' }}>
+      {/* Aviso de error del servidor (p.ej. acción restringida al anfitrión) */}
+      {socketErrorMessage && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="rounded-lg p-2 text-sm flex items-center justify-between gap-2"
+          style={{ backgroundColor: 'var(--button-danger-bg)', color: 'var(--text-on-danger)' }}
+        >
+          <span>{socketErrorMessage}</span>
+          <button
+            type="button"
+            onClick={() => setSocketErrorMessage(null)}
+            aria-label="Cerrar aviso de error"
+            className="underline shrink-0"
+          >
+            Cerrar
+          </button>
+        </div>
+      )}
+
       {/* Timer Section - Redesigned */}
       <div className="text-center pb-6" style={{ borderBottom: '1px solid var(--border-light)' }}>
         <div className="flex items-center justify-center gap-3 mb-4">
@@ -546,7 +628,8 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
 
           <button
             onClick={handleResetTimer}
-            className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl text-xs sm:text-sm lg:text-lg font-medium flex items-center gap-1 sm:gap-2 transition-all shadow-lg transform hover:scale-105"
+            disabled={gameMode === 'multiplayer' && isGameActive && !esAnfitrion}
+            className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 rounded-lg sm:rounded-xl text-xs sm:text-sm lg:text-lg font-medium flex items-center gap-1 sm:gap-2 transition-all shadow-lg transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             style={{
               backgroundColor: 'var(--button-gray-bg)',
               color: 'var(--text-on-dark)'
@@ -554,10 +637,17 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
             onMouseOver={(e) => {
               e.currentTarget.style.backgroundColor = 'var(--button-gray-hover)';
             }}
+            onFocus={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--button-gray-hover)';
+            }}
             onMouseOut={(e) => {
               e.currentTarget.style.backgroundColor = 'var(--button-gray-bg)';
             }}
+            onBlur={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--button-gray-bg)';
+            }}
             aria-label="Reiniciar cronómetro"
+            title={(gameMode === 'multiplayer' && isGameActive && !esAnfitrion) ? 'Solo el anfitrión puede reiniciar el cronómetro' : undefined}
             type="button"
           >
             <RotateCcw size={16} className="sm:w-5 sm:h-5" aria-hidden="true" />
@@ -581,7 +671,13 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
           onMouseOver={(e) => {
             e.currentTarget.style.backgroundColor = 'var(--button-success-hover)';
           }}
+          onFocus={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--button-success-hover)';
+          }}
           onMouseOut={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--button-success-bg)';
+          }}
+          onBlur={(e) => {
             e.currentTarget.style.backgroundColor = 'var(--button-success-bg)';
           }}
           aria-label="Verificar solución actual"
@@ -592,34 +688,20 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
         </button>
       </div>
 
-      {/* Challenge Card Section */}
-      <div className="pb-4" style={{ borderBottom: '1px solid var(--border-light)' }}>
-        <div className="text-center mb-3">
-          <h3 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
-            Desafío {currentChallenge + 1} de {totalChallenges}
-          </h3>
-          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-            {challenges[currentChallenge]?.name || 'Cargando...'}
-          </p>
-        </div>
-
+      {/*
+        En móvil el objetivo no va aquí, al final de una columna con scroll:
+        va arriba del tablero (ver MirrorChallengeGame) y a pantalla completa
+        los primeros segundos del reto (ChallengeIntro). Este panel sólo existe
+        desde xl, donde cabe al lado del tablero sin quitarle sitio.
+      */}
+      <div className="hidden xl:block pb-4" style={{ borderBottom: '1px solid var(--border-light)' }}>
         {challenges[currentChallenge] && (
-          <div className="flex justify-center">
-            <ChallengeThumbnail
-              challenge={challenges[currentChallenge]}
-              width={300}
-              height={225}
-              backgroundColor="dark-blue"
-              alt={`Objetivo del reto ${currentChallenge + 1}: ${challenges[currentChallenge]?.name}`}
-            />
-          </div>
+          <ChallengeObjective
+            challenge={challenges[currentChallenge]}
+            index={currentChallenge}
+            total={totalChallenges}
+          />
         )}
-
-        <div className="text-center mt-2">
-          <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-            {challenges[currentChallenge]?.description || 'Objetivo del reto'}
-          </p>
-        </div>
       </div>
 
       {/* Secondary Action - Reset Level */}
@@ -634,7 +716,13 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
           onMouseOver={(e) => {
             e.currentTarget.style.backgroundColor = 'var(--button-danger-hover)';
           }}
+          onFocus={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--button-danger-hover)';
+          }}
           onMouseOut={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--button-danger-bg)';
+          }}
+          onBlur={(e) => {
             e.currentTarget.style.backgroundColor = 'var(--button-danger-bg)';
           }}
           aria-label="Reiniciar nivel actual"
@@ -646,8 +734,7 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
       </div>
 
 
-      {/* Multiplayer Section Removed */}
-      {false && (
+      {gameMode === 'multiplayer' && (
         <div className="border-t pt-4">
           <div className="flex items-center justify-center gap-2 mb-3">
             <Users size={20} className="text-secondary-600" aria-hidden="true" />
@@ -666,7 +753,13 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
                 onMouseOver={(e) => {
                   e.currentTarget.style.backgroundColor = 'var(--button-secondary-hover)';
                 }}
+                onFocus={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--button-secondary-hover)';
+                }}
                 onMouseOut={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--button-secondary-bg)';
+                }}
+                onBlur={(e) => {
                   e.currentTarget.style.backgroundColor = 'var(--button-secondary-bg)';
                 }}
                 aria-label="Crear sala de multijugador"
@@ -685,7 +778,13 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
                 onMouseOver={(e) => {
                   e.currentTarget.style.backgroundColor = 'var(--button-primary-hover)';
                 }}
+                onFocus={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--button-primary-hover)';
+                }}
                 onMouseOut={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--button-primary-bg)';
+                }}
+                onBlur={(e) => {
                   e.currentTarget.style.backgroundColor = 'var(--button-primary-bg)';
                 }}
                 aria-label="Unirse a sala existente"
@@ -731,7 +830,14 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
                     <li key={player.id} className="flex items-center justify-between gap-2 text-sm">
                       <div className="flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--button-success-bg)' }} aria-hidden="true"></span>
-                        <span style={{ color: 'var(--text-primary)' }}>{player.username}</span>
+                        <span style={{ color: 'var(--text-primary)' }}>
+                          {player.username}
+                          {player.id === hostId && (
+                            <span className="ml-1 text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>
+                              (Anfitrión)
+                            </span>
+                          )}
+                        </span>
                       </div>
                       {isGameActive && (
                         <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ backgroundColor: 'var(--card-elevated-bg)', color: 'var(--text-primary)' }}>
@@ -758,19 +864,14 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
           {(() => {
             const shouldShowStartButton = roomId && connectedPlayers.length > 1 && !isGameActive;
             const shouldShowActiveIndicator = roomId && isGameActive;
-            console.log('🎮 Button visibility:', { 
-              roomId: !!roomId, 
-              playersCount: connectedPlayers.length, 
-              isGameActive, 
-              shouldShowStartButton, 
-              shouldShowActiveIndicator 
-            });
 
             if (shouldShowStartButton) {
               return (
-                <button 
+                <button
                   onClick={handleStartGame}
-                  className="w-full py-2 px-4 rounded-lg transition-colors text-sm font-medium flex items-center justify-center gap-2 mb-3"
+                  disabled={!esAnfitrion}
+                  title={esAnfitrion ? undefined : 'Solo el anfitrión puede comenzar la partida'}
+                  className="w-full py-2 px-4 rounded-lg transition-colors text-sm font-medium flex items-center justify-center gap-2 mb-3 disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{
                     backgroundColor: 'var(--button-success-bg)',
                     color: 'var(--text-on-success)'
@@ -778,7 +879,13 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
                   onMouseOver={(e) => {
                     e.currentTarget.style.backgroundColor = 'var(--button-success-hover)';
                   }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--button-success-hover)';
+                  }}
                   onMouseOut={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--button-success-bg)';
+                  }}
+                  onBlur={(e) => {
                     e.currentTarget.style.backgroundColor = 'var(--button-success-bg)';
                   }}
                   aria-label="Comenzar partida multijugador"
@@ -830,7 +937,13 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
                     onMouseOver={(e) => {
                       e.currentTarget.style.backgroundColor = 'var(--button-gray-hover)';
                     }}
+                    onFocus={(e) => {
+                      e.currentTarget.style.backgroundColor = 'var(--button-gray-hover)';
+                    }}
                     onMouseOut={(e) => {
+                      e.currentTarget.style.backgroundColor = 'var(--button-gray-bg)';
+                    }}
+                    onBlur={(e) => {
                       e.currentTarget.style.backgroundColor = 'var(--button-gray-bg)';
                     }}
                     aria-label="Cancelar unirse a sala"
@@ -848,7 +961,13 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
                     onMouseOver={(e) => {
                       e.currentTarget.style.backgroundColor = 'var(--button-primary-hover)';
                     }}
+                    onFocus={(e) => {
+                      e.currentTarget.style.backgroundColor = 'var(--button-primary-hover)';
+                    }}
                     onMouseOut={(e) => {
+                      e.currentTarget.style.backgroundColor = 'var(--button-primary-bg)';
+                    }}
+                    onBlur={(e) => {
                       e.currentTarget.style.backgroundColor = 'var(--button-primary-bg)';
                     }}
                     aria-label="Confirmar unirse a sala"
@@ -860,25 +979,100 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
               </div>
             </div>
           )}
+
+          {/* Username Dialog (sustituye a prompt()) */}
+          {showUsernameDialog && (
+            <div
+              className="fixed inset-0 bg-modal-overlay flex items-center justify-center z-50"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="username-dialog-title"
+            >
+              <div className="bg-modal rounded-lg p-4 max-w-sm w-full">
+                <h3 id="username-dialog-title" className="text-lg font-bold mb-3">
+                  {usernameDialogAction === 'create' ? 'Crear Sala' : 'Unirse a Sala'}
+                </h3>
+                <div className="mb-3">
+                  <label htmlFor="username-input" className="block text-sm font-medium text-gray-700 mb-1">
+                    Nombre de usuario
+                  </label>
+                  <input
+                    id="username-input"
+                    type="text"
+                    value={usernameInput}
+                    onChange={(e) => {
+                      setUsernameInput(e.target.value);
+                      setUsernameError(null);
+                    }}
+                    className="w-full px-3 py-2 border border-card rounded-md focus:outline-none focus:ring-2 focus:ring-focus"
+                    placeholder="Ingresa tu nombre de usuario"
+                    maxLength={32}
+                    aria-invalid={usernameError !== null}
+                    aria-describedby={usernameError ? 'username-input-error' : undefined}
+                  />
+                  {usernameError && (
+                    <p id="username-input-error" role="alert" className="text-xs mt-1" style={{ color: 'var(--button-danger-bg)' }}>
+                      {usernameError}
+                    </p>
+                  )}
+                </div>
+                <div className="flex justify-end gap-2">
+                  <button
+                    onClick={handleUsernameDialogCancel}
+                    className="px-4 py-2 rounded-md"
+                    style={{
+                      backgroundColor: 'var(--button-gray-bg)',
+                      color: 'var(--text-on-dark)'
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.backgroundColor = 'var(--button-gray-hover)';
+                    }}
+                    onFocus={(e) => {
+                      e.currentTarget.style.backgroundColor = 'var(--button-gray-hover)';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.backgroundColor = 'var(--button-gray-bg)';
+                    }}
+                    onBlur={(e) => {
+                      e.currentTarget.style.backgroundColor = 'var(--button-gray-bg)';
+                    }}
+                    aria-label="Cancelar"
+                    type="button"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleUsernameDialogSubmit}
+                    className="px-4 py-2 rounded-md"
+                    style={{
+                      backgroundColor: 'var(--button-primary-bg)',
+                      color: 'var(--text-on-primary)'
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.backgroundColor = 'var(--button-primary-hover)';
+                    }}
+                    onFocus={(e) => {
+                      e.currentTarget.style.backgroundColor = 'var(--button-primary-hover)';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.backgroundColor = 'var(--button-primary-bg)';
+                    }}
+                    onBlur={(e) => {
+                      e.currentTarget.style.backgroundColor = 'var(--button-primary-bg)';
+                    }}
+                    aria-label="Confirmar nombre de usuario"
+                    type="button"
+                  >
+                    Confirmar
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
       {/* Multiplayer Section Removed */}
-      {false && (
-        <div className="border-t pt-4">
-          <div className="flex items-center justify-center gap-2 mb-3">
-            <Users size={20} className="text-secondary-600" aria-hidden="true" />
-            <h3 className="font-bold text-gray-800">Multijugador</h3>
-          </div>
-
-          <div className="space-y-2">
-            <p className="text-xs text-gray-600 text-center">
-              Estás jugando en modo offline. Reinicia el juego para jugar en modo multijugador.
-            </p>
-          </div>
-        </div>
-      )}
-
       {/* Disabled Multiplayer Notice */}
       {!isMultiplayerEnabled && (
         <div className="border-t pt-4">

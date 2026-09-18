@@ -1,135 +1,45 @@
-/* Accessible Color Theme System
- * This file defines a comprehensive color system that meets WCAG AA standards
- * for contrast ratios (4.5:1 for normal text, 3:1 for large text).
- */
-
-:root {
-  /* Primary colors - Blue spectrum */
-  --color-primary-50: #eff6ff;
-  --color-primary-100: #dbeafe;
-  --color-primary-200: #bfdbfe;
-  --color-primary-300: #93c5fd;
-  --color-primary-400: #60a5fa;
-  --color-primary-500: #1565c0;
-  --color-primary-600: #2563eb;
-  --color-primary-700: #1d4ed8;
-  --color-primary-800: #1e40af;
-  --color-primary-900: #1e3a8a;
-  --color-primary-950: #172554;
-
-  /* Secondary colors - Purple spectrum */
-  --color-secondary-50: #f5f3ff;
-  --color-secondary-100: #ede9fe;
-  --color-secondary-200: #ddd6fe;
-  --color-secondary-300: #c4b5fd;
-  --color-secondary-400: #a78bfa;
-  --color-secondary-500: #8b5cf6;
-  --color-secondary-600: #7c3aed;
-  --color-secondary-700: #6d28d9;
-  --color-secondary-800: #5b21b6;
-  --color-secondary-900: #4c1d95;
-  --color-secondary-950: #2e1065;
-
-  /* Success colors - Green spectrum */
-  --color-success-50: #f0fdf4;
-  --color-success-100: #dcfce7;
-  --color-success-200: #bbf7d0;
-  --color-success-300: #86efac;
-  --color-success-400: #4ade80;
-  --color-success-500: #22c55e;
-  --color-success-600: #16a34a;
-  --color-success-700: #15803d;
-  --color-success-800: #166534;
-  --color-success-900: #14532d;
-  --color-success-950: #052e16;
-
-  /* Warning colors - Amber spectrum with enhanced contrast */
-  --color-warning-50: #fffbeb;
-  --color-warning-100: #fef3c7;
-  --color-warning-200: #fde68a;
-  --color-warning-300: #fcd34d;
-  --color-warning-400: #fbbf24;
-  --color-warning-500: #f59e0b;
-  --color-warning-600: #d97706;
-  --color-warning-700: #b45309;
-  --color-warning-800: #92400e;
-  --color-warning-900: #78350f;
-  --color-warning-950: #451a03;
-
-  /* Danger colors - Red spectrum */
-  --color-danger-50: #fef2f2;
-  --color-danger-100: #fee2e2;
-  --color-danger-200: #fecaca;
-  --color-danger-300: #fca5a5;
-  --color-danger-400: #c62828;
-  --color-danger-500: #ef4444;
-  --color-danger-600: #dc2626;
-  --color-danger-700: #b91c1c;
-  --color-danger-800: #991b1b;
-  --color-danger-900: #7f1d1d;
-  --color-danger-950: #450a0a;
-
-  /* Info colors - Cyan spectrum with enhanced contrast */
-  --color-info-50: #ecfeff;
-  --color-info-100: #cffafe;
-  --color-info-200: #a5f3fc;
-  --color-info-300: #67e8f9;
-  --color-info-400: #22d3ee;
-  --color-info-500: #06b6d4;
-  --color-info-600: #0891b2;
-  --color-info-700: #0e7490;
-  --color-info-800: #155e75;
-  --color-info-900: #164e63;
-  --color-info-950: #083344;
-
-  /* Neutral colors - Gray spectrum */
-  --color-gray-50: #f9fafb;
-  --color-gray-100: #f3f4f6;
-  --color-gray-200: #e5e7eb;
-  --color-gray-300: #d1d5db;
-  --color-gray-400: #9ca3af;
-  --color-gray-500: #6b7280;
-  --color-gray-600: #4b5563;
-  --color-gray-700: #374151;
-  --color-gray-800: #1f2937;
-  --color-gray-900: #111827;
-  --color-gray-950: #030712;
-
-  /* Text colors with guaranteed contrast */
-  --text-primary: var(--color-gray-900);
-  --text-secondary: var(--color-gray-700);
-  --text-tertiary: var(--color-gray-600);
-  --text-disabled: var(--color-gray-500);
-  --text-on-primary: white;
-  --text-on-secondary: white;
-  --text-on-success: white;
-  --text-on-warning: var(--color-gray-900);
-  --text-on-danger: white;
-  --text-on-info: white;
-  --text-on-dark: white;
-  --text-on-light: var(--color-gray-900);
-
-  /* Background colors */
-  --bg-primary: white;
-  --bg-secondary: var(--color-gray-50);
-  --bg-tertiary: var(--color-gray-100);
-  --bg-disabled: var(--color-gray-200);
-
-  /* Border colors */
-  --border-light: var(--color-gray-200);
-  --border-medium: var(--color-gray-300);
-  --border-dark: var(--color-gray-400);
-
-  /* Focus ring colors */
-  --focus-ring: var(--color-primary-500);
-  --focus-ring-offset: white;
-
-  /* Shadow colors */
-  --shadow-color: rgba(0, 0, 0, 0.1);
-  --shadow-color-darker: rgba(0, 0, 0, 0.2);
 /**
- * Sistema de temas con variables CSS para accesibilidad
- * Proporciona colores con contraste adecuado según WCAG AA (4.5:1 para texto normal, 3:1 para texto grande)
+ * Sistema de temas: dos ejes ortogonales (F12).
+ *
+ * Antes había dos variantes fijas ("colorful" y "accessible") que mezclaban
+ * claridad y paleta en un único interruptor, y además `body.theme-colorful`
+ * pisaba con su especificidad a `@media (prefers-color-scheme: dark) :root`,
+ * así que la preferencia de oscuro del sistema se ignoraba. Ahora:
+ *
+ *  - CLARIDAD (`clarity`): 'auto' | 'light' | 'dark'. ThemeContext resuelve
+ *    'auto' contra `matchMedia('(prefers-color-scheme: dark)')` en
+ *    JavaScript (con un listener para reaccionar a cambios en caliente) y
+ *    escribe el resultado, ya resuelto a 'light'/'dark', en
+ *    `<html data-theme>`. Este fichero nunca necesita `@media
+ *    (prefers-color-scheme: dark)`: sólo conoce 'light' (implícito, en
+ *    `:root`) y 'dark' (`[data-theme="dark"]`).
+ *  - PALETA (`palette`): 'normal' (identidad visual del juego) | 'high'
+ *    (alto contraste, máximo contraste WCAG). Se refleja en
+ *    `<html data-palette>`.
+ *
+ * MATRIZ DE LAS CUATRO COMBINACIONES (selector CSS -> qué es):
+ *
+ *   :root                                  -> normal + light (por defecto)
+ *   [data-theme="dark"]                    -> normal + dark
+ *   [data-palette="high"]                  -> high   + light
+ *   [data-palette="high"][data-theme="dark"] -> high   + dark
+ *
+ * Especificidad: `:root` y un único atributo (`[data-theme="dark"]` o
+ * [data-palette="high"]`) valen igual (0,0,1,0 en el modelo de 4 valores), así
+ * que en empate gana el orden en el fichero - por eso los bloques van en ESTE
+ * orden: base, clarity, palette, palette+clarity. El último combina dos
+ * atributos (0,0,2,0) y por eso gana siempre a los demás sin depender del
+ * orden. `@media (forced-colors: active)` (modo alto contraste del SO) es un
+ * eje aparte, ortogonal a estos dos: se declara `!important` para que gane
+ * siempre, sin importar qué combinación esté activa.
+ *
+ * Sólo la paleta cambia los colores de las piezas del lienzo
+ * (--canvas-piece-*) y de los botones (--button-*-bg/hover): son los que
+ * necesitan "distinguibilidad", no brillo/oscuridad. Sólo la claridad cambia
+ * fondo/texto/borde/tarjeta/modal/sombra: son los que necesitan invertirse
+ * entre pantalla clara y oscura. Cada eje toca sólo lo que le corresponde,
+ * así que no hay que reinventar las cuatro combinaciones a mano: la paleta
+ * "high" se superpone sobre cualquiera de las dos claridades.
  */
 
 :root {
@@ -137,7 +47,9 @@
   --color-white: #ffffff;
   --color-black: #000000;
 
-  /* Paleta primaria */
+  /* Paleta numérica compartida (no depende de clarity/palette): recurso de
+   * bajo nivel para los pocos sitios que necesitan un tono concreto de la
+   * escala, con su propio fallback inline (p.ej. CanvasConstants.ts). */
   --color-primary-50: #eff6ff;
   --color-primary-100: #dbeafe;
   --color-primary-200: #bfdbfe;
@@ -150,7 +62,6 @@
   --color-primary-900: #1e3a8a;
   --color-primary-950: #172554;
 
-  /* Paleta secundaria */
   --color-secondary-50: #f5f3ff;
   --color-secondary-100: #ede9fe;
   --color-secondary-200: #ddd6fe;
@@ -163,7 +74,6 @@
   --color-secondary-900: #4c1d95;
   --color-secondary-950: #2e1065;
 
-  /* Paleta de éxito */
   --color-success-50: #f0fdf4;
   --color-success-100: #dcfce7;
   --color-success-200: #bbf7d0;
@@ -176,20 +86,6 @@
   --color-success-900: #14532d;
   --color-success-950: #052e16;
 
-  /* Paleta de peligro */
-  --color-danger-50: #fef2f2;
-  --color-danger-100: #fee2e2;
-  --color-danger-200: #fecaca;
-  --color-danger-300: #fca5a5;
-  --color-danger-400: #c62828;
-  --color-danger-500: #ef4444;
-  --color-danger-600: #dc2626;
-  --color-danger-700: #b91c1c;
-  --color-danger-800: #991b1b;
-  --color-danger-900: #7f1d1d;
-  --color-danger-950: #450a0a;
-
-  /* Paleta de advertencia */
   --color-warning-50: #fffbeb;
   --color-warning-100: #fef3c7;
   --color-warning-200: #fde68a;
@@ -202,7 +98,18 @@
   --color-warning-900: #78350f;
   --color-warning-950: #451a03;
 
-  /* Paleta de información */
+  --color-danger-50: #fef2f2;
+  --color-danger-100: #fee2e2;
+  --color-danger-200: #fecaca;
+  --color-danger-300: #fca5a5;
+  --color-danger-400: #c62828;
+  --color-danger-500: #ef4444;
+  --color-danger-600: #dc2626;
+  --color-danger-700: #b91c1c;
+  --color-danger-800: #991b1b;
+  --color-danger-900: #7f1d1d;
+  --color-danger-950: #450a0a;
+
   --color-info-50: #ecfeff;
   --color-info-100: #cffafe;
   --color-info-200: #a5f3fc;
@@ -215,7 +122,6 @@
   --color-info-900: #164e63;
   --color-info-950: #083344;
 
-  /* Paleta de grises */
   --color-gray-50: #f9fafb;
   --color-gray-100: #f3f4f6;
   --color-gray-200: #e5e7eb;
@@ -228,322 +134,341 @@
   --color-gray-900: #111827;
   --color-gray-950: #030712;
 
-  /* Variables funcionales */
-  --color-text: var(--color-gray-900);
-  --color-text-secondary: var(--color-gray-700);
-  --color-text-tertiary: var(--color-gray-500);
-  --color-text-inverted: var(--color-white);
+  /* --- normal + light (por defecto) --- */
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-tertiary: #64748b;
+  --text-disabled: var(--color-gray-500);
+  --text-on-primary: #ffffff;
+  --text-on-secondary: #ffffff;
+  --text-on-success: #000000;
+  --text-on-warning: #000000;
+  --text-on-danger: #ffffff;
+  --text-on-info: #ffffff;
+  --text-on-dark: #ffffff;
+  --text-on-light: #0f172a;
 
-  --color-background: var(--color-white);
-  --color-background-alt: var(--color-gray-50);
-  --color-surface: var(--color-white);
-  --color-surface-alt: var(--color-gray-100);
+  --bg-primary: #f8fafc;
+  --bg-secondary: #f1f5f9;
+  --bg-tertiary: #e2e8f0;
+  --bg-disabled: var(--color-gray-200);
 
-  --color-border: var(--color-gray-200);
-  --color-border-hover: var(--color-gray-300);
+  --border-light: #cbd5e1;
+  --border-medium: #94a3b8;
+  --border-dark: #64748b;
 
-  --color-focus: var(--color-primary-500);
-  --color-placeholder: var(--color-gray-500);
+  --focus-ring: var(--color-primary-600);
+  --focus-ring-offset: #ffffff;
 
-  /* Gradientes con mayor contraste */
-  --primary-gradient: linear-gradient(to bottom right, var(--color-primary-600), var(--color-primary-800));
-  --primary-gradient-hover: linear-gradient(to bottom right, var(--color-primary-700), var(--color-primary-900));
-
-  --secondary-gradient: linear-gradient(to bottom right, var(--color-secondary-600), var(--color-secondary-800));
-  --secondary-gradient-hover: linear-gradient(to bottom right, var(--color-secondary-700), var(--color-secondary-900));
-
-  --success-gradient: linear-gradient(to bottom right, var(--color-success-600), var(--color-success-800));
-  --success-gradient-hover: linear-gradient(to bottom right, var(--color-success-700), var(--color-success-900));
-
-  --danger-gradient: linear-gradient(to bottom right, var(--color-danger-600), var(--color-danger-800));
-  --danger-gradient-hover: linear-gradient(to bottom right, var(--color-danger-700), var(--color-danger-900));
-
-  --warning-gradient: linear-gradient(to bottom right, var(--color-warning-500), var(--color-warning-700));
-  --warning-gradient-hover: linear-gradient(to bottom right, var(--color-warning-600), var(--color-warning-800));
-
-  --info-gradient: linear-gradient(to bottom right, var(--color-info-600), var(--color-info-800));
-  --info-gradient-hover: linear-gradient(to bottom right, var(--color-info-700), var(--color-info-900));
-
-  --gray-gradient: linear-gradient(to bottom right, var(--color-gray-600), var(--color-gray-800));
-  --gray-gradient-hover: linear-gradient(to bottom right, var(--color-gray-700), var(--color-gray-900));
-
-  /* Espaciado */
-  --spacing-1: 0.25rem;
-  --spacing-2: 0.5rem;
-  --spacing-3: 0.75rem;
-  --spacing-4: 1rem;
-  --spacing-6: 1.5rem;
-  --spacing-8: 2rem;
-
-  /* Radios de borde */
-  --radius-sm: 0.25rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 1rem;
-  --radius-xl: 1.5rem;
-
-  /* Sombras */
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-
-  /* Tipografía */
-  --font-size-xs: 0.75rem;
-  --font-size-sm: 0.875rem;
-  --font-size-base: 1rem;
-  --font-size-lg: 1.125rem;
-  --font-size-xl: 1.25rem;
-  --font-size-2xl: 1.5rem;
-
-  /* Fuentes */
-  --font-family-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
-
-  /* Líneas de texto */
-  --line-height-tight: 1.25;
-  --line-height-normal: 1.5;
-  --line-height-relaxed: 1.75;
-
-  /* Opacidad de superposición */
-  --overlay-opacity: 0.75;
-
-  /* Transiciones */
-  --transition-fast: 150ms;
-  --transition-normal: 300ms;
-  --transition-slow: 500ms;
-}
-
-/* Modo oscuro */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-text: var(--color-white);
-    --color-text-secondary: var(--color-gray-300);
-    --color-text-tertiary: var(--color-gray-400);
-    --color-text-inverted: var(--color-gray-900);
-
-    --color-background: var(--color-gray-900);
-    --color-background-alt: var(--color-gray-800);
-    --color-surface: var(--color-gray-800);
-    --color-surface-alt: var(--color-gray-700);
-
-    --color-border: var(--color-gray-700);
-    --color-border-hover: var(--color-gray-600);
-
-    --color-placeholder: var(--color-gray-500);
-
-    /* Gradientes con mayor contraste para modo oscuro */
-    --primary-gradient: linear-gradient(to bottom right, var(--color-primary-500), var(--color-primary-700));
-    --primary-gradient-hover: linear-gradient(to bottom right, var(--color-primary-400), var(--color-primary-600));
-
-    --secondary-gradient: linear-gradient(to bottom right, var(--color-secondary-500), var(--color-secondary-700));
-    --secondary-gradient-hover: linear-gradient(to bottom right, var(--color-secondary-400), var(--color-secondary-600));
-
-    --success-gradient: linear-gradient(to bottom right, var(--color-success-500), var(--color-success-700));
-    --success-gradient-hover: linear-gradient(to bottom right, var(--color-success-400), var(--color-success-600));
-
-    --danger-gradient: linear-gradient(to bottom right, var(--color-danger-500), var(--color-danger-700));
-    --danger-gradient-hover: linear-gradient(to bottom right, var(--color-danger-400), var(--color-danger-600));
-
-    --warning-gradient: linear-gradient(to bottom right, var(--color-warning-400), var(--color-warning-600));
-    --warning-gradient-hover: linear-gradient(to bottom right, var(--color-warning-300), var(--color-warning-500));
-
-    --info-gradient: linear-gradient(to bottom right, var(--color-info-500), var(--color-info-700));
-    --info-gradient-hover: linear-gradient(to bottom right, var(--color-info-400), var(--color-info-600));
-
-    --gray-gradient: linear-gradient(to bottom right, var(--color-gray-500), var(--color-gray-700));
-    --gray-gradient-hover: linear-gradient(to bottom right, var(--color-gray-400), var(--color-gray-600));
-  }
-}
-
-/* Clases utilitarias para fondos */
-.bg-primary-gradient { background: var(--primary-gradient); }
-.bg-primary-gradient-hover { background: var(--primary-gradient-hover); }
-.bg-secondary-gradient { background: var(--secondary-gradient); }
-.bg-secondary-gradient-hover { background: var(--secondary-gradient-hover); }
-.bg-success-gradient { background: var(--success-gradient); }
-.bg-success-gradient-hover { background: var(--success-gradient-hover); }
-.bg-danger-gradient { background: var(--danger-gradient); }
-.bg-danger-gradient-hover { background: var(--danger-gradient-hover); }
-.bg-warning-gradient { background: var(--warning-gradient); }
-.bg-warning-gradient-hover { background: var(--warning-gradient-hover); }
-.bg-info-gradient { background: var(--info-gradient); }
-.bg-info-gradient-hover { background: var(--info-gradient-hover); }
-.bg-gray-gradient { background: var(--gray-gradient); }
-.bg-gray-gradient-hover { background: var(--gray-gradient-hover); }
-  /* Component-specific colors - Simplified for better accessibility (solid colors instead of gradients) */
-  --button-primary-bg: var(--color-primary-600);
-  --button-primary-hover: var(--color-primary-700);
-  --button-secondary-bg: var(--color-secondary-600);
-  --button-secondary-hover: var(--color-secondary-700);
-  --button-success-bg: var(--color-success-600);
-  --button-success-hover: var(--color-success-700);
-  --button-warning-bg: var(--color-warning-600);
-  --button-warning-hover: var(--color-warning-700);
-  --button-danger-bg: var(--color-danger-600);
-  --button-danger-hover: var(--color-danger-700);
-  --button-info-bg: var(--color-info-600);
-  --button-info-hover: var(--color-info-700);
-  --button-gray-bg: var(--color-gray-600);
-  --button-gray-hover: var(--color-gray-700);
-
-  /* Card colors - Simplified for better accessibility (solid colors instead of gradients) */
-  --card-bg: white;
+  --card-bg: #ffffff;
+  --card-elevated-bg: #f8fafc;
+  --card-flat-bg: #ffffff;
   --card-border: var(--border-light);
-  --card-elevated-bg: var(--color-gray-50);
-  --card-flat-bg: white;
 
-  /* Modal colors - Simplified for better accessibility (solid colors instead of gradients) */
-  --modal-overlay: rgba(0, 0, 0, 0.7);
-  --modal-bg: white;
-  --modal-header-bg: var(--color-primary-600);
+  --modal-overlay: rgba(15, 23, 42, 0.6);
+  --modal-bg: #ffffff;
+  --modal-header-bg: var(--button-primary-bg);
   --modal-border: var(--border-light);
   --modal-text: var(--text-primary);
-  --modal-header-text: white;
+  --modal-header-text: #ffffff;
   --modal-subtitle-text: var(--color-primary-100);
 
-  /* Canvas colors for ChallengeThumbnail - Using theme colors for consistency */
-  --canvas-bg-light: var(--color-gray-100);
-  --canvas-piece-front-center: var(--color-warning-500); /* Gold/Yellow */
-  --canvas-piece-front-triangle: var(--color-danger-600); /* Red */
-  --canvas-piece-back-center: var(--color-danger-600); /* Red */
-  --canvas-piece-back-triangle: var(--color-warning-500); /* Gold/Yellow */
+  /* Botones: identidad "normal" del juego (azul marino, dorado, rojo) */
+  --button-primary-bg: #1e40af;
+  --button-primary-hover: #1d4ed8;
+  --button-secondary-bg: #0ea5e9;
+  --button-secondary-hover: #0284c7;
+  --button-success-bg: var(--color-success-600);
+  --button-success-hover: var(--color-success-700);
+  --button-warning-bg: #f59e0b;
+  --button-warning-hover: #d97706;
+  --button-danger-bg: #dc2626;
+  --button-danger-hover: #b91c1c;
+  --button-info-bg: #0284c7;
+  --button-info-hover: #075985;
+  --button-gray-bg: #64748b;
+  --button-gray-hover: #475569;
+
+  /* Piezas del lienzo: gold/red del juego original */
+  --canvas-bg-light: #f8fafc;
+  --canvas-piece-front-center: #fbbf24;
+  --canvas-piece-front-triangle: #dc2626;
+  --canvas-piece-back-center: #dc2626;
+  --canvas-piece-back-triangle: #fbbf24;
+  /* Contorno exterior de la pieza, aparte del relleno: el oro y el rojo del
+   * juego original no se tocan (identidad visual), pero contra el lienzo
+   * claro el relleno solo da 1.6:1 (WCAG 1.4.11 exige 3:1 para bordes) -
+   * #0f172a sobre este fondo da 17:1. Ver GamePiece.tsx (drawPiece). */
+  --canvas-piece-outline: #0f172a;
+
+  --game-shadow: rgba(30, 58, 138, 0.15);
 }
 
-/* Dark mode theme */
-@media (prefers-color-scheme: dark) {
-  :root {
-    /* Text colors with guaranteed contrast in dark mode */
-    --text-primary: var(--color-gray-100);
-    --text-secondary: var(--color-gray-300);
-    --text-tertiary: var(--color-gray-400);
-    --text-disabled: var(--color-gray-500);
-    --text-on-primary: white;
-    --text-on-secondary: white;
-    --text-on-success: white;
-    --text-on-warning: var(--color-gray-900);
-    --text-on-danger: white;
-    --text-on-info: white;
-    --text-on-dark: white;
-    --text-on-light: var(--color-gray-900);
+/* --- normal + dark --- */
+[data-theme='dark'] {
+  --text-primary: #f1f5f9;
+  --text-secondary: #cbd5e1;
+  --text-tertiary: #94a3b8;
+  --text-disabled: var(--color-gray-500);
+  --text-on-primary: #ffffff;
+  --text-on-secondary: #ffffff;
+  --text-on-success: #000000;
+  --text-on-warning: #000000;
+  --text-on-danger: #ffffff;
+  --text-on-info: #ffffff;
+  --text-on-dark: #ffffff;
+  --text-on-light: #0f172a;
 
-    /* Background colors */
-    --bg-primary: var(--color-gray-900);
-    --bg-secondary: var(--color-gray-800);
-    --bg-tertiary: var(--color-gray-700);
-    --bg-disabled: var(--color-gray-600);
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --bg-tertiary: #334155;
+  --bg-disabled: var(--color-gray-600);
 
-    /* Border colors */
-    --border-light: var(--color-gray-700);
-    --border-medium: var(--color-gray-600);
-    --border-dark: var(--color-gray-500);
+  --border-light: #334155;
+  --border-medium: #475569;
+  --border-dark: #64748b;
 
-    /* Focus ring colors */
-    --focus-ring: var(--color-primary-400);
-    --focus-ring-offset: var(--color-gray-900);
+  --focus-ring: var(--color-primary-400);
+  --focus-ring-offset: #0f172a;
 
-    /* Shadow colors */
-    --shadow-color: rgba(0, 0, 0, 0.3);
-    --shadow-color-darker: rgba(0, 0, 0, 0.5);
+  --card-bg: #1e293b;
+  --card-elevated-bg: #334155;
+  --card-flat-bg: #1e293b;
+  --card-border: var(--border-light);
 
-    /* Component-specific colors - Simplified for better accessibility (solid colors instead of gradients) */
-    --button-primary-bg: var(--color-primary-500);
-    --button-primary-hover: var(--color-primary-600);
-    --button-secondary-bg: var(--color-secondary-500);
-    --button-secondary-hover: var(--color-secondary-600);
-    --button-success-bg: var(--color-success-500);
-    --button-success-hover: var(--color-success-600);
-    --button-warning-bg: var(--color-warning-500);
-    --button-warning-hover: var(--color-warning-600);
-    --button-danger-bg: var(--color-danger-500);
-    --button-danger-hover: var(--color-danger-600);
-    --button-info-bg: var(--color-info-500);
-    --button-info-hover: var(--color-info-600);
-    --button-gray-bg: var(--color-gray-500);
-    --button-gray-hover: var(--color-gray-600);
+  --modal-overlay: rgba(0, 0, 0, 0.75);
+  --modal-bg: #1e293b;
+  --modal-header-bg: var(--button-primary-bg);
+  --modal-border: var(--border-light);
+  --modal-text: var(--text-primary);
+  --modal-header-text: #ffffff;
+  --modal-subtitle-text: var(--color-primary-200);
 
-    /* Card colors - Simplified for better accessibility (solid colors instead of gradients) */
-    --card-bg: var(--color-gray-800);
-    --card-border: var(--border-light);
-    --card-elevated-bg: var(--color-gray-800);
-    --card-flat-bg: var(--color-gray-800);
+  --button-primary-bg: #3b82f6;
+  --button-primary-hover: #60a5fa;
+  --button-secondary-bg: #38bdf8;
+  --button-secondary-hover: #7dd3fc;
+  --button-success-bg: var(--color-success-500);
+  --button-success-hover: var(--color-success-400);
+  --button-warning-bg: #fbbf24;
+  --button-warning-hover: #fcd34d;
+  --button-danger-bg: #ef4444;
+  --button-danger-hover: #f87171;
+  --button-info-bg: #38bdf8;
+  --button-info-hover: #7dd3fc;
+  --button-gray-bg: #94a3b8;
+  --button-gray-hover: #cbd5e1;
 
-    /* Modal colors - Simplified for better accessibility (solid colors instead of gradients) */
-    --modal-overlay: rgba(0, 0, 0, 0.8);
-    --modal-bg: var(--color-gray-800);
-    --modal-header-bg: var(--color-primary-700);
-    --modal-border: var(--border-light);
-    --modal-text: var(--text-primary);
-    --modal-header-text: white;
-    --modal-subtitle-text: var(--color-primary-200);
+  --canvas-bg-light: #1e293b;
+  --canvas-piece-front-center: #ffd700;
+  --canvas-piece-front-triangle: #ef4444;
+  --canvas-piece-back-center: #ef4444;
+  --canvas-piece-back-triangle: #ffd700;
+  /* #f8fafc sobre este fondo (#1e293b) da 14:1. */
+  --canvas-piece-outline: #f8fafc;
 
-    /* Canvas colors for ChallengeThumbnail */
-    --canvas-bg-light: var(--color-gray-800);
-    --canvas-piece-front-center: #FFD700; /* Gold */
-    --canvas-piece-front-triangle: #D32F2F; /* Darker red for better contrast */
-    --canvas-piece-back-center: #D32F2F; /* Darker red */
-    --canvas-piece-back-triangle: #FFD700; /* Gold */
-  }
+  --game-shadow: rgba(0, 0, 0, 0.5);
 }
 
-/* High contrast mode */
+/* --- high + light --- */
+[data-palette='high'] {
+  --text-primary: #000000;
+  --text-secondary: #1f2937;
+  --text-tertiary: #374151;
+  --text-disabled: var(--color-gray-600);
+  --text-on-primary: #ffffff;
+  --text-on-secondary: #ffffff;
+  --text-on-success: #ffffff;
+  --text-on-warning: #000000;
+  --text-on-danger: #ffffff;
+  --text-on-info: #ffffff;
+  --text-on-dark: #ffffff;
+  --text-on-light: #000000;
+
+  --bg-primary: #ffffff;
+  --bg-secondary: #f3f4f6;
+  --bg-tertiary: #e5e7eb;
+  --bg-disabled: var(--color-gray-300);
+
+  --border-light: #6b7280;
+  --border-medium: #4b5563;
+  --border-dark: #1f2937;
+
+  --focus-ring: #1565c0;
+  --focus-ring-offset: #ffffff;
+
+  --card-bg: #ffffff;
+  --card-elevated-bg: #f3f4f6;
+  --card-flat-bg: #ffffff;
+  --card-border: var(--border-light);
+
+  --modal-overlay: rgba(0, 0, 0, 0.75);
+  --modal-bg: #ffffff;
+  --modal-header-bg: #1565c0;
+  --modal-border: var(--border-light);
+  --modal-text: var(--text-primary);
+  --modal-header-text: #ffffff;
+  --modal-subtitle-text: #dbeafe;
+
+  /* Botones: paleta WCAG de alto contraste (misma que "high + dark") */
+  --button-primary-bg: #1565c0;
+  --button-primary-hover: #1976d2;
+  --button-secondary-bg: #1565c0;
+  --button-secondary-hover: #1976d2;
+  --button-success-bg: #2e7d32;
+  --button-success-hover: #1b5e20;
+  --button-warning-bg: #f57f17;
+  --button-warning-hover: #e65100;
+  --button-danger-bg: #c62828;
+  --button-danger-hover: #b71c1c;
+  --button-info-bg: #1565c0;
+  --button-info-hover: #1976d2;
+  --button-gray-bg: #424242;
+  --button-gray-hover: #616161;
+
+  /* Piezas: colores oscuros y saturados, máximo contraste sobre lienzo claro */
+  --canvas-bg-light: #ffffff;
+  --canvas-piece-front-center: #b45309;
+  --canvas-piece-front-triangle: #991b1b;
+  --canvas-piece-back-center: #991b1b;
+  --canvas-piece-back-triangle: #b45309;
+  --canvas-piece-outline: #0f172a;
+
+  --game-shadow: rgba(0, 0, 0, 0.25);
+}
+
+/* --- high + dark --- */
+[data-palette='high'][data-theme='dark'] {
+  --text-primary: #ffffff;
+  --text-secondary: #f1f5f9;
+  --text-tertiary: #cbd5e1;
+  --text-disabled: var(--color-gray-500);
+  --text-on-primary: #ffffff;
+  --text-on-secondary: #ffffff;
+  --text-on-success: #000000;
+  --text-on-warning: #000000;
+  --text-on-danger: #ffffff;
+  --text-on-info: #ffffff;
+  --text-on-dark: #ffffff;
+  --text-on-light: #000000;
+
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --bg-tertiary: #334155;
+  --bg-disabled: var(--color-gray-600);
+
+  --border-light: #475569;
+  --border-medium: #64748b;
+  --border-dark: #94a3b8;
+
+  --focus-ring: #1565c0;
+  --focus-ring-offset: #0f172a;
+
+  --card-bg: #1e293b;
+  --card-elevated-bg: #334155;
+  --card-flat-bg: #1e293b;
+  --card-border: var(--border-light);
+
+  --modal-overlay: rgba(0, 0, 0, 0.8);
+  --modal-bg: #1e293b;
+  --modal-header-bg: #1565c0;
+  --modal-border: var(--border-light);
+  --modal-text: var(--text-primary);
+  --modal-header-text: #ffffff;
+  --modal-subtitle-text: #bfdbfe;
+
+  --button-primary-bg: #1565c0;
+  --button-primary-hover: #1976d2;
+  --button-secondary-bg: #1565c0;
+  --button-secondary-hover: #1976d2;
+  --button-success-bg: #f57f17;
+  --button-success-hover: #e65100;
+  --button-warning-bg: #f57f17;
+  --button-warning-hover: #e65100;
+  --button-danger-bg: #c62828;
+  --button-danger-hover: #d32f2f;
+  --button-info-bg: #1565c0;
+  --button-info-hover: #1976d2;
+  --button-gray-bg: #424242;
+  --button-gray-hover: #616161;
+
+  --canvas-bg-light: #1e293b;
+  --canvas-piece-front-center: #fde047;
+  --canvas-piece-front-triangle: #c62828;
+  --canvas-piece-back-center: #c62828;
+  --canvas-piece-back-triangle: #fde047;
+  --canvas-piece-outline: #f8fafc;
+
+  --game-shadow: rgba(0, 0, 0, 0.7);
+}
+
+/* Modo alto contraste del sistema operativo (Windows High Contrast / forced
+ * colors): eje ortogonal a clarity x palette. `!important` para que gane
+ * siempre sin depender de qué combinación de data-theme/data-palette esté
+ * activa - de lo contrario, `[data-palette="high"][data-theme="dark"]` (dos
+ * selectores de atributo) tendría más especificidad que este bloque y
+ * ganaría por encima de los colores que impone el sistema operativo. */
 @media (forced-colors: active) {
   :root {
-    --button-primary-bg: ButtonFace;
-    --button-primary-hover: Highlight;
-    --button-secondary-bg: ButtonFace;
-    --button-secondary-hover: Highlight;
-    --button-success-bg: ButtonFace;
-    --button-success-hover: Highlight;
-    --button-warning-bg: ButtonFace;
-    --button-warning-hover: Highlight;
-    --button-danger-bg: ButtonFace;
-    --button-danger-hover: Highlight;
-    --button-info-bg: ButtonFace;
-    --button-info-hover: Highlight;
-    --button-gray-bg: ButtonFace;
-    --button-gray-hover: Highlight;
+    --button-primary-bg: ButtonFace !important;
+    --button-primary-hover: Highlight !important;
+    --button-secondary-bg: ButtonFace !important;
+    --button-secondary-hover: Highlight !important;
+    --button-success-bg: ButtonFace !important;
+    --button-success-hover: Highlight !important;
+    --button-warning-bg: ButtonFace !important;
+    --button-warning-hover: Highlight !important;
+    --button-danger-bg: ButtonFace !important;
+    --button-danger-hover: Highlight !important;
+    --button-info-bg: ButtonFace !important;
+    --button-info-hover: Highlight !important;
+    --button-gray-bg: ButtonFace !important;
+    --button-gray-hover: Highlight !important;
 
-    --text-primary: CanvasText;
-    --text-secondary: CanvasText;
-    --text-tertiary: GrayText;
-    --text-disabled: GrayText;
-    --text-on-primary: ButtonText;
-    --text-on-secondary: ButtonText;
-    --text-on-success: ButtonText;
-    --text-on-warning: ButtonText;
-    --text-on-danger: ButtonText;
-    --text-on-info: ButtonText;
-    --text-on-dark: ButtonText;
-    --text-on-light: CanvasText;
+    --text-primary: CanvasText !important;
+    --text-secondary: CanvasText !important;
+    --text-tertiary: GrayText !important;
+    --text-disabled: GrayText !important;
+    --text-on-primary: ButtonText !important;
+    --text-on-secondary: ButtonText !important;
+    --text-on-success: ButtonText !important;
+    --text-on-warning: ButtonText !important;
+    --text-on-danger: ButtonText !important;
+    --text-on-info: ButtonText !important;
+    --text-on-dark: ButtonText !important;
+    --text-on-light: CanvasText !important;
 
-    --bg-primary: Canvas;
-    --bg-secondary: Canvas;
-    --bg-tertiary: Canvas;
-    --bg-disabled: Canvas;
+    --bg-primary: Canvas !important;
+    --bg-secondary: Canvas !important;
+    --bg-tertiary: Canvas !important;
+    --bg-disabled: Canvas !important;
 
-    --border-light: CanvasText;
-    --border-medium: CanvasText;
-    --border-dark: CanvasText;
+    --border-light: CanvasText !important;
+    --border-medium: CanvasText !important;
+    --border-dark: CanvasText !important;
 
-    --focus-ring: Highlight;
-    --focus-ring-offset: Canvas;
+    --focus-ring: Highlight !important;
+    --focus-ring-offset: Canvas !important;
 
-    --card-bg: Canvas;
-    --card-border: CanvasText;
-    --card-elevated-bg: Canvas;
-    --card-flat-bg: Canvas;
+    --card-bg: Canvas !important;
+    --card-border: CanvasText !important;
+    --card-elevated-bg: Canvas !important;
+    --card-flat-bg: Canvas !important;
 
-    --modal-overlay: Canvas;
-    --modal-bg: Canvas;
-    --modal-header-bg: Canvas;
-    --modal-border: CanvasText;
-    --modal-text: CanvasText;
-    --modal-header-text: CanvasText;
-    --modal-subtitle-text: CanvasText;
+    --modal-overlay: Canvas !important;
+    --modal-bg: Canvas !important;
+    --modal-header-bg: Canvas !important;
+    --modal-border: CanvasText !important;
+    --modal-text: CanvasText !important;
+    --modal-header-text: CanvasText !important;
+    --modal-subtitle-text: CanvasText !important;
 
-    --canvas-bg-light: Canvas;
-    --canvas-piece-front-center: Highlight;
-    --canvas-piece-front-triangle: CanvasText;
-    --canvas-piece-back-center: CanvasText;
-    --canvas-piece-back-triangle: Highlight;
+    --canvas-bg-light: Canvas !important;
+    --canvas-piece-front-center: Highlight !important;
+    --canvas-piece-front-triangle: CanvasText !important;
+    --canvas-piece-back-center: CanvasText !important;
+    --canvas-piece-back-triangle: Highlight !important;
+    --canvas-piece-outline: CanvasText !important;
   }
 
   /* Add borders to all interactive elements for better visibility */
@@ -562,160 +487,6 @@
     outline: 2px solid Highlight !important;
     outline-offset: 2px !important;
   }
-}
-
-/* Theme classes for colorful and accessible themes */
-body.theme-colorful {
-  /* Colorful theme inspired by original Educa game: navy blue, electric blue, gold, and red pieces */
-  
-  /* Primary colors - Navy Blue (like original Educa packaging) */
-  --color-primary-500: #1e3a8a; /* Navy blue */
-  --color-primary-600: #1e40af; /* Deep navy */
-  --color-primary-700: #1d4ed8; /* Bright navy */
-  --color-primary-800: #1e3a8a;
-  --color-primary-900: #172554; /* Very dark navy */
-
-  /* Secondary colors - Electric Blue (like original game accents) */
-  --color-secondary-500: #0ea5e9; /* Electric blue */
-  --color-secondary-600: #0284c7; /* Medium electric blue */
-  --color-secondary-700: #0369a1; /* Deep electric blue */
-  
-  /* Game piece colors - Gold/Yellow and Red from original pieces */
-  --color-warning-500: #fbbf24; /* Gold (piece centers) */
-  --color-warning-600: #f59e0b; /* Deep gold */
-  --color-warning-700: #d97706; /* Very deep gold */
-  
-  --color-danger-500: #dc2626; /* Red (triangles) */
-  --color-danger-600: #b91c1c; /* Deep red */
-  --color-danger-700: #991b1b; /* Very deep red */
-  
-  --color-success-500: #059669; /* Success green */
-  --color-success-600: #047857; /* Deep green */
-  --color-success-700: #065f46; /* Very deep green */
-  
-  --color-info-500: #0284c7; /* Info blue (electric blue variant) */
-  --color-info-600: #0369a1; /* Deep info blue */
-  --color-info-700: #075985; /* Very deep info blue */
-
-  /* Background inspired by original game box - navy blue gradient */
-  --bg-primary: linear-gradient(135deg, #1e3a8a 0%, #0ea5e9 50%, #1e40af 100%);
-  --bg-secondary: #f8fafc;
-  --bg-tertiary: #e2e8f0;
-
-  /* Card backgrounds with blue tint */
-  --card-bg: rgba(255, 255, 255, 0.95);
-  --card-elevated-bg: rgba(248, 250, 252, 0.98);
-  --card-flat-bg: rgba(255, 255, 255, 0.9);
-
-  /* Text colors - dark navy for readability on light backgrounds */
-  --text-primary: #0f172a; /* Very dark navy */
-  --text-secondary: #334155; /* Dark slate */
-  --text-tertiary: #64748b; /* Medium slate */
-  --text-on-primary: #ffffff;
-  --text-on-secondary: #ffffff;
-  --text-on-success: #000000; /* Black on gold for contrast */
-  --text-on-warning: #000000; /* Black on gold for contrast */
-  --text-on-danger: #ffffff;
-  --text-on-info: #ffffff;
-  --text-on-dark: #ffffff;
-  --text-on-light: #0f172a;
-
-  /* Border colors with navy theme */
-  --border-light: #cbd5e1;
-  --border-medium: #94a3b8;
-  --border-dark: #64748b;
-
-  /* Button colors using game colors (yellow, red, blue) for reliability */
-  --button-primary-bg: #1e40af; /* Game blue (navy) */
-  --button-primary-hover: #1d4ed8;
-  --button-secondary-bg: #0ea5e9; /* Game blue (electric) */
-  --button-secondary-hover: #0284c7;
-  --button-success-bg: #fbbf24; /* Game gold/yellow */
-  --button-success-hover: #f59e0b;
-  --button-warning-bg: #f59e0b; /* Game gold */
-  --button-warning-hover: #d97706;
-  --button-danger-bg: #dc2626; /* Game red */
-  --button-danger-hover: #b91c1c;
-  --button-info-bg: #0ea5e9; /* Game blue (electric) */
-  --button-info-hover: #0284c7;
-  --button-gray-bg: #64748b; /* Neutral gray */
-  --button-gray-hover: #475569;
-
-  /* Canvas and game colors - matching original pieces */
-  --canvas-piece-front-center: #fbbf24; /* Gold (like original) */
-  --canvas-piece-front-triangle: #dc2626; /* Red (like original) */
-  --canvas-piece-back-center: #dc2626; /* Red (inverted) */
-  --canvas-piece-back-triangle: #fbbf24; /* Gold (inverted) */
-  --canvas-bg-light: rgba(248, 250, 252, 0.95); /* Light blue-tinted background */
-  
-  /* Game specific with navy theme */
-  --game-bg: rgba(248, 250, 252, 0.95);
-  --game-border: #94a3b8;
-  --game-shadow: rgba(30, 58, 138, 0.15); /* Navy shadow */
-}
-
-body.theme-accessible {
-  /* Accessible theme with maximum contrast - dark navy background inspired by original game but optimized for accessibility */
-  
-  /* Dark navy background for maximum contrast */
-  --bg-primary: #0f172a; /* Very dark navy (from original game but darker) */
-  --bg-secondary: #1e293b; /* Dark slate */
-  --bg-tertiary: #334155; /* Medium slate */
-
-  /* Card backgrounds - dark with strong contrast */
-  --card-bg: #1e293b;
-  --card-elevated-bg: #334155;
-  --card-flat-bg: #1e293b;
-
-  /* Maximum contrast text on dark background */
-  --text-primary: #ffffff; /* Pure white text */
-  --text-secondary: #f1f5f9; /* Very light text */
-  --text-tertiary: #cbd5e1; /* Light text */
-  --text-on-primary: #ffffff;
-  --text-on-secondary: #ffffff;
-  --text-on-success: #000000; /* Black on WCAG yellow/gold */
-  --text-on-warning: #000000; /* Black on WCAG gold */
-  --text-on-danger: #ffffff;
-  --text-on-info: #ffffff;
-  --text-on-dark: #ffffff;
-  --text-on-light: #000000;
-
-  /* High contrast borders */
-  --border-light: #475569;
-  --border-medium: #64748b;
-  --border-dark: #94a3b8;
-
-  /* Button colors - high contrast using game colors (yellow, red, blue) */
-  --button-primary-bg: #1565c0; /* WCAG compliant blue */
-  --button-primary-hover: #1976d2;
-  --button-secondary-bg: #1565c0; /* WCAG compliant blue */
-  --button-secondary-hover: #1976d2;
-  --button-success-bg: #F57F17; /* WCAG compliant yellow/gold */
-  --button-success-hover: #E65100;
-  --button-warning-bg: #F57F17; /* WCAG compliant yellow/gold */
-  --button-warning-hover: #E65100;
-  --button-danger-bg: #c62828; /* WCAG compliant red */
-  --button-danger-hover: #d32f2f;
-  --button-info-bg: #1565c0; /* WCAG compliant blue */
-  --button-info-hover: #1976d2;
-  --button-gray-bg: #424242; /* WCAG compliant gray */
-  --button-gray-hover: #616161;
-
-  /* Canvas colors - maximum contrast pieces on dark background */
-  --canvas-piece-front-center: #fde047; /* Very bright yellow/gold */
-  --canvas-piece-front-triangle: #c62828; /* WCAG compliant red */
-  --canvas-piece-back-center: #c62828; /* WCAG compliant red */
-  --canvas-piece-back-triangle: #fde047; /* Very bright yellow/gold */
-  --canvas-bg-light: #1e293b; /* Dark navy background for canvas */
-  
-  /* Game specific - high contrast dark theme */
-  --game-bg: #1e293b;
-  --game-border: #64748b;
-  --game-shadow: rgba(0, 0, 0, 0.7);
-
-  /* Focus indicators - very bright on dark */
-  --focus-ring: #1565c0;
-  --focus-ring-offset: #0f172a;
 }
 
 /* Apply base styles using the theme variables */

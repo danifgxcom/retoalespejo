@@ -1,20 +1,56 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
+import { RotateCw, X } from 'lucide-react';
 import GameCanvas, { GameCanvasRef } from './components/GameCanvas';
 import GameControls from './components/GameControls';
 import LeftSidebar from './components/LeftSidebar';
 import RightSidebar from './components/RightSidebar';
 import StartupMenu from './components/StartupMenu';
 import ChallengeWinOverlay from './components/ChallengeWinOverlay';
-import { ChallengeEditorApp } from './ChallengeEditorApp';
+import TutorialOverlay from './components/TutorialOverlay';
+import { ChallengeIntro } from './components/ChallengeObjective';
+import MobileHud from './components/MobileHud';
 import { ResponsiveTest } from './components/ResponsiveTest';
 import { useGameLogic } from './hooks/useGameLogic';
-import { useMouseHandlers } from './hooks/useMouseHandlers';
+import { usePointerHandlers } from './hooks/usePointerHandlers';
 import socketService, { Player } from './services/SocketService';
+import { GAME_NAME } from './branding';
+import SkipLink from './components/accessibility/SkipLink';
+import MobileGameActions from './components/MobileGameActions';
+import { CANVAS_CONSTANTS } from './utils/canvas/CanvasConstants';
+
+const ChallengeEditorApp = import.meta.env.DEV
+  ? React.lazy(async () => ({ default: (await import('./ChallengeEditorApp')).ChallengeEditorApp }))
+  : null;
 
 const MirrorChallengeGame: React.FC = () => {
   const canvasRef = useRef<GameCanvasRef>(null);
   const [showChallengeEditor, setShowChallengeEditor] = useState(false);
+  // F10: id de la pieza señalada por la última validación fallida (si la
+  // hubo), para resaltarla en el lienzo. Se limpia en cuanto el jugador
+  // vuelve a tocar las piezas (ver el useEffect sobre `pieces` más abajo).
+  const [highlightedPieceId, setHighlightedPieceId] = useState<number | null>(null);
+  const [selectedPieceId, setSelectedPieceId] = useState<number | null>(null);
   const [debugMode, setDebugMode] = useState(false);
+  // F-mobile: espejo de sólo lectura del cronómetro que vive en RightSidebar,
+  // para el badge compacto de la cabecera en móvil (ver GameControls).
+  const [mobileTimer, setMobileTimer] = useState({ text: '00:00', isPaused: true });
+  // F-mobile: aviso descartable para sugerir horizontal en pantallas
+  // estrechas en vertical (el tablero es 1.4:1, encaja mejor girado). Sólo
+  // CSS decide cuándo se ve (`max-[640px]:portrait:flex`); no bloquea nada.
+  const [showRotateHint, setShowRotateHint] = useState(true);
+  // F-mobile: la barra de acciones flotante en móvil reutiliza la MISMA
+  // función "Verificar Solución" que RightSidebar (con su rama de
+  // multijugador y el tiempo transcurrido correcto) en vez de una copia.
+  const mobileCheckSolutionRef = useRef<() => void>(() => {});
+  // Identidad estable: si esta prop cambiase en cada render, el useEffect de
+  // RightSidebar que la llama volvería a dispararse en bucle (setMobileTimer
+  // -> nuevo render -> nueva función -> nuevo disparo...).
+  const handleMobileTimerChange = useCallback((text: string, isPaused: boolean) => {
+    setMobileTimer(prev => (prev.text === text && prev.isPaused === isPaused) ? prev : { text, isPaused });
+  }, []);
+  const handleExposeMobileCheckSolution = useCallback((fn: () => void) => {
+    mobileCheckSolutionRef.current = fn;
+  }, []);
   const [showResponsiveTest, setShowResponsiveTest] = useState(false);
   const [showStartupMenu, setShowStartupMenu] = useState(true);
   const [gameMode, setGameMode] = useState<'offline' | 'multiplayer'>('offline');
@@ -48,6 +84,7 @@ const MirrorChallengeGame: React.FC = () => {
     animatingPieceId,
     showGrid,
     setControlEffect,
+    setCurrentChallenge,
     setPieces,
     setDraggedPiece,
     setDragOffset,
@@ -59,22 +96,30 @@ const MirrorChallengeGame: React.FC = () => {
     resetLevel,
     nextChallenge,
     previousChallenge,
+    canGoToPreviousChallenge,
+    canGoToNextChallenge,
+    isLastChallenge,
     isPieceHit,
     checkSolutionWithMirrors,
     loadCustomChallenges,
     toggleGrid,
     geometry,
-    initializeResponsiveSystem,
-    responsiveCanvas
+    pushHistory,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+    initializeResponsiveSystem
   } = useGameLogic();
 
   const {
-    handleMouseDown,
-    handleMouseMove,
-    handleMouseUp,
-    handleMouseLeave,
+    handlePointerDown,
+    handlePointerMove,
+    handlePointerUp,
+    handlePointerCancel,
+    handlePointerLeave,
     handleContextMenu,
-  } = useMouseHandlers({
+  } = usePointerHandlers({
     pieces,
     draggedPiece,
     dragOffset,
@@ -86,7 +131,44 @@ const MirrorChallengeGame: React.FC = () => {
     rotatePiece,
     geometry,
     setInteractingPieceId,
+    pushHistory,
   });
+
+  const handleCanvasPointerDown = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current?.getCanvas();
+    if (canvas) {
+      const rect = canvas.getBoundingClientRect();
+      const x = (event.clientX - rect.left) * (CANVAS_CONSTANTS.CANVAS_WIDTH / rect.width);
+      const y = (event.clientY - rect.top) * (CANVAS_CONSTANTS.CANVAS_HEIGHT / rect.height);
+      const piece = pieces.slice().reverse().find(candidate => isPieceHit(candidate, x, y));
+      if (piece) setSelectedPieceId(piece.id);
+    }
+    handlePointerDown(event);
+  };
+
+  // F13: Ctrl+Z / Ctrl+Y (también Cmd en macOS) deshacen/rehacen la última
+  // acción sobre las piezas, sin importar qué elemento tenga el foco -
+  // salvo que sea un campo de texto, donde debe ganar el undo nativo.
+  useEffect(() => {
+    const handleUndoRedoShortcut = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey)) return;
+
+      const target = e.target as HTMLElement | null;
+      const isTextInput = target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target?.isContentEditable;
+      if (isTextInput) return;
+
+      if (e.key === 'z' || e.key === 'Z') {
+        e.preventDefault();
+        undo();
+      } else if (e.key === 'y' || e.key === 'Y') {
+        e.preventDefault();
+        redo();
+      }
+    };
+
+    window.addEventListener('keydown', handleUndoRedoShortcut);
+    return () => window.removeEventListener('keydown', handleUndoRedoShortcut);
+  }, [undo, redo]);
 
   // Inicializar sistema responsive cuando el canvas esté disponible
   useEffect(() => {
@@ -106,7 +188,6 @@ const MirrorChallengeGame: React.FC = () => {
       if (canvas) {
         const rect = canvas.getBoundingClientRect();
         initializeResponsiveSystem(rect.width, rect.height);
-        console.log(`🔄 Responsive system updated: ${Math.round(rect.width)}x${Math.round(rect.height)}`);
       }
     };
 
@@ -130,8 +211,12 @@ const MirrorChallengeGame: React.FC = () => {
     }
   };
 
-  const handleCheckSolution = () => {
-    const result = checkSolutionWithMirrors();
+  const handleCheckSolution = (elapsedSeconds?: number) => {
+    const result = checkSolutionWithMirrors(elapsedSeconds);
+
+    // F10: resalta en el lienzo la pieza que señala explainMismatch, si la hay.
+    const mismatchedPiece = result.pieceIndex !== undefined ? pieces[result.pieceIndex] : undefined;
+    setHighlightedPieceId(result.isCorrect ? null : mismatchedPiece?.id ?? null);
 
     if (result.isCorrect) {
       setIsGamePaused(true);
@@ -140,6 +225,13 @@ const MirrorChallengeGame: React.FC = () => {
 
     return result;
   };
+
+  // El resaltado deja de tener sentido en cuanto el jugador vuelve a tocar
+  // las piezas (arrastrar, girar, voltear...): así no queda "pegado" a una
+  // pieza que ya se movió.
+  useEffect(() => {
+    setHighlightedPieceId(null);
+  }, [pieces]);
 
   const handleStartMultiplayer = () => {
     setGameMode('multiplayer');
@@ -163,55 +255,45 @@ const MirrorChallengeGame: React.FC = () => {
 
     // Set up event listeners
     socketService.onPlayerJoined((data) => {
-      console.log('Player joined:', data);
       setConnectedPlayers(data.players);
-      // Update room ID if not already set
-      if (!roomId) {
-        setRoomId(socketService.getRoomId());
-      }
+      setRoomId(socketService.getRoomId());
     });
 
     socketService.onPlayerLeft((data) => {
-      console.log('Player left:', data);
       setConnectedPlayers(prev => prev.filter(player => player.id !== data.playerId));
     });
 
     socketService.onRoomHistory((data) => {
-      console.log('Room history:', data);
       if (data.gameState) {
         setIsGameActive(data.gameState.isActive || false);
-        setIsGamePaused(data.gameState.isPaused || true);
+        setIsGamePaused(data.gameState.isPaused ?? true); // `|| true` forzaba pausa SIEMPRE
         setShowSolution(data.gameState.showSolution || false);
+        setGamePhase(data.gameState.phase);
       }
     });
 
     // Listen for game started event
     socketService.onGameStarted((data) => {
-      console.log('📥 Game started event received:', data);
       if (data.gameState) {
-        console.log('🔄 Setting isGameActive to:', data.gameState.isActive);
         setIsGameActive(data.gameState.isActive || false);
-        setIsGamePaused(data.gameState.isPaused || false);
+        setIsGamePaused(data.gameState.isPaused ?? true);
         setShowSolution(data.gameState.showSolution || false);
+        setGamePhase(data.gameState.phase);
       }
     });
 
     // Listen for timer commands
     socketService.onTimerCommand((data) => {
-      console.log('📥 Main game timer command:', data);
       switch (data.command) {
         case 'pause':
-          console.log('🔄 Main game processing pause - setting isGamePaused to true');
           setIsGamePaused(true);
           setPausedBy(data.pausedBy || null);
           break;
         case 'resume':
-          console.log('🔄 Main game processing resume - setting isGamePaused to false');
           setIsGamePaused(false);
           setPausedBy(null);
           break;
         case 'reset':
-          console.log('🔄 Main game processing reset - setting isGamePaused to true');
           setIsGamePaused(true);
           setPausedBy(null);
           break;
@@ -221,6 +303,11 @@ const MirrorChallengeGame: React.FC = () => {
     // Listen for last player standing event
     socketService.onLastPlayerStanding((data) => {
       setShowSolution(data.showSolution);
+      setChallengeWinner({
+        id: data.playerId,
+        username: data.username,
+        completionTime: data.completionTime || 0
+      });
     });
 
     // Listen for countdown event
@@ -228,27 +315,32 @@ const MirrorChallengeGame: React.FC = () => {
       setGamePhase('countdown');
       setCountdownValue(data.value);
       setChallengeWinner(null); // Clear winner overlay when countdown starts
+      setShowSolution(false);
     });
 
     // Listen for phase changed event
     socketService.onPhaseChanged((data) => {
-      console.log('📥 Phase changed:', data);
       setGamePhase(data.phase as 'waiting' | 'countdown' | 'playing');
       if (data.gameState) {
-        console.log('🔄 Setting isGameActive to:', data.gameState.isActive);
         setIsGameActive(data.gameState.isActive || false);
         setIsGamePaused(data.gameState.isPaused || false);
       }
 
       // Reset pieces when game starts playing
       if (data.phase === 'playing') {
-        resetLevel();
+        if (Number.isInteger(data.currentChallengeIndex)) {
+          setCurrentChallenge(data.currentChallengeIndex as number);
+        } else {
+          resetLevel();
+        }
+      } else if (data.phase === 'countdown') {
+        setChallengeWinner(null);
+        setShowSolution(false);
       }
     });
 
     // Listen for challenge solved event
     socketService.onChallengeSolved((data) => {
-      console.log('📥 Challenge solved event:', data);
       setChallengeWinner({
         id: data.playerId,
         username: data.username,
@@ -257,10 +349,7 @@ const MirrorChallengeGame: React.FC = () => {
     });
 
     // Listen for players ready updates
-    socketService.onPlayersReadyUpdate((data) => {
-      console.log('📥 Players ready update:', data);
-      // Could show ready status in UI if needed
-    });
+    // onPlayersReadyUpdate: sin uso en la interfaz por ahora.
   };
 
   // Cleanup socket listeners on unmount or mode change
@@ -299,8 +388,12 @@ const MirrorChallengeGame: React.FC = () => {
     );
   }
 
-  if (showChallengeEditor) {
-    return <ChallengeEditorApp onClose={() => setShowChallengeEditor(false)} />;
+  if (import.meta.env.DEV && showChallengeEditor && ChallengeEditorApp) {
+    return (
+      <React.Suspense fallback={null}>
+        <ChallengeEditorApp onClose={() => setShowChallengeEditor(false)} />
+      </React.Suspense>
+    );
   }
 
   if (showResponsiveTest) {
@@ -318,16 +411,58 @@ const MirrorChallengeGame: React.FC = () => {
   }
 
   return (
-    <div 
-      className="h-screen overflow-hidden p-1"
+    <div
+      className="min-h-[100dvh] overflow-y-auto p-2 xl:h-[100dvh] xl:overflow-hidden"
       style={{ 
         background: 'var(--bg-primary)',
         color: 'var(--text-primary)'
       }}
     >
-      <div className="w-full h-full flex gap-1 sm:gap-2">
+      <SkipLink />
+      {/*
+        Sólo se muestra en vertical Y en pantallas estrechas (móvil, no la
+        tablet de 768px): el tablero es 1.4:1, así que girar el aparato es
+        literalmente la forma en que encaja mejor. Descartable, no bloquea.
+      */}
+      {showRotateHint && (
+        <div
+          className="hidden max-[640px]:portrait:flex items-center gap-2 rounded-xl border px-3 py-1.5 mb-2 text-xs"
+          style={{ backgroundColor: 'var(--card-elevated-bg)', borderColor: 'var(--border-medium)', color: 'var(--text-secondary)' }}
+        >
+          <RotateCw className="h-4 w-4 shrink-0" aria-hidden="true" style={{ color: 'var(--text-primary)' }} />
+          <p className="flex-1 leading-snug">
+            Gira el dispositivo: en horizontal el tablero encaja mejor en la pantalla.
+          </p>
+          <button
+            type="button"
+            onClick={() => setShowRotateHint(false)}
+            className="grid shrink-0 place-items-center min-h-11 min-w-11 rounded-lg transition hover:brightness-110"
+            style={{ color: 'var(--text-tertiary)' }}
+            aria-label="Descartar sugerencia de girar el dispositivo"
+          >
+            <X className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </div>
+      )}
+      {/*
+        xl:h-full: sin esto `main` no tiene altura definida (crece con su
+        contenido) y el `xl:h-full` de la rejilla de abajo no tiene nada
+        contra lo que resolverse (porcentaje sobre altura auto = auto). El
+        resultado era que el lienzo se calculaba más alto de lo que cabía y
+        el contenedor raíz (xl:overflow-hidden) lo recortaba en vez de
+        encogerlo.
+      */}
+      <main id="main" className="xl:h-full">
+        <h1 className="sr-only">{GAME_NAME}</h1>
+        {/*
+          Rejilla fluida: las columnas laterales se encogen con clamp() y la
+          central nunca baja de 0 (minmax(0,1fr)), así el lienzo conserva el
+          espacio aunque el navegador esté con zoom. Por debajo de xl la rejilla
+          se apila y la página hace scroll en vez de recortar contenido.
+        */}
+        <div className="w-full grid gap-2 xl:h-full xl:grid-rows-[minmax(0,1fr)] xl:grid-cols-[clamp(10rem,16vw,18rem)_minmax(0,1fr)_clamp(12rem,20vw,22rem)]">
         {/* Left Sidebar - Wider for better usability */}
-        <div className="w-[25vw] min-w-[200px] max-w-[320px] flex-shrink-1">
+        <div className="min-w-0 min-h-0 max-h-[60dvh] xl:max-h-none xl:h-full overflow-y-auto">
           <LeftSidebar
             pieces={pieces}
             challenges={challenges}
@@ -340,9 +475,17 @@ const MirrorChallengeGame: React.FC = () => {
         </div>
 
         {/* Main Game Area - Only shrinks after sidebars reach minimum */}
-        <div className="flex-1 flex flex-col min-w-[400px] max-w-none relative">
+        {/*
+          Por debajo de xl ya no se fuerza una altura (antes h-[85dvh]/30rem):
+          con el lienzo de vuelta a proporción 1.4 fija, forzar altura sólo
+          dejaría hueco vacío entre el lienzo y la barra flotante. Se deja que
+          el bloque mida lo que necesita (cabecera + lienzo + acciones +
+          pie) y lo que sobra pasa, sin pelea, al contenido secundario
+          (inventario, panel de sala) bajo scroll de página.
+        */}
+        <div className="order-first xl:order-none flex flex-col min-w-0 xl:h-full xl:min-h-0 relative">
           {/* Top Navigation */}
-          <div className="mb-1 sm:mb-2">
+          <div className="mb-2 shrink-0">
             <GameControls
               pieces={pieces}
               challenges={challenges}
@@ -352,35 +495,68 @@ const MirrorChallengeGame: React.FC = () => {
               onResetLevel={resetLevel}
               onNextChallenge={gameMode === 'multiplayer' ? undefined : nextChallenge}
               onPreviousChallenge={gameMode === 'multiplayer' ? undefined : previousChallenge}
+              canGoToPreviousChallenge={canGoToPreviousChallenge}
+              canGoToNextChallenge={canGoToNextChallenge}
+              isLastChallenge={isLastChallenge}
               onRotatePiece={rotatePiece}
               onRotatePieceCounterClockwise={rotatePieceCounterClockwise}
               onFlipPiece={flipPiece}
               onCheckSolution={gameMode === 'multiplayer' ? undefined : handleCheckSolution}
-              onLoadCustomChallenges={loadCustomChallenges}
-              onOpenChallengeEditor={() => setShowChallengeEditor(true)}
+              onLoadCustomChallenges={import.meta.env.DEV ? loadCustomChallenges : undefined}
+              onOpenChallengeEditor={import.meta.env.DEV ? () => setShowChallengeEditor(true) : undefined}
               isLoading={isLoading}
-              debugMode={debugMode}
-              onToggleDebugMode={() => setDebugMode(!debugMode)}
-              showGrid={showGrid}
-              onToggleGrid={toggleGrid}
+              debugMode={import.meta.env.DEV && debugMode}
+              onToggleDebugMode={import.meta.env.DEV ? () => setDebugMode(!debugMode) : undefined}
+              showGrid={import.meta.env.DEV && showGrid}
+              onToggleGrid={import.meta.env.DEV ? toggleGrid : undefined}
               setControlEffect={setControlEffect}
+              onUndo={gameMode === 'multiplayer' ? undefined : undo}
+              onRedo={gameMode === 'multiplayer' ? undefined : redo}
+              canUndo={canUndo}
+              canRedo={canRedo}
               compact={true}
               gameMode={gameMode}
+              /* El cronómetro de móvil vive en el HUD flotante (MobileHud):
+                 aquí sería el mismo dato dos veces en la misma pantalla. */
             />
           </div>
 
           {/* Game Canvas */}
-          <div className="bg-game-bg rounded-lg shadow-lg p-1 sm:p-2 flex-1 flex flex-col min-h-0 relative border border-game-border">
-            <div className="flex justify-center items-start flex-1 overflow-hidden">
+          <div className="bg-card border border-card rounded-2xl shadow-lg p-2 flex-1 flex flex-col min-h-0 relative">
+            {/*
+              Por debajo de xl el tutorial es una banda propia EN EL FLUJO
+              (ver TutorialOverlay), fuera del lienzo: en un tablero de
+              ~250px de alto una tarjeta superpuesta tapa la única pieza del
+              reto. Desde xl vuelve a ser la tarjeta de esquina de siempre,
+              posicionada contra este mismo contenedor (position:relative),
+              con el offset left-2/top-2 cayendo donde caía antes.
+            */}
+            <TutorialOverlay
+              pieces={pieces}
+              currentChallenge={currentChallenge}
+              challenges={challenges}
+              geometry={geometry}
+            />
+            {/*
+              Por debajo de xl, aspect-[1.4] fija la altura de esta caja a
+              partir de su ancho (proporción real del lienzo, 1400x1000): así
+              GameCanvas mide un contenedor que YA tiene la proporción
+              correcta. En xl se vuelve al ajuste flexible original
+              (letterbox por JS). Ya no contiene overlays: por debajo de xl
+              nada se superpone al lienzo (tutorial y acciones son bandas
+              propias, fuera de esta caja).
+            */}
+            <div className="relative flex justify-center items-center w-full aspect-[1.4] xl:w-auto xl:aspect-auto xl:flex-1 xl:min-h-0 overflow-hidden">
               <GameCanvas
                 ref={canvasRef}
                 pieces={gameMode === 'multiplayer' && gamePhase !== 'playing' ? [] : pieces}
                 currentChallenge={gameMode === 'multiplayer' && gamePhase !== 'playing' ? -1 : currentChallenge}
                 challenges={challenges}
-                onMouseDown={handleMouseDown}
-                onMouseMove={handleMouseMove}
-                onMouseUp={handleMouseUp}
-                onMouseLeave={handleMouseLeave}
+                onPointerDown={handleCanvasPointerDown}
+                onPointerMove={handlePointerMove}
+                onPointerUp={handlePointerUp}
+                onPointerCancel={handlePointerCancel}
+                onPointerLeave={handlePointerLeave}
                 onContextMenu={handleContextMenu}
                 geometry={geometry}
                 debugMode={debugMode}
@@ -389,14 +565,33 @@ const MirrorChallengeGame: React.FC = () => {
                 interactingPieceId={interactingPieceId}
                 temporaryDraggedPieceId={temporaryDraggedPieceId}
                 animatingPieceId={animatingPieceId}
+                highlightedPieceId={highlightedPieceId}
+                setPieces={setPieces}
+                onRotatePiece={rotatePiece}
+                onRotatePieceCounterClockwise={rotatePieceCounterClockwise}
+                onFlipPiece={flipPiece}
+                onSelectedPieceChange={setSelectedPieceId}
+                pushHistory={pushHistory}
               />
-
+              {/* Sólo xl+: en xl TutorialOverlay se auto-posiciona absolute
+                  sobre este wrapper (misma jerarquía relative que antes). */}
             </div>
+            {/*
+              Barra de acciones móvil: banda fija DEBAJO del lienzo, nunca
+              superpuesta (xl:hidden - en escritorio no existe, ahí se usan
+              los controles de RightSidebar/GameControls).
+            */}
+            <MobileGameActions
+              selectedPieceId={selectedPieceId}
+              onRotateClockwise={rotatePiece}
+              onRotateCounterClockwise={rotatePieceCounterClockwise}
+              onFlip={flipPiece}
+            />
 
             {/* Footer */}
-            <div className="text-center py-1">
-              <p className="text-gray-400 text-xs">
-                Basado en &quot;Reto al Espejo&quot; de Educa
+            <div className="text-center pt-1">
+              <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                Inspirado en un clásico de puzles de simetría
               </p>
             </div>
           </div>
@@ -414,7 +609,7 @@ const MirrorChallengeGame: React.FC = () => {
             >
               {/* Challenge number background - decorative only */}
               <div className="absolute inset-0 flex items-center justify-center opacity-10" aria-hidden="true">
-                <div className="text-[40vh] font-bold text-white select-none">
+                <div className="text-[40dvh] font-bold text-white select-none">
                   {currentChallenge + 1}
                 </div>
               </div>
@@ -534,7 +729,7 @@ const MirrorChallengeGame: React.FC = () => {
                     Eres el último jugador activo. ¡Has ganado un punto!
                   </p>
                   <p className="text-gray-600 mb-4">
-                    La solución del desafío se muestra en el tablero.
+                    La ronda ha terminado. Cuando todos estén listos, comenzará el siguiente reto.
                   </p>
                 </div>
               </div>
@@ -544,11 +739,12 @@ const MirrorChallengeGame: React.FC = () => {
         </div>
 
         {/* Right Sidebar - Wider for better usability */}
-        <div className="w-[30vw] min-w-[250px] max-w-[400px] flex-shrink-1">
+        <div className="min-w-0 min-h-0 max-h-[70dvh] xl:max-h-none xl:h-full overflow-y-auto">
           <RightSidebar
             currentChallenge={currentChallenge}
             totalChallenges={challenges.length}
             challenges={challenges}
+            pieces={pieces}
             onResetLevel={resetLevel}
             onCheckSolution={handleCheckSolution}
             isMultiplayerEnabled={MULTIPLAYER_ENABLED}
@@ -559,12 +755,15 @@ const MirrorChallengeGame: React.FC = () => {
             isPaused={isGamePaused}
             onPauseChange={setIsGamePaused}
             onPausedByChange={setPausedBy}
+            onTimerChange={handleMobileTimerChange}
+            onExposeCheckSolution={handleExposeMobileCheckSolution}
           />
         </div>
-      </div>
+        </div>
+      </main>
 
       {/* Debug Tools (floating) */}
-      {debugMode && (
+      {import.meta.env.DEV && debugMode && (
         <div 
           className="absolute top-4 left-4 z-10"
           role="region"
@@ -581,69 +780,34 @@ const MirrorChallengeGame: React.FC = () => {
               >
                 <span aria-hidden="true">🧪</span> Test Responsive
               </button>
-              <button 
-                onClick={() => {
-                  console.log('📸 GLOBAL SNAPSHOT:');
-                  console.log('Game State:', { gameMode, isGameActive, gamePhase, isGamePaused, currentChallenge });
-                  console.log('Pieces:', pieces);
-                  console.log('Connected Players:', connectedPlayers);
-                  console.log('Room ID:', roomId);
-                }}
-                className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm transition-colors"
-                aria-label="Capturar estado global del juego en la consola"
-                type="button"
-              >
-                <span aria-hidden="true">📸</span> Global Snapshot
-              </button>
             </div>
-            <div className="flex flex-wrap gap-2 mb-2" role="toolbar" aria-label="Herramientas de áreas específicas">
-              <button 
-                onClick={() => {
-                  console.log('🎮 GAME AREA SNAPSHOT:');
-                  const placedPieces = pieces.filter(piece => piece.placed && piece.y < 600);
-                  console.log('Placed Pieces:', placedPieces);
-                  console.log('Mirror Pieces:', placedPieces.map(p => ({
-                    ...p,
-                    x: 700 - p.x,
-                    mirrored: true
-                  })));
-                  console.log('Geometry State:', geometry);
-                }}
-                className="bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs transition-colors"
-                aria-label="Capturar estado del área de juego en la consola"
-                type="button"
-              >
-                <span aria-hidden="true">🎯</span> Game Area
-              </button>
-              <button 
-                onClick={() => {
-                  console.log('📦 STORAGE AREA SNAPSHOT:');
-                  const storagePieces = pieces.filter(piece => !piece.placed || piece.y >= 600);
-                  console.log('Storage Pieces:', storagePieces);
-                }}
-                className="bg-purple-500 hover:bg-purple-600 text-white px-2 py-1 rounded text-xs transition-colors"
-                aria-label="Capturar estado del área de almacenamiento en la consola"
-                type="button"
-              >
-                <span aria-hidden="true">📦</span> Storage
-              </button>
-              <button 
-                onClick={() => {
-                  console.log('🏆 CHALLENGE SNAPSHOT:');
-                  console.log('Current Challenge:', challenges[currentChallenge]);
-                  console.log('Challenge Index:', currentChallenge);
-                  console.log('Total Challenges:', challenges.length);
-                }}
-                className="bg-orange-500 hover:bg-orange-600 text-white px-2 py-1 rounded text-xs transition-colors"
-                aria-label="Capturar información del reto actual en la consola"
-                type="button"
-              >
-                <span aria-hidden="true">🏆</span> Challenge
-              </button>
-            </div>
-            <p className="text-xs text-yellow-700">Debug mode - Click buttons for console logs</p>
+            <p className="text-xs text-yellow-700">Modo depuración: muestra etiquetas y contornos sobre las piezas.</p>
           </div>
         </div>
+      )}
+
+      {/*
+        Presentación del reto antes del tablero en móvil. En multijugador no,
+        porque ahí la cuenta atrás del servidor ya cumple ese papel y el
+        arranque de la partida no lo manda el reloj de este cliente.
+      */}
+      {challenges[currentChallenge] && (
+        <MobileHud
+          challenge={challenges[currentChallenge]}
+          index={currentChallenge}
+          total={challenges.length}
+          timerText={mobileTimer.text}
+          timerPaused={mobileTimer.isPaused}
+          onCheckSolution={gameMode === 'offline' ? () => mobileCheckSolutionRef.current() : undefined}
+        />
+      )}
+
+      {gameMode === 'offline' && challenges[currentChallenge] && (
+        <ChallengeIntro
+          challenge={challenges[currentChallenge]}
+          index={currentChallenge}
+          total={challenges.length}
+        />
       )}
 
       {/* Challenge Win Overlay */}

@@ -1,8 +1,8 @@
 {
   "gameInfo": {
-    "title": "Reto al Espejo - Actividades con Espejo",
+    "title": "Actividades con espejo",
     "origin": "XIII Feria de la Ciencia Sevilla",
-    "reference": "Juego descatalogado de Educa",
+    "reference": "Juego de puzles de simetría descatalogado",
     "description": "Juego de simetría con espejo usando 4 piezas trapezoidales y 14 tarjetas-reto"
   },
   "pieces": {
@@ -156,7 +156,7 @@
     }
   ],
   "designPrinciples": {
-    "authenticity": "Basado en las 14 tarjetas originales del juego de Educa",
+    "authenticity": "Basado en 14 tarjetas clásicas de puzles de simetría",
     "symmetry": "Todos los patrones deben ser perfectamente simétricos",
     "mirror_dependency": "El reflejo debe ser esencial para completar la figura",
     "geometric_beauty": "Los patrones deben ser reconocibles y estéticamente agradables",

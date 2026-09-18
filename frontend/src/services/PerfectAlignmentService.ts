@@ -37,7 +37,7 @@ export class PerfectAlignmentService {
     const groups: number[][] = [];
     const visited = new Set<number>();
 
-    pieces.forEach((piece, index) => {
+    pieces.forEach((_piece, index) => {
       if (visited.has(index)) return;
 
       const group: number[] = [];
