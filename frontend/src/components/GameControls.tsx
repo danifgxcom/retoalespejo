@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
-import { RotateCcw, SkipForward, SkipBack, HelpCircle, RotateCw, FlipHorizontal, CheckCircle, RefreshCw, Upload, Edit, Camera, Bug, Grid3x3, Undo2, Redo2, Clock } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
+import { RotateCcw, SkipForward, SkipBack, HelpCircle, RotateCw, FlipHorizontal, CheckCircle, RefreshCw, Upload, Edit, Camera, Bug, Grid3x3, Undo2, Redo2, Clock } from './ui/AtelierIcons';
+import type { LucideIcon } from './ui/AtelierIcons';
 import { Piece } from './GamePiece';
 import { Challenge } from './ChallengeCard';
 import { PieceColors } from '../utils/piece/PieceColors';
@@ -90,6 +90,7 @@ interface GameControlsProps {
   canRedo?: boolean;
   compact?: boolean;
   gameMode?: 'offline' | 'multiplayer';
+  freePlay?: boolean;
   /** F-mobile: cronómetro ya formateado ("MM:SS"), embebido en la cabecera
    *  compacta sólo por debajo de xl (en xl el cronómetro grande de
    *  RightSidebar ya es visible sin scroll). */
@@ -127,6 +128,7 @@ const GameControls: React.FC<GameControlsProps> = ({
   canRedo = false,
   compact = false,
   gameMode = 'offline',
+  freePlay = false,
   mobileTimerText,
   mobileTimerPaused,
 }) => {
@@ -232,7 +234,7 @@ const GameControls: React.FC<GameControlsProps> = ({
     const challengeName = challenges[currentChallenge]?.name || 'Cargando...';
 
     return (
-      <div className="bg-card rounded-2xl shadow-lg px-3 py-2.5 border border-card">
+      <div className="challenge-toolbar bg-card rounded-2xl shadow-lg px-3 py-2.5 border border-card">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           {/*
             La identidad conserva espacio para el nombre completo. La botonera
@@ -251,12 +253,12 @@ const GameControls: React.FC<GameControlsProps> = ({
                 {challengeName}
               </h2>
               <p className="flex flex-wrap items-center gap-2 text-xs leading-tight" style={{ color: 'var(--text-secondary)' }}>
-                <span className="whitespace-nowrap">Desafío {currentChallenge + 1} de {challenges.length}</span>
+                <span>Desafío {currentChallenge + 1} de {challenges.length}{challenges[currentChallenge]?.chapterNumber ? ` · Cuaderno ${challenges[currentChallenge].chapterNumber}` : ''}</span>
                 <span
                   className="whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold"
                   style={{ backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
                 >
-                  {gameMode === 'multiplayer' ? 'Multijugador' : 'Modo offline'}
+                  {gameMode === 'multiplayer' ? 'Multijugador' : freePlay ? 'Juego libre' : 'Estudio individual'}
                 </span>
                 {mobileTimerText && (
                   <span
@@ -415,15 +417,15 @@ const GameControls: React.FC<GameControlsProps> = ({
           maxWidth="4xl"
         >
           <div className="grid gap-4 text-sm sm:grid-cols-2" style={{ color: 'var(--text-secondary)' }}>
-            <p><strong style={{ color: 'var(--text-primary)' }}>🎯 Objetivo:</strong> recrea el patrón del reto usando las piezas y el reflejo del espejo.</p>
-            <p><strong style={{ color: 'var(--text-primary)' }}>🔄 Mover piezas:</strong> arrastra las piezas desde &quot;Piezas disponibles&quot; hasta el área de juego.</p>
-            <p><strong style={{ color: 'var(--text-primary)' }}>🪞 El espejo:</strong> cada pieza colocada se refleja automáticamente al otro lado.</p>
-            <p><strong style={{ color: 'var(--text-primary)' }}>⚙️ Controles:</strong> gira o voltea la cara de cada pieza con sus botones o con el teclado.</p>
-            <p className="sm:col-span-2"><strong style={{ color: 'var(--text-primary)' }}>🚫 Restricciones:</strong> las piezas no pueden atravesar el espejo ni salir de su área.</p>
+            <p><strong style={{ color: 'var(--text-primary)' }}> Objetivo:</strong> recrea el patrón del reto usando las piezas y el reflejo del espejo.</p>
+            <p><strong style={{ color: 'var(--text-primary)' }}>↻ Mover piezas:</strong> arrastra las piezas desde &quot;Piezas disponibles&quot; hasta el área de juego.</p>
+            <p><strong style={{ color: 'var(--text-primary)' }}> El espejo:</strong> cada pieza colocada se refleja automáticamente al otro lado.</p>
+            <p><strong style={{ color: 'var(--text-primary)' }}> Controles:</strong> gira o voltea la cara de cada pieza con sus botones o con el teclado.</p>
+            <p className="sm:col-span-2"><strong style={{ color: 'var(--text-primary)' }}> Restricciones:</strong> las piezas no pueden atravesar el espejo ni salir de su área.</p>
           </div>
 
           <div className="mt-4 pt-3" style={{ borderTop: '1px solid var(--border-light)' }}>
-            <p className="font-bold mb-1" style={{ color: 'var(--text-primary)' }}>⌨️ Atajos de teclado en el área de juego</p>
+            <p className="font-bold mb-1" style={{ color: 'var(--text-primary)' }}>Atajos de teclado en el área de juego</p>
             <ul className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm md:grid-cols-3" style={{ color: 'var(--text-secondary)' }}>
               <li><strong>Tab</strong> / <strong>Mayús+Tab</strong>: elegir pieza</li>
               <li><strong>Flechas</strong>: mover la pieza</li>
@@ -445,7 +447,7 @@ const GameControls: React.FC<GameControlsProps> = ({
       <div className="bg-card rounded-lg shadow-lg p-6 mb-4">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-4xl font-bold text-gray-800 mb-2">🪞 {GAME_NAME}</h1>
+            <h1 className="text-4xl font-bold text-gray-800 mb-2"> {GAME_NAME}</h1>
             <p className="text-lg text-gray-600">Juego de simetría con piezas geométricas</p>
           </div>
           <div className="flex gap-2">
@@ -713,7 +715,7 @@ const GameControls: React.FC<GameControlsProps> = ({
             <div className="bg-modal-header  p-6 rounded-t-2xl">
               <div className="flex justify-between items-center">
                 <div>
-                  <h3 className="font-bold text-2xl mb-2">🪞 Cómo jugar a {GAME_NAME}</h3>
+                  <h3 className="font-bold text-2xl mb-2"> Cómo jugar a {GAME_NAME}</h3>
                   <p className="text-blue-100 text-sm">Domina la simetría y resuelve los desafíos geométricos</p>
                 </div>
                 <button
@@ -733,7 +735,7 @@ const GameControls: React.FC<GameControlsProps> = ({
                 <div className="space-y-5">
                   <div className="bg-success-50 border-l-4 border-success-400 p-4 rounded-r-lg">
                     <div className="flex items-start">
-                      <span className="text-2xl mr-3">🎯</span>
+                      <span className="text-2xl mr-3"></span>
                       <div>
                         <h4 className="font-bold text-success-800 mb-2">Objetivo del Juego</h4>
                         <p className="text-success-700 leading-relaxed">
@@ -746,7 +748,7 @@ const GameControls: React.FC<GameControlsProps> = ({
 
                   <div className="bg-primary-50 border-l-4 border-primary-400 p-4 rounded-r-lg">
                     <div className="flex items-start">
-                      <span className="text-2xl mr-3">🔄</span>
+                      <span className="text-2xl mr-3">↻</span>
                       <div>
                         <h4 className="font-bold text-primary-800 mb-2">Movimiento de Piezas</h4>
                         <p className="text-primary-700 leading-relaxed">
@@ -760,7 +762,7 @@ const GameControls: React.FC<GameControlsProps> = ({
 
                   <div className="bg-secondary-50 border-l-4 border-secondary-400 p-4 rounded-r-lg">
                     <div className="flex items-start">
-                      <span className="text-2xl mr-3">🪞</span>
+                      <span className="text-2xl mr-3"></span>
                       <div>
                         <h4 className="font-bold text-secondary-800 mb-2">Magia del Espejo</h4>
                         <p className="text-secondary-700 leading-relaxed">
@@ -777,13 +779,13 @@ const GameControls: React.FC<GameControlsProps> = ({
                 <div className="space-y-5">
                   <div className="bg-warning-50 border-l-4 border-warning-400 p-4 rounded-r-lg">
                     <div className="flex items-start">
-                      <span className="text-2xl mr-3">⚙️</span>
+                      <span className="text-2xl mr-3"></span>
                       <div>
                         <h4 className="font-bold text-warning-800 mb-2">Controles de Piezas</h4>
                         <div className="text-warning-700 leading-relaxed space-y-2">
-                          <p><strong>🔄 Rotar:</strong> Haz clic en el botón de rotación o clic derecho sobre una pieza 
+                          <p><strong>↻ Rotar:</strong> Haz clic en el botón de rotación o clic derecho sobre una pieza
                           para rotarla 45° en sentido horario. Úsalo para orientar las piezas correctamente.</p>
-                          <p><strong>🔀 Voltear:</strong> El botón de voltear cambia la cara de la pieza, 
+                          <p><strong>Voltear:</strong> El botón de voltear cambia la cara de la pieza,
                           intercambiando los colores (amarillo ↔ rojo). Esencial para conseguir patrones específicos.</p>
                         </div>
                       </div>
@@ -792,7 +794,7 @@ const GameControls: React.FC<GameControlsProps> = ({
 
                   <div className="bg-danger-50 border-l-4 border-danger-400 p-4 rounded-r-lg">
                     <div className="flex items-start">
-                      <span className="text-2xl mr-3">🚫</span>
+                      <span className="text-2xl mr-3"></span>
                       <div>
                         <h4 className="font-bold text-danger-800 mb-2">Restricciones</h4>
                         <p className="text-danger-700 leading-relaxed">
@@ -805,7 +807,6 @@ const GameControls: React.FC<GameControlsProps> = ({
 
                   <div className="bg-warning-50 border-l-4 border-warning-400 p-4 rounded-r-lg">
                     <div className="flex items-start">
-                      <span className="text-2xl mr-3">⭐</span>
                       <div>
                         <h4 className="font-bold text-warning-800 mb-2">Estrategia y Desafíos</h4>
                         <p className="text-warning-700 leading-relaxed">
@@ -823,7 +824,7 @@ const GameControls: React.FC<GameControlsProps> = ({
               <div className="mt-6 pt-4 border-t border-gray-200">
                 <div className="bg-primary-50 p-4 rounded-lg text-center">
                   <p className="text-gray-600 text-sm">
-                    💡 <strong>Consejo:</strong> Observa detenidamente el patrón objetivo y planifica tus movimientos. 
+                     <strong>Consejo:</strong> Observa detenidamente el patrón objetivo y planifica tus movimientos.
                     La simetría del espejo puede sorprenderte con soluciones elegantes.
                   </p>
                 </div>
@@ -845,7 +846,7 @@ const GameControls: React.FC<GameControlsProps> = ({
           `}>
             <div className="flex items-center">
               <div className="text-2xl mr-3 flex-shrink-0">
-                {isCorrectSolution ? '🎉' : '⚠️'}
+                {isCorrectSolution ? '' : ''}
               </div>
               <p className="text-white font-semibold text-sm leading-relaxed">
                 {solutionMessage}

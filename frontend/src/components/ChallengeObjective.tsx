@@ -38,7 +38,7 @@ export const ChallengeObjective: React.FC<ChallengeObjectiveProps> = ({
       className="inline-block text-xs font-semibold rounded-full px-2 py-0.5"
       style={{ backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
     >
-      Nivel: {challenge.difficulty}
+      {challenge.piecesNeeded} {challenge.piecesNeeded === 1 ? 'pieza' : 'piezas'} · {challenge.difficulty}
     </span>
   );
 
@@ -70,7 +70,7 @@ export const ChallengeObjective: React.FC<ChallengeObjectiveProps> = ({
   }
 
   return (
-    <div className={className}>
+    <div className={`objective-card ${className}`}>
       <div className="text-center mb-3">
         <h3 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
           Desafío {index + 1} de {total}

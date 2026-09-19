@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#f3f0e7"/>
+  <g fill="#203d48"><path d="M55 49h20v32H55l16-16ZM105 49H85v32h20L89 65Z"/><path d="M79 39h2v52h-2Z"/>
+    <text x="124" y="62" font-family="sans-serif" font-size="22" font-weight="600">Desafía al reflejo</text>
+    <text x="125" y="85" font-family="monospace" font-size="10" letter-spacing="3">GABINETE DE SIMETRÍA</text>
+    <text x="58" y="250" font-family="Georgia,serif" font-size="88">Todo tiene</text>
+    <text x="58" y="342" font-family="Georgia,serif" font-size="88">otra <tspan fill="#a53929" font-style="italic">mitad.</tspan></text>
+    <text x="62" y="417" font-family="sans-serif" font-size="18">Una pieza. Un espejo. Otra forma de pensar.</text>
+    <text x="62" y="550" font-family="monospace" font-size="12" letter-spacing="2">16 FIGURAS / 4 CUADERNOS / INFINITAS MIRADAS</text>
+  </g>
+  <path d="M55 117h1090M55 581h1090" stroke="#a9b2a1"/>
+  <rect x="660" y="156" width="484" height="390" fill="#e3e7d9" stroke="#a9b2a1"/>
+  <circle cx="902" cy="347" r="157" fill="none" stroke="#bec8b8"/>
+  <path d="M902 180v340" stroke="#203d48"/>
+  <g stroke="#203d48" stroke-width="1.5"><path d="m703 390 80-80 40-40 40 40 39 40-39 40Z" fill="#c74732"/><path d="M783 310h80v80h-80Z" fill="#edb935"/><path d="m1101 390-80-80-40-40-40 40-39 40 39 40Z" fill="#c74732"/><path d="M941 310h80v80h-80Z" fill="#edb935"/></g>
+  <g font-family="monospace" font-size="10" fill="#203d48" letter-spacing="2"><text x="681" y="182">ESTUDIO N.º 01</text><text x="684" y="517">PIEZA</text><text x="1070" y="517">REFLEJO</text></g>
+</svg>

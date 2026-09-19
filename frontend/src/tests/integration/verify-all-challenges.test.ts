@@ -1,11 +1,12 @@
 import { GameGeometry } from '@reto/geometry';
 import { Challenge } from '../../components/ChallengeCard';
 import * as fs from 'fs';
+import { CANVAS_CONSTANTS } from '../../utils/canvas/CanvasConstants';
 
 describe('Verificación de todos los challenges', () => {
   const geometry = new GameGeometry({
     width: 700,
-    height: 500, // configuración real del juego (antes 600, dejaba pasar retos rotos)
+    height: CANVAS_CONSTANTS.GAME_AREA_HEIGHT,
     mirrorLineX: 700,
     pieceSize: 100
   });

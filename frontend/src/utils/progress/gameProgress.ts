@@ -19,9 +19,9 @@ const STORAGE_KEY = 'reto-al-espejo:progress:v1';
 
 const EMPTY_PROGRESS: GameProgress = { lastChallenge: 0, completed: [], bestTimes: {} };
 
-export const loadGameProgress = (): GameProgress => {
+export const loadGameProgress = (scope: 'campaign' | 'free' = 'campaign'): GameProgress => {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(scope === 'free' ? `${STORAGE_KEY}:free` : STORAGE_KEY);
     if (!raw) return { ...EMPTY_PROGRESS };
 
     const parsed = JSON.parse(raw);
@@ -35,9 +35,9 @@ export const loadGameProgress = (): GameProgress => {
   }
 };
 
-export const saveGameProgress = (progress: GameProgress): void => {
+export const saveGameProgress = (progress: GameProgress, scope: 'campaign' | 'free' = 'campaign'): void => {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+    localStorage.setItem(scope === 'free' ? `${STORAGE_KEY}:free` : STORAGE_KEY, JSON.stringify(progress));
   } catch {
     // Modo privado, cuota agotada, etc: el progreso sigue vivo sólo en memoria.
   }

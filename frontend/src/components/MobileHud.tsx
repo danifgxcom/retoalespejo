@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { CheckCircle, Clock, X } from 'lucide-react';
+import { CheckCircle, Clock, X } from './ui/AtelierIcons';
 import { Challenge } from './ChallengeCard';
 import ChallengeObjective from './ChallengeObjective';
 import ChallengeThumbnail from './ui/ChallengeThumbnail';
+import Modal from './ui/Modal';
 
 interface MobileHudProps {
   challenge: Challenge;
@@ -40,7 +41,7 @@ const MobileHud: React.FC<MobileHudProps> = ({
   return (
     <>
       <div
-        className="fixed right-2 top-2 z-40 flex flex-col items-end gap-1.5 xl:hidden"
+        className="mobile-hud-summary z-20 flex flex-col items-end gap-1.5 xl:hidden"
         style={{ top: 'calc(0.5rem + env(safe-area-inset-top, 0px))' }}
       >
         <button
@@ -57,6 +58,7 @@ const MobileHud: React.FC<MobileHudProps> = ({
             backgroundColor="dark-blue"
             alt={`Objetivo del reto ${index + 1}: ${challenge.name}`}
           />
+          <span className="mobile-target-label">Ver figura</span>
         </button>
 
         <span
@@ -71,13 +73,11 @@ const MobileHud: React.FC<MobileHudProps> = ({
           <Clock className="h-3.5 w-3.5" aria-hidden="true" />
           {timerText}
         </span>
-      </div>
-
       {onCheckSolution && (
         <button
           type="button"
           onClick={onCheckSolution}
-          className="fixed right-3 z-40 flex min-h-14 items-center gap-2 rounded-full px-5 font-bold shadow-xl transition hover:brightness-110 xl:hidden"
+          className="mobile-verify flex min-h-11 items-center gap-2 rounded px-3 font-bold transition hover:brightness-110 xl:hidden"
           style={{
             bottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))',
             backgroundColor: 'var(--button-success-bg)',
@@ -89,16 +89,10 @@ const MobileHud: React.FC<MobileHudProps> = ({
           Verificar
         </button>
       )}
+      </div>
 
       {expanded && (
-        <div
-          className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 p-6 xl:hidden"
-          style={{ backgroundColor: 'var(--bg-primary)' }}
-          role="dialog"
-          aria-modal="true"
-          aria-label={`Reto ${index + 1}: ${challenge.name}`}
-          onPointerDown={() => setExpanded(false)}
-        >
+        <Modal isOpen={expanded} onClose={() => setExpanded(false)} title={`Estudio ${index + 1}: ${challenge.name}`} maxWidth="sm">
           <ChallengeObjective
             challenge={challenge}
             index={index}
@@ -116,7 +110,7 @@ const MobileHud: React.FC<MobileHudProps> = ({
             <X className="h-4 w-4" aria-hidden="true" />
             Volver al tablero
           </button>
-        </div>
+        </Modal>
       )}
     </>
   );

@@ -131,7 +131,7 @@ describe('GameAreaRenderer', () => {
   });
 
   describe('drawAreaLabels', () => {
-    test('should draw area labels with text and emojis', () => {
+    test('should draw descriptive area labels without emoji', () => {
       renderer.drawAreaLabels(mockCtx);
 
       // Font ends at the subtitle font (set last)
@@ -139,9 +139,9 @@ describe('GameAreaRenderer', () => {
       expect(mockCtx.textAlign).toBe('left');
 
       // Should draw main area labels
-      expect(mockCtx.fillText).toHaveBeenCalledWith('🎮 ÁREA DE JUEGO', 15, 30);
-      expect(mockCtx.fillText).toHaveBeenCalledWith('🪞 ESPEJO', config.mirrorLine + 15, 30);
-      expect(mockCtx.fillText).toHaveBeenCalledWith('🧩 ALMACÉN DE PIEZAS', 15, config.gameAreaHeight + 30);
+      expect(mockCtx.fillText).toHaveBeenCalledWith(' ÁREA DE JUEGO', 15, 30);
+      expect(mockCtx.fillText).toHaveBeenCalledWith(' ESPEJO', config.mirrorLine + 15, 30);
+      expect(mockCtx.fillText).toHaveBeenCalledWith(' ALMACÉN DE PIEZAS', 15, config.gameAreaHeight + 30);
 
       // Should draw descriptive subtitles
       expect(mockCtx.fillText).toHaveBeenCalledWith('Arrastra aquí tus piezas', 15, 50);

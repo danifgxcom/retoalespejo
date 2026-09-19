@@ -4,6 +4,7 @@ import { Challenge } from './components/ChallengeCard';
 import { ChallengeEditorService } from './services/ChallengeEditorService';
 import ChallengeThumbnail from './components/ui/ChallengeThumbnail';
 import { GAME_NAME } from './branding';
+import { MirrorMark } from './components/Identity';
 
 interface ChallengeEditorAppProps {
   onClose?: () => void;
@@ -129,7 +130,7 @@ export const ChallengeEditorApp: React.FC<ChallengeEditorAppProps> = ({ onClose 
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--bg-primary)' }}>
         <div className="text-center rounded-2xl p-8 shadow-2xl" style={{ backgroundColor: 'var(--card-bg)', color: 'var(--text-primary)' }}>
           <div className="animate-spin rounded-full h-32 w-32 border-b-4 mx-auto mb-4" style={{ borderColor: 'var(--color-primary-600)' }}></div>
-          <div className="text-4xl mb-4">🎯</div>
+          <div className="text-4xl mb-4"></div>
           <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>Cargando Editor de Retos</h2>
           <p style={{ color: 'var(--text-secondary)' }}>Preparando la experiencia de edición...</p>
         </div>
@@ -138,12 +139,12 @@ export const ChallengeEditorApp: React.FC<ChallengeEditorAppProps> = ({ onClose 
   }
 
   return (
-    <div className="min-h-screen p-2 sm:p-4" style={{ backgroundColor: 'var(--bg-primary)' }}>
+    <div className="editor-shell min-h-screen p-2 sm:p-4" style={{ backgroundColor: 'var(--bg-primary)' }}>
       <div className="w-full max-w-full mx-auto">
         <div className="rounded-xl sm:rounded-2xl shadow-2xl p-4 sm:p-6 lg:p-8" style={{ backgroundColor: 'var(--card-bg)', color: 'var(--text-primary)' }}>
           <div className="flex justify-between items-center mb-6">
             <div>
-              <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>🎯 Editor de Retos</h1>
+              <div className="wordmark"><MirrorMark /><h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>Archivo de figuras</h1></div>
               <p style={{ color: 'var(--text-secondary)' }}>Crea y edita desafíos para {GAME_NAME}</p>
             </div>
             <div className="flex flex-wrap gap-1 sm:gap-2">
@@ -174,8 +175,8 @@ export const ChallengeEditorApp: React.FC<ChallengeEditorAppProps> = ({ onClose 
                   e.currentTarget.style.backgroundColor = 'var(--button-success-bg)';
                 }}
               >
-                <span className="sm:hidden">📥</span>
-                <span className="hidden sm:inline">📥 Importar</span>
+                <span className="sm:hidden">↓</span>
+                <span className="hidden sm:inline">↓ Importar</span>
               </label>
               <button
                 onClick={handleExportChallenges}
@@ -198,8 +199,8 @@ export const ChallengeEditorApp: React.FC<ChallengeEditorAppProps> = ({ onClose 
                 }}
                 type="button"
               >
-                <span className="sm:hidden">📤</span>
-                <span className="hidden sm:inline">📤 Exportar</span>
+                <span className="sm:hidden">↑</span>
+                <span className="hidden sm:inline">↑ Exportar</span>
               </button>
               <button
                 onClick={handleNewChallenge}
@@ -222,8 +223,8 @@ export const ChallengeEditorApp: React.FC<ChallengeEditorAppProps> = ({ onClose 
                 }}
                 type="button"
               >
-                <span className="sm:hidden">✨</span>
-                <span className="hidden sm:inline">✨ Nuevo Reto</span>
+                <span className="sm:hidden">＋</span>
+                <span className="hidden sm:inline">＋ Nuevo Reto</span>
               </button>
               <button
                 onClick={() => {
@@ -259,8 +260,8 @@ export const ChallengeEditorApp: React.FC<ChallengeEditorAppProps> = ({ onClose 
                 }}
                 type="button"
               >
-                <span className="sm:hidden">🔥</span>
-                <span className="hidden sm:inline">🔥 DEBUG SNAPSHOT</span>
+                <span className="sm:hidden"></span>
+                <span className="hidden sm:inline"> DEBUG SNAPSHOT</span>
               </button>
               {onClose && (
                 <button
@@ -284,8 +285,8 @@ export const ChallengeEditorApp: React.FC<ChallengeEditorAppProps> = ({ onClose 
                   }}
                   type="button"
                 >
-                  <span className="sm:hidden">🔙</span>
-                  <span className="hidden sm:inline">🔙 Volver al Juego</span>
+                  <span className="sm:hidden">←</span>
+                  <span className="hidden sm:inline">← Volver al Juego</span>
                 </button>
               )}
             </div>
@@ -386,7 +387,7 @@ export const ChallengeEditorApp: React.FC<ChallengeEditorAppProps> = ({ onClose 
                     }}
                     type="button"
                   >
-                    ✏️ Editar
+                     Editar
                   </button>
                   <button
                     onClick={() => handleDeleteChallenge(challenge.id)}
@@ -409,7 +410,7 @@ export const ChallengeEditorApp: React.FC<ChallengeEditorAppProps> = ({ onClose 
                     }}
                     type="button"
                   >
-                    🗑️
+                    ×
                   </button>
                 </div>
               </div>
@@ -418,7 +419,7 @@ export const ChallengeEditorApp: React.FC<ChallengeEditorAppProps> = ({ onClose 
 
           {challenges.length === 0 && (
             <div className="text-center py-16">
-              <div className="text-6xl mb-4">🎯</div>
+              <div className="text-6xl mb-4"></div>
               <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>No hay retos disponibles</h3>
               <p className="mb-6" style={{ color: 'var(--text-secondary)' }}>Comienza creando tu primer desafío</p>
               <button
@@ -442,7 +443,7 @@ export const ChallengeEditorApp: React.FC<ChallengeEditorAppProps> = ({ onClose 
                 }}
                 type="button"
               >
-                ✨ Crear tu primer reto
+                ＋ Crear tu primer reto
               </button>
             </div>
           )}

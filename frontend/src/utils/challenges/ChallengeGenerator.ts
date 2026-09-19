@@ -1,6 +1,7 @@
 import { GameGeometry, PiecePosition } from '@reto/geometry';
 import { Challenge, ObjectivePattern } from '../../components/ChallengeCard';
 import { migrateLegacyAnchor } from '@reto/geometry';
+import campaign from '../../../../shared/challenges.json';
 
 export class ChallengeGenerator {
   // Static cache to ensure challenges are only loaded once per application lifetime
@@ -12,216 +13,22 @@ export class ChallengeGenerator {
 
   // Embedded fallback challenges in case the JSON file can't be loaded
   // Estos challenges están validados y garantizados para funcionar correctamente
-  private readonly embeddedChallenges: Challenge[] = [
-    {
-      "id": 1,
-      "name": "Tarjeta 1: Corazón Simple",
-      "description": "Forma un corazón con una pieza A tocando el espejo",
-      "piecesNeeded": 1,
-      "difficulty": "Principiante",
-      "targetPattern": "heart_simple",
-      "objective": {
-        "playerPieces": [
-          {
-            "type": "A",
-            "face": "front",
-            "x": 330, // Posición validada para tocar exactamente el espejo
-            "y": 300,
-            "rotation": 0
-          }
-        ],
-      },
-      "targetPieces": [
-        {
-          "type": "A",
-          "face": "front",
-          "x": 330,
-          "y": 300,
-          "rotation": 0
-        }
-      ]
-    },
-    {
-      "id": 2,
-      "name": "Tarjeta 2: Cuatro Piezas",
-      "description": "Forma un patrón con 4 piezas para probar posicionamiento",
-      "piecesNeeded": 4,
-      "difficulty": "Intermedio",
-      "targetPattern": "four_pieces",
-      "objective": {
-        "playerPieces": [
-          {
-            "type": "A",
-            "face": "front",
-            "x": 200,
-            "y": 200,
-            "rotation": 0
-          },
-          {
-            "type": "A",
-            "face": "back",
-            "x": 400,
-            "y": 200,
-            "rotation": 45
-          },
-          {
-            "type": "B",
-            "face": "front",
-            "x": 200,
-            "y": 400,
-            "rotation": 90
-          },
-          {
-            "type": "B",
-            "face": "back",
-            "x": 400,
-            "y": 400,
-            "rotation": 135
-          }
-        ],
-      },
-      "targetPieces": [
-        {
-          "type": "A",
-          "face": "front",
-          "x": 200,
-          "y": 200,
-          "rotation": 0
-        },
-        {
-          "type": "A",
-          "face": "back",
-          "x": 400,
-          "y": 200,
-          "rotation": 45
-        },
-        {
-          "type": "B",
-          "face": "front",
-          "x": 200,
-          "y": 400,
-          "rotation": 90
-        },
-        {
-          "type": "B",
-          "face": "back",
-          "x": 400,
-          "y": 400,
-          "rotation": 135
-        }
-      ]
-    },
-    {
-      "id": 3,
-      "name": "Tarjeta 3: Torre Vertical",
-      "description": "Forma una torre con dos piezas A apiladas",
-      "piecesNeeded": 2,
-      "difficulty": "Fácil",
-      "targetPattern": "vertical_tower",
-      "objective": {
-        "playerPieces": [
-          {
-            "type": "A",
-            "face": "front",
-            "x": 330, // Alineadas verticalmente
-            "y": 200, // Posición superior - ajustada para que quepa en el área
-            "rotation": 0
-          },
-          {
-            "type": "A",
-            "face": "front",
-            "x": 330, // Pieza que toca el espejo
-            "y": 300, // Posición inferior - ajustada para tocar la pieza superior
-            "rotation": 0
-          }
-        ],
-      },
-      "targetPieces": [
-        {
-          "type": "A",
-          "face": "front",
-          "x": 330,
-          "y": 200,
-          "rotation": 0
-        },
-        {
-          "type": "A",
-          "face": "front",
-          "x": 330,
-          "y": 300,
-          "rotation": 0
-        }
-      ]
-    },
-    {
-      "id": 4,
-      "name": "Tarjeta 4: Forma en L",
-      "description": "Forma una L con tres piezas A conectadas",
-      "piecesNeeded": 3,
-      "difficulty": "Intermedio",
-      "targetPattern": "l_shape",
-      "objective": {
-        "playerPieces": [
-          {
-            "type": "A",
-            "face": "front",
-            "x": 72, // Posición superior de la L
-            "y": 200, // Calculada para formar L conectada y estar dentro del área
-            "rotation": 0
-          },
-          {
-            "type": "A",
-            "face": "front",
-            "x": 72, // Posición central de la L
-            "y": 300,
-            "rotation": 0
-          },
-          {
-            "type": "A",
-            "face": "front",
-            "x": 330, // Pieza que toca el espejo
-            "y": 300,
-            "rotation": 0
-          }
-        ],
-      },
-      "targetPieces": [
-        {
-          "type": "A",
-          "face": "front",
-          "x": 72,
-          "y": 200,
-          "rotation": 0
-        },
-        {
-          "type": "A",
-          "face": "front",
-          "x": 72,
-          "y": 300,
-          "rotation": 0
-        },
-        {
-          "type": "A",
-          "face": "front",
-          "x": 330,
-          "y": 300,
-          "rotation": 0
-        }
-      ]
-    }
-  ];
-
+  private readonly embeddedChallenges: Challenge[];
   constructor(geometry: GameGeometry) {
     this.geometry = geometry;
 
-    // Los challenges embebidos están escritos en el ancla antigua (esquina superior
-    // izquierda); migrarlos al ancla nueva (centro de la pieza) igual que a los cargados.
+    // Never mutate the imported catalogue: the atlas shares this source.
+    // New figures already use centre anchors; only legacy imports need migration.
     const pieceSize = this.geometry.getConfig().pieceSize;
-    this.embeddedChallenges.forEach(challenge => {
-      challenge.objective.playerPieces = challenge.objective.playerPieces.map(piece =>
-        ({ ...migrateLegacyAnchor(piece, pieceSize), anchor: 'center' as const })
-      );
-    });
+    this.embeddedChallenges = (campaign as Challenge[]).map(challenge => ({
+      ...challenge,
+      objective: {
+        ...challenge.objective,
+        playerPieces: challenge.objective.playerPieces.map(piece =>
+          ({ ...(piece.anchor === 'center' ? piece : migrateLegacyAnchor(piece, pieceSize)), anchor: 'center' as const })
+        ),
+      },
+    }));
   }
 
   // Flag para controlar si ya se está cargando un archivo

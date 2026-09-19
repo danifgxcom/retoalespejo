@@ -1,94 +1,57 @@
-import React from 'react';
-import { User, Users, Play } from 'lucide-react';
-import { GAME_NAME, GAME_TAGLINE } from '../branding';
+import React, { useState } from 'react';
+import { GAME_NAME } from '../branding';
+import { MirrorMark, SymmetryArt } from './Identity';
+import ThemeSwitcher from './accessibility/ThemeSwitcher';
+import { SoundControl } from './SoundControl';
+import Modal from './ui/Modal';
+import { CampaignAtlas } from './CampaignAtlas';
 
 interface StartupMenuProps {
   onStartOffline: () => void;
   onStartMultiplayer: () => void;
   isMultiplayerEnabled: boolean;
+  onSelectChallenge?: (index: number) => void;
+  onFreePlay: () => void;
 }
-
-const StartupMenu: React.FC<StartupMenuProps> = ({
-  onStartOffline,
-  onStartMultiplayer,
-  isMultiplayerEnabled
-}) => {
-  return (
-    <div
-      className="min-h-[100dvh] flex items-center justify-center p-4"
-      style={{ background: 'var(--bg-primary)' }}
-    >
-      <div
-        className="rounded-2xl shadow-2xl p-8 max-w-md w-full"
-        style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-light)' }}
-      >
-        {/* Title */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
-            🪞 {GAME_NAME}
-          </h1>
-          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-            {GAME_TAGLINE}
-          </p>
-        </div>
-
-        {/* Game Modes */}
-        <div className="space-y-4">
-          {/* Offline Mode */}
-          <button
-            onClick={onStartOffline}
-            className="w-full p-4 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center justify-center gap-3"
-            style={{ backgroundColor: 'var(--button-primary-bg)', color: 'var(--text-on-primary)' }}
-          >
-            <User size={24} aria-hidden="true" />
-            <div className="text-left">
-              <div className="font-bold text-lg">Jugar Solo</div>
-              <div className="text-sm opacity-90">Modo individual clásico</div>
-            </div>
-            <Play size={20} className="ml-auto" aria-hidden="true" />
+const StartupMenu: React.FC<StartupMenuProps> = ({ onStartOffline, onStartMultiplayer, isMultiplayerEnabled, onSelectChallenge, onFreePlay }) => {
+  const [guide, setGuide] = useState(false);
+  return <main className="atelier-home">
+    <header className="identity-header">
+      <div className="wordmark"><MirrorMark /><span>{GAME_NAME}<small>GABINETE DE SIMETRÍA</small></span></div>
+      <div className="identity-tools"><SoundControl /><ThemeSwitcher className="px-3 py-2 text-sm" /></div>
+    </header>
+    <section className="home-composition">
+      <div className="home-copy">
+        <p className="eyebrow"><span className="axis-dash" /> UN JUEGO DE MIRAR DOS VECES</p>
+        <h1>Todo tiene<br />otra <em>mitad.</em></h1>
+        <p className="home-description">Una pieza. Un espejo. Otra forma de pensar.<br />Mueve, gira y descubre lo que aparece al otro lado.</p>
+        <div className="mode-options">
+          <button className="mode-ticket primary-ticket" onClick={onStartOffline}>
+            <span className="ticket-number">01</span><span><strong>Jugar solo</strong><small>A tu ritmo, pieza a pieza</small></span><span className="ticket-arrow" aria-hidden="true">↗</span>
           </button>
-
-          {/* Multiplayer Mode */}
-          <button
-            onClick={isMultiplayerEnabled ? onStartMultiplayer : undefined}
-            disabled={!isMultiplayerEnabled}
-            className={`w-full p-4 rounded-xl transition-all duration-200 flex items-center justify-center gap-3 ${
-              isMultiplayerEnabled ? 'shadow-lg hover:shadow-xl transform hover:scale-105' : 'cursor-not-allowed opacity-60'
-            }`}
-            style={{
-              backgroundColor: isMultiplayerEnabled ? 'var(--button-secondary-bg)' : 'var(--bg-disabled)',
-              color: isMultiplayerEnabled ? 'var(--text-on-secondary)' : 'var(--text-disabled)',
-            }}
-          >
-            <Users size={24} aria-hidden="true" />
-            <div className="text-left">
-              <div className="font-bold text-lg">Multijugador</div>
-              <div className="text-sm opacity-90">
-                {isMultiplayerEnabled ? 'Jugar con amigos online' : 'Próximamente disponible'}
-              </div>
-            </div>
-            {isMultiplayerEnabled ? (
-              <Play size={20} className="ml-auto" aria-hidden="true" />
-            ) : (
-              <div
-                className="ml-auto text-xs px-2 py-1 rounded"
-                style={{ backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-tertiary)' }}
-              >
-                SOON
-              </div>
-            )}
+          <button className="mode-ticket free-ticket" onClick={onFreePlay}><span className="ticket-number">02</span><span><strong>Juego libre</strong><small>Tus tarjetas y seis nuevos aperitivos</small></span><span className="ticket-arrow" aria-hidden="true">↗</span></button>
+          <button className="mode-ticket" onClick={onStartMultiplayer} disabled={!isMultiplayerEnabled}>
+            <span className="ticket-number">03</span><span><strong>Multijugador</strong><small>{isMultiplayerEnabled ? 'Un mismo reto. Distintas miradas.' : 'No disponible'}</small></span><span className="ticket-arrow" aria-hidden="true">↗</span>
           </button>
         </div>
-
-        {/* Footer */}
-        <div className="text-center mt-8 pt-6" style={{ borderTop: '1px solid var(--border-light)' }}>
-          <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-            Inspirado en un clásico de puzles de simetría
-          </p>
-        </div>
+        <div className="home-links"><button className="text-link" onClick={() => setGuide(true)}>Cómo funciona <span aria-hidden="true">↗</span></button><CampaignAtlas onSelect={onSelectChallenge} /></div>
       </div>
-    </div>
-  );
+      <figure className="home-art">
+        <div className="art-caption"><span>ESTUDIO N.º 01</span><span>LA OTRA MITAD</span></div>
+        <SymmetryArt />
+        <figcaption><span className="art-seal">1 : 1</span><span>Lo que mueves aquí,<br /><strong>se transforma allí.</strong></span><span className="art-index">A / B</span></figcaption>
+      </figure>
+    </section>
+    <footer className="home-footer"><span>OBSERVAR <i /> GIRAR <i /> REFLEJAR</span><span>Pequeñas piezas. Grandes descubrimientos.</span></footer>
+    <Modal isOpen={guide} onClose={() => setGuide(false)} title="El arte de completar" subtitle="Tres gestos. Una nueva manera de mirar.">
+      <div className="guide-steps">
+        <p><b>01 · Observa</b>La ficha del reto muestra la figura que debes construir.</p>
+        <p><b>02 · Compón</b>Arrastra las piezas al tablero. Gíralas y cambia su cara con los controles.</p>
+        <p><b>03 · Refleja</b>Acerca las piezas al eje. Su reflejo completa la otra mitad. Comprueba cuando coincidan.</p>
+      </div>
+      <p className="keyboard-note">Con teclado: enfoca el tablero y consulta su guía de controles. Los números y colores identifican cada pieza.</p>
+      <button className="brand-button" onClick={onStartOffline}>Empezar a descubrir ↗</button>
+    </Modal>
+  </main>;
 };
-
 export default StartupMenu;

@@ -4,6 +4,7 @@ import { getPiecePartsInWorld, drawColorRegions } from '../GamePiece';
 import { useTheme } from '../../contexts/ThemeContext';
 import { PieceColors } from '../../utils/piece/PieceColors';
 import { GameGeometry, PiecePosition } from '@reto/geometry';
+import { thumbnailPalette } from '../../utils/theme/thumbnailPalette';
 
 interface ChallengeThumbnailProps {
   challenge: Challenge;
@@ -74,29 +75,11 @@ const ChallengeThumbnail: React.FC<ChallengeThumbnailProps> = ({
     // Clear canvas
     ctx.clearRect(0, 0, width, height);
 
-    // Draw gradient background based on difficulty
-    if (backgroundColor) {
-      const gradient = ctx.createLinearGradient(0, 0, width, height);
-
-      // Map difficulty to darker blue gradient colors
-      const difficultyColors = {
-        'Principiante': ['#1E40AF', '#1E3A8A'], // blue-700 to blue-800 
-        'Fácil': ['#1E3A8A', '#1E293B'],        // blue-800 to slate-800
-        'Intermedio': ['#1E293B', '#0F172A'],   // slate-800 to slate-900
-        'Difícil': ['#0F172A', '#020617'],      // slate-900 to slate-950
-        'Avanzado': ['#0F172A', '#020617']      // slate-900 to slate-950
-      };
-
-      const colors = difficultyColors[challenge.difficulty as keyof typeof difficultyColors] || ['#60A5FA', '#3B82F6'];
-      gradient.addColorStop(0, colors[0]);
-      gradient.addColorStop(1, colors[1]);
-
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, width, height);
-    } else {
-      // For thumbnails without custom background, let the canvas CSS handle the background
-      // We'll set it via the canvas style instead of drawing over everything
-    }
+    // A neutral print field in high contrast keeps navy pieces distinct.
+    // The dark outline also separates the pale amber from the white ground.
+    const field = thumbnailPalette(highContrast, isDarkClarity, Boolean(backgroundColor));
+    ctx.fillStyle = field.background;
+    ctx.fillRect(0, 0, width, height);
 
     // Calculate scaling and centering from the real geometry, including reflections.
     const playerPieces = challenge.objective.playerPieces as PiecePosition[];
@@ -155,8 +138,8 @@ const ChallengeThumbnail: React.FC<ChallengeThumbnailProps> = ({
     drawColorRegions(
       ctx,
       [...byColor].map(([color, polygons]) => ({ color, polygons })),
-      isDarkClarity ? '#0f172a' : '#1f2937',
-      Math.max(0.75, 100 * scale * 0.012)
+      field.outline,
+      Math.max(field.outlineWidth, 100 * scale * 0.012)
     );
 
   }, [challenge, width, height, backgroundColor, resolvedClarity, isDarkClarity, highContrast, thumbnailGeometry]); // Re-render when theme changes

@@ -28,13 +28,10 @@ export const computeCampaignNavigation = (
     };
   }
 
-  // Un reto se desbloquea al completar el anterior: el último desbloqueado
-  // es (índice completado más alto) + 1, sin pasar del final del array.
-  let maxCompletedIndex = -1;
-  completedChallenges.forEach(index => {
-    if (index > maxCompletedIndex) maxCompletedIndex = index;
-  });
-  const maxUnlockedChallenge = Math.min(maxCompletedIndex + 1, totalChallenges - 1);
+  // Only a continuous run unlocks the next study. A retained legacy ID later
+  // in the new campaign must not unlock all the new figures before it.
+  let maxUnlockedChallenge = 0;
+  while (maxUnlockedChallenge < totalChallenges - 1 && completedChallenges.has(maxUnlockedChallenge)) maxUnlockedChallenge++;
 
   const isLastChallenge = currentChallenge === totalChallenges - 1;
 

@@ -79,7 +79,7 @@ const TutorialOverlay: React.FC<TutorialOverlayProps> = ({ pieces, currentChalle
       // el propio contenedor con position:relative de la tarjeta del lienzo
       // (mismo padding p-2, así que el offset left-2/top-2 cae exactamente
       // donde caía cuando colgaba del wrapper interior).
-      className="relative z-20 mb-2 w-full rounded-2xl border p-3 shadow-lg xl:absolute xl:left-2 xl:top-2 xl:mb-0 xl:max-w-sm xl:p-4"
+      className="tutorial-strip relative z-20 mb-2 w-full rounded-2xl border p-3 shadow-lg"
       style={{ backgroundColor: 'var(--card-elevated-bg)', borderColor: 'var(--border-medium)', color: 'var(--text-primary)' }}
       role="status"
       aria-live="polite"

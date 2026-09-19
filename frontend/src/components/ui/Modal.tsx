@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { X } from 'lucide-react';
+import { X } from './AtelierIcons';
 import Button from './Button';
 
 interface ModalProps {
@@ -52,7 +52,6 @@ const Modal: React.FC<ModalProps> = ({
     const timeoutId = window.setTimeout(() => modalRef.current?.focus(), 0);
     return () => {
       window.clearTimeout(timeoutId);
-      previousFocusRef.current?.focus();
     };
   }, [isOpen]);
 
@@ -74,7 +73,7 @@ const Modal: React.FC<ModalProps> = ({
 
       const firstElement = focusableElements[0];
       const lastElement = focusableElements[focusableElements.length - 1];
-      if (event.shiftKey && document.activeElement === firstElement) {
+      if (event.shiftKey && (document.activeElement === firstElement || document.activeElement === modalRef.current)) {
         event.preventDefault();
         lastElement.focus();
       } else if (!event.shiftKey && document.activeElement === lastElement) {
@@ -91,9 +90,14 @@ const Modal: React.FC<ModalProps> = ({
     if (!isOpen) return;
 
     const originalOverflow = document.body.style.overflow;
+    const app = document.getElementById('root');
+    const wasInert = app?.hasAttribute('inert');
+    app?.setAttribute('inert', '');
     document.body.style.overflow = 'hidden';
     return () => {
       document.body.style.overflow = originalOverflow;
+      if (!wasInert) app?.removeAttribute('inert');
+      previousFocusRef.current?.focus();
     };
   }, [isOpen]);
 

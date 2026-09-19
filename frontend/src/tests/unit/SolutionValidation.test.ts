@@ -1,4 +1,5 @@
 import { GameGeometry, ValidationService, SOLUTION_TOLERANCE, PiecePosition } from '@reto/geometry';
+import legacyCampaign from '../fixtures/legacy-campaign.json';
 
 const pieza = (over: Partial<PiecePosition> = {}): PiecePosition => ({
   type: 'A',
@@ -170,9 +171,7 @@ describe('centroide', () => {
  * solución que en pantalla es idéntica al objetivo.
  */
 describe('descomposiciones distintas de la misma figura', () => {
-  const challenges = JSON.parse(
-    require('fs').readFileSync('./public/challenges.json', 'utf8')
-  );
+  const challenges = legacyCampaign as unknown as Array<{ piecesNeeded: number; objective: { playerPieces: PiecePosition[] } }>;
   const objetivo: PiecePosition[] = challenges[15].objective.playerPieces;
 
   // Mismos centros que el objetivo, otros tipos y giros. Comprobado aparte que

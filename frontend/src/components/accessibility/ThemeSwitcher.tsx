@@ -7,7 +7,7 @@ interface ThemeSwitcherProps {
 }
 
 const CLARITY_SEQUENCE: ThemeClarity[] = ['auto', 'light', 'dark'];
-const CLARITY_ICON: Record<ThemeClarity, string> = { auto: '🖥️', light: '☀️', dark: '🌙' };
+const CLARITY_ICON: Record<ThemeClarity, string> = { auto: 'M12 3v18M3 3h18v18H3Z', light: 'M7 7h10v10H7ZM12 1v3m0 16v3M1 12h3m16 0h3', dark: 'M3 3h18v18H3ZM3 3l18 18M3 8l13 13M3 13l8 8' };
 const CLARITY_LABEL: Record<ThemeClarity, string> = { auto: 'Automático', light: 'Claro', dark: 'Oscuro' };
 
 /**
@@ -38,7 +38,7 @@ const ThemeSwitcher: React.FC<ThemeSwitcherProps> = ({ className = '' }) => {
         aria-label={`Claridad: ${CLARITY_LABEL[clarity]}. Cambiar.`}
         title={`Claridad: ${CLARITY_LABEL[clarity]}`}
       >
-        <span aria-hidden="true" className="text-lg leading-none">{CLARITY_ICON[clarity]}</span>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d={CLARITY_ICON[clarity]} /></svg>
         <span className="hidden 2xl:inline">{CLARITY_LABEL[clarity]}</span>
       </button>
       <button
@@ -50,7 +50,7 @@ const ThemeSwitcher: React.FC<ThemeSwitcherProps> = ({ className = '' }) => {
         aria-label={`Paleta ${palette === 'high' ? 'de alto contraste' : 'normal'}. Cambiar.`}
         title={`Paleta: ${palette === 'high' ? 'alto contraste' : 'normal'}`}
       >
-        <span aria-hidden="true" className="text-lg leading-none">{palette === 'high' ? '🔆' : '🎨'}</span>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="M3 3h18v18H3ZM12 3v18" /><path d="M12 3h9v18h-9Z" fill="currentColor" /></svg>
         {/*
           Rótulo FIJO: nombra lo que hace el botón, no el estado en que está.
           Con "Normal" / "Alta distinguibilidad" el botón cambiaba de ancho al

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { sound } from '../services/SoundService';
 import { Piece } from '../components/GamePiece';
 import { Challenge, PiecePosition } from '../components/ChallengeCard';
 import { GameGeometry, GameAreaConfig } from '@reto/geometry';
@@ -13,6 +14,7 @@ import { loadGameProgress, saveGameProgress } from '../utils/progress/gameProgre
 import { computeCampaignNavigation } from '../utils/progress/campaignNavigation';
 import { createHistory, pushSnapshot, undoStep, redoStep, HistoryState } from '../utils/progress/undoHistory';
 import { CANVAS_CONSTANTS } from '../utils/canvas/CanvasConstants';
+import campaignData from '../../../shared/challenges.json';
 
 export const useGameLogic = () => {
   // F21: la paleta (única propiedad de la que dependen los colores de pieza)
@@ -61,6 +63,29 @@ export const useGameLogic = () => {
   const [animatingPieceId, setAnimatingPieceId] = useState<number | null>(null);
   const [completedChallenges, setCompletedChallenges] = useState<Set<number>>(new Set());
   const [bestTimes, setBestTimes] = useState<Record<number, number>>({});
+  const [playMode, setPlayMode] = useState<'campaign' | 'free'>('campaign');
+  const [sessionRevision, setSessionRevision] = useState(0);
+  const sessionSelected = useRef(false);
+
+  const startCollection = (deck: Challenge[], mode: 'campaign' | 'free', index?: number) => {
+    sessionSelected.current = true;
+    setSessionRevision(revision => revision + 1);
+    const progress = loadGameProgress(mode);
+    const completed = new Set(deck.flatMap((c, i) => progress.completed.includes(c.id) ? [i] : []));
+    const navigation = computeCampaignNavigation(0, completed, deck.length);
+    const remembered = deck.findIndex(c => c.id === progress.lastChallenge);
+    const requested = index ?? Math.max(0, remembered);
+    setPlayMode(mode);
+    setChallenges([...deck]);
+    setCompletedChallenges(completed);
+    setBestTimes(progress.bestTimes);
+    setCurrentChallenge(Math.max(0, Math.min(requested, mode === 'free' ? deck.length - 1 : navigation.maxUnlockedChallenge)));
+    setHistory(createHistory<Piece[]>());
+    setDraggedPiece(null);
+    setIsLoading(false);
+  };
+  const startCampaign = (index?: number) => startCollection([...(campaignData as Challenge[])], 'campaign', index);
+  const startFreePlay = (deck: Challenge[], index: number) => startCollection(deck, 'free', index);
   const [showGrid, setShowGrid] = useState(false);
 
   // F13: pila de deshacer/rehacer sobre `pieces`. La mecánica en sí
@@ -183,8 +208,7 @@ export const useGameLogic = () => {
           );
 
           if (loadedChallenges.length > 0) {
-            setChallenges(loadedChallenges);
-            setCurrentChallenge(0); // Reiniciar al primer desafío
+            startCollection(loadedChallenges, 'free', 0);
           } else {
             console.error('No se pudieron cargar desafíos personalizados válidos');
           }
@@ -325,9 +349,6 @@ export const useGameLogic = () => {
     const progress = loadGameProgress();
 
     const lastIndex = loadedChallenges.findIndex(c => c.id === progress.lastChallenge);
-    if (lastIndex >= 0) {
-      setCurrentChallenge(lastIndex);
-    }
 
     const completedIndices = new Set(
       progress.completed
@@ -335,6 +356,8 @@ export const useGameLogic = () => {
         .filter(index => index >= 0)
     );
     setCompletedChallenges(completedIndices);
+    const navigation = computeCampaignNavigation(0, completedIndices, loadedChallenges.length);
+    setCurrentChallenge(Math.max(0, Math.min(lastIndex, navigation.maxUnlockedChallenge)));
     setBestTimes(progress.bestTimes);
   };
 
@@ -357,6 +380,7 @@ export const useGameLogic = () => {
       try {
         // Intentar cargar los desafíos desde el archivo por defecto
         const loadedChallenges = await challengeGenerator.getAvailableChallenges();
+        if (sessionSelected.current) return;
         setChallenges(loadedChallenges);
         restoreProgress(loadedChallenges);
         // Marcar que ya se cargaron los desafíos iniciales
@@ -365,6 +389,7 @@ export const useGameLogic = () => {
         console.error('Error al cargar los desafíos iniciales:', error);
         // Si falla, usar los desafíos predefinidos
         const fallbackChallenges = challengeGenerator.generateAllChallenges();
+        if (sessionSelected.current) return;
         setChallenges(fallbackChallenges);
         restoreProgress(fallbackChallenges);
         // Marcar que ya se cargaron los desafíos iniciales (aunque sean los predefinidos)
@@ -410,6 +435,7 @@ export const useGameLogic = () => {
 
   // Funciones de control - ROTACIÓN EN INCREMENTOS DE 45 GRADOS CON ANIMACIÓN
   const rotatePiece = (pieceId: number, fromControl: boolean = false) => {
+    sound.play('turn');
     const piece = pieces.find(p => p.id === pieceId);
     if (!piece) return;
 
@@ -417,7 +443,7 @@ export const useGameLogic = () => {
 
     const targetRotation = (piece.rotation + 45) % 360;
     // Saltar animación visual si viene de control
-    const skipAnimation = fromControl;
+    const skipAnimation = fromControl || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     animateRotation(pieceId, targetRotation, skipAnimation);
 
@@ -432,6 +458,7 @@ export const useGameLogic = () => {
   };
 
   const rotatePieceCounterClockwise = (pieceId: number, fromControl: boolean = false) => {
+    sound.play('turn');
     const piece = pieces.find(p => p.id === pieceId);
     if (!piece) return;
 
@@ -439,7 +466,7 @@ export const useGameLogic = () => {
 
     const targetRotation = (piece.rotation - 45 + 360) % 360;
     // Saltar animación visual si viene de control
-    const skipAnimation = fromControl;
+    const skipAnimation = fromControl || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     animateRotation(pieceId, targetRotation, skipAnimation);
 
@@ -454,6 +481,7 @@ export const useGameLogic = () => {
   };
 
   const flipPiece = (pieceId: number, fromControl: boolean = false) => {
+    sound.play('reflect');
     pushHistory(pieces);
 
     setPieces(pieces.map(piece => {
@@ -507,17 +535,19 @@ export const useGameLogic = () => {
     isLastChallenge,
     isCampaignComplete
   } = useMemo(
-    () => computeCampaignNavigation(currentChallenge, completedChallenges, challenges.length),
-    [currentChallenge, completedChallenges, challenges.length]
+    () => computeCampaignNavigation(currentChallenge, playMode === 'free' ? new Set(challenges.map((_, i) => i)) : completedChallenges, challenges.length),
+    [currentChallenge, completedChallenges, challenges, playMode]
   );
 
   const nextChallenge = () => {
     if (!canGoToNextChallenge) return;
+    sound.play('transition');
     setCurrentChallenge(currentChallenge + 1);
   };
 
   const previousChallenge = () => {
     if (!canGoToPreviousChallenge) return;
+    sound.play('transition');
     setCurrentChallenge(currentChallenge - 1);
   };
 
@@ -537,11 +567,12 @@ export const useGameLogic = () => {
       .map(index => challenges[index]?.id)
       .filter((id): id is number => id !== undefined);
 
+    const existing = loadGameProgress(playMode);
     saveGameProgress({
       lastChallenge: challenges[lastChallengeIndex]?.id ?? 0,
-      completed: completedIds,
-      bestTimes: bestTimesById
-    });
+      completed: [...new Set([...existing.completed, ...completedIds])],
+      bestTimes: { ...existing.bestTimes, ...bestTimesById }
+    }, playMode);
   };
 
   /**
@@ -583,6 +614,10 @@ export const useGameLogic = () => {
 
 
   return {
+    playMode,
+    sessionRevision,
+    startCampaign,
+    startFreePlay,
     currentChallenge,
     pieces,
     draggedPiece,

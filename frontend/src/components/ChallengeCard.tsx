@@ -25,6 +25,9 @@ export interface Challenge {
   description: string;
   piecesNeeded: number;
   difficulty: string;
+  chapter?: string;
+  chapterNumber?: number;
+  skill?: string;
   targetPattern: string;
   // Definición del patrón objetivo completo (piezas + reflejos)
   objective: ObjectivePattern;

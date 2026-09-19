@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Save, RotateCw, FlipHorizontal, Plus, Trash2, Check, X, Edit, Bug } from 'lucide-react';
+import { Save, RotateCw, FlipHorizontal, Plus, Trash2, Check, X, Edit, Bug } from './ui/AtelierIcons';
 import { Piece } from './GamePiece';
 import { Challenge, PiecePosition } from './ChallengeCard';
 import { GameGeometry } from '@reto/geometry';
 import EditorCanvas, { EditorCanvasRef } from './EditorCanvas';
 import { usePointerHandlers } from '../hooks/usePointerHandlers';
+import ChallengeThumbnail from './ui/ChallengeThumbnail';
 
 interface ChallengeEditorProps {
   onSave?: (challenge: Challenge) => void;
@@ -346,13 +347,14 @@ export const ChallengeEditor: React.FC<ChallengeEditorProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
+    <div className="editor-shell min-h-screen bg-gray-50 p-4">
       <div className="max-w-7xl mx-auto">
         <div className="bg-white rounded-xl shadow-md p-6">
           <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
-            <h1 className="text-2xl font-bold text-gray-800">Editor de Retos</h1>
+            <h1 className="text-2xl font-bold text-gray-800">Mesa de composición</h1>
             <button
               onClick={onClose}
+              aria-label="Cerrar mesa de composición"
               className="p-2 hover:bg-gray-100 rounded-full transition-colors"
             >
               <X className="w-6 h-6 text-gray-600" />
@@ -406,25 +408,7 @@ export const ChallengeEditor: React.FC<ChallengeEditorProps> = ({
 
                           {/* Main challenge visual */}
                           <div className="absolute inset-0 flex items-center justify-center">
-                            {challenge.targetPattern === 'heart_simple' ? (
-                              <span className="text-red-500 text-4xl drop-shadow-md">♥</span>
-                            ) : (
-                              <div className="flex flex-col items-center">
-                                <div className="w-10 h-10 flex items-center justify-center">
-                                  {challenge.objective.playerPieces.slice(0, 1).map((piece, idx) => (
-                                    <div key={idx} className={`w-8 h-8 rounded-sm ${
-                                      piece.type === 'A' 
-                                        ? piece.face === 'front' ? 'bg-indigo-400' : 'bg-purple-400'
-                                        : piece.face === 'front' ? 'bg-green-400' : 'bg-teal-400'
-                                    }`}>
-                                    </div>
-                                  ))}
-                                </div>
-                                <span className="text-sm font-medium mt-1 text-gray-700">
-                                  {challenge.name.split(':')[0]}
-                                </span>
-                              </div>
-                            )}
+                            <ChallengeThumbnail challenge={challenge} width={180} height={100} />
                           </div>
                         </div>
                       </div>
@@ -709,7 +693,7 @@ export const ChallengeEditor: React.FC<ChallengeEditorProps> = ({
                       {pieces.map(piece => (
                         <div key={piece.id} className="bg-white p-2 rounded-lg shadow-sm border border-gray-200 hover:shadow transition-shadow">
                           <div className="text-xs font-medium mb-1 text-gray-800 flex items-center justify-between">
-                            <span>🧩 P{piece.id} ({piece.type})</span>
+                            <span> P{piece.id} ({piece.type})</span>
                             <span className={`px-1 rounded-full text-xs ${
                               piece.face === 'front' 
                                 ? 'bg-indigo-100 text-indigo-800' 

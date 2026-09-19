@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Pieza de Desafía al reflejo">
-  <rect width="64" height="64" rx="12" fill="#fbbf24"/>
-  <path d="M32 8 56 32 32 56 8 32Z" fill="#dc2626"/>
-  <path d="M32 15 49 32 32 49 15 32Z" fill="#fbbf24"/>
-  <path d="M32 15v34M15 32h34" stroke="#dc2626" stroke-width="5" stroke-linecap="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Desafía al reflejo: dos mitades y un eje">
+  <rect width="64" height="64" rx="5" fill="#203d48"/>
+  <path d="M7 16h20v32H7l16-16Z" fill="#edb935"/>
+  <path d="M57 16H37v32h20L41 32Z" fill="#f3eddb"/>
+  <path d="M32 6v52" stroke="#f3eddb" stroke-width="2"/>
 </svg>

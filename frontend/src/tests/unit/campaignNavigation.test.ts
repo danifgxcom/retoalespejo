@@ -4,6 +4,9 @@ import { computeCampaignNavigation } from '../../utils/progress/campaignNavigati
  * F04 + D2: campaña libre entre desbloqueados, sin ciclar.
  */
 describe('computeCampaignNavigation', () => {
+  test('retener un reto antiguo avanzado no salta los nuevos estudios previos', () => {
+    expect(computeCampaignNavigation(0, new Set([0, 8]), 16).maxUnlockedChallenge).toBe(1);
+  });
   test('sin retos, no se puede navegar', () => {
     expect(computeCampaignNavigation(0, new Set(), 0)).toEqual({
       maxUnlockedChallenge: 0,

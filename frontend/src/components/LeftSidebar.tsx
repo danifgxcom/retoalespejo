@@ -1,7 +1,8 @@
 import React from 'react';
+import { MirrorMark } from './Identity';
 import { Piece } from './GamePiece';
 import { Challenge } from './ChallengeCard';
-import { RotateCw, RotateCcw, FlipVertical } from 'lucide-react';
+import { RotateCw, RotateCcw, FlipVertical } from './ui/AtelierIcons';
 import { VisuallyHidden } from '../components/accessibility';
 import { PieceColors } from '../utils/piece/PieceColors';
 import { useTheme } from '../contexts/ThemeContext';
@@ -32,7 +33,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({
 
   return (
     <div 
-      className="w-full h-full min-h-0 rounded-2xl shadow-lg p-3 space-y-3 flex flex-col"
+      className="pieces-panel w-full h-full min-h-0 rounded-2xl shadow-lg p-3 space-y-3 flex flex-col"
       style={{
         backgroundColor: 'var(--card-bg)',
         color: 'var(--text-primary)',
@@ -42,7 +43,8 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({
       aria-labelledby="piece-controls-heading"
     >
       <div className="text-center pb-2" style={{ borderBottom: '1px solid var(--border-light)' }}>
-        <h3 id="piece-controls-heading" className="font-bold text-lg sm:text-xl" style={{ color: 'var(--text-primary)' }}>Controles de Piezas</h3>
+        <p className="panel-eyebrow">01 / MATERIAL DE ESTUDIO</p>
+        <h2 id="piece-controls-heading" className="font-bold text-lg sm:text-xl" style={{ color: 'var(--text-primary)' }}>Tus piezas</h2>
       </div>
 
       <div className="flex-1 overflow-y-auto" role="region" aria-label="Lista de controles de piezas">
@@ -53,7 +55,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({
             role="status"
             aria-live="polite"
           >
-            <span aria-hidden="true" className="text-3xl">🧩</span>
+            <MirrorMark className="empty-piece" />
             <p>Arrastra una pieza al área de juego y sus controles aparecerán aquí.</p>
           </div>
         ) : (
@@ -61,7 +63,7 @@ const LeftSidebar: React.FC<LeftSidebarProps> = ({
             {placedPieces.map((piece) => {
               const identificationColor = PieceColors.getIdentificationColor(piece.id, highContrast);
               return (
-            <div key={piece.id} className="rounded-lg p-3" 
+            <div key={piece.id} className="piece-control-card rounded-lg p-3"
                  style={{ 
                    backgroundColor: 'var(--bg-secondary)', 
                    border: `6px solid ${identificationColor}`,

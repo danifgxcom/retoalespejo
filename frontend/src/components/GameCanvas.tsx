@@ -254,54 +254,22 @@ const GameCanvas = forwardRef<GameCanvasRef, GameCanvasProps>(
       const drawThemeAwareBackgroundAreas = (ctx: CanvasRenderingContext2D, isDark: boolean) => {
         const { GAME_AREA_WIDTH, GAME_AREA_HEIGHT, BOTTOM_AREA_HEIGHT, MIRROR_LINE } = CANVAS_CONSTANTS;
 
-        // Define colors based on theme
-        const colors = isDark ? {
-          // Accessible theme colors - high contrast
-          gameArea1: '#334155',    // Dark slate
-          gameArea2: '#1e293b',    // Darker slate  
-          gameArea3: '#0f172a',    // Very dark navy
-          mirrorArea1: '#374151',  // Medium slate
-          mirrorArea2: '#1f2937',  // Dark gray
-          pieceArea1: '#374151',   // Medium slate
-          pieceArea2: '#1e293b',   // Dark slate
-        } : {
-          // Colorful theme colors - light and vibrant
-          gameArea1: '#ffffff',    // White
-          gameArea2: '#f8fafc',    // Very light blue
-          gameArea3: '#e2e8f0',    // Light blue-gray
-          mirrorArea1: '#e8f4f8',  // Light cyan
-          mirrorArea2: '#d6eaf8',  // Slightly darker cyan
-          pieceArea1: '#fef7ed',   // Light orange
-          pieceArea2: '#f3e8ff',   // Light purple
-        };
-
-        // Game area gradient
-        const gameGradient = ctx.createRadialGradient(
-          GAME_AREA_WIDTH / 2, GAME_AREA_HEIGHT / 2, 0,
-          GAME_AREA_WIDTH / 2, GAME_AREA_HEIGHT / 2, GAME_AREA_WIDTH
-        );
-        gameGradient.addColorStop(0, colors.gameArea1);
-        gameGradient.addColorStop(0.6, colors.gameArea2);
-        gameGradient.addColorStop(1, colors.gameArea3);
-        ctx.fillStyle = gameGradient;
+        const paper = isDark ? "#213a40" : "#faf7ed";
+        const mirror = isDark ? "#2c454b" : "#e1e8df";
+        const storage = isDark ? "#172e36" : "#eae6d8";
+        ctx.fillStyle = paper;
         ctx.fillRect(0, 0, GAME_AREA_WIDTH, GAME_AREA_HEIGHT);
-
-        // Mirror area gradient
-        const mirrorGradient = ctx.createLinearGradient(MIRROR_LINE, 0, MIRROR_LINE + GAME_AREA_WIDTH, 0);
-        mirrorGradient.addColorStop(0, colors.mirrorArea2);
-        mirrorGradient.addColorStop(0.2, colors.gameArea2);
-        mirrorGradient.addColorStop(0.5, colors.gameArea1);
-        mirrorGradient.addColorStop(0.8, colors.gameArea2);
-        mirrorGradient.addColorStop(1, colors.mirrorArea1);
-        ctx.fillStyle = mirrorGradient;
+        ctx.fillStyle = mirror;
         ctx.fillRect(MIRROR_LINE, 0, GAME_AREA_WIDTH, GAME_AREA_HEIGHT);
-
-        // Piece storage area - Extended to full width
-        const pieceGradient = ctx.createLinearGradient(0, GAME_AREA_HEIGHT, 0, GAME_AREA_HEIGHT + BOTTOM_AREA_HEIGHT);
-        pieceGradient.addColorStop(0, colors.pieceArea1);
-        pieceGradient.addColorStop(1, colors.pieceArea2);
-        ctx.fillStyle = pieceGradient;
+        ctx.fillStyle = storage;
         ctx.fillRect(0, GAME_AREA_HEIGHT, GAME_AREA_WIDTH * 2, BOTTOM_AREA_HEIGHT);
+        ctx.fillStyle = isDark ? "#81918a" : "#bfc7b8";
+        for (let x = 25; x < CANVAS_WIDTH; x += 50) {
+          for (let y = 25; y < GAME_AREA_HEIGHT; y += 50) ctx.fillRect(x, y, 2, 2);
+        }
+        ctx.font = "16px monospace";
+        ctx.fillStyle = isDark ? "#cfcebd" : "#43545b";
+        ctx.fillText("PIEZAS DISPONIBLES / ARRASTRA AL TABLERO", 24, GAME_AREA_HEIGHT + 32);
 
         // Draw grid overlay if enabled
         if (showGrid) {
@@ -356,13 +324,13 @@ const GameCanvas = forwardRef<GameCanvasRef, GameCanvasProps>(
         const secondaryTextColor = isDarkClarity ? '#cbd5e1' : '#64748b';
 
         // Área de juego
-        drawTextWithShadow('🎮 ÁREA DE JUEGO', 15, 30, primaryTextColor);
+        drawTextWithShadow(' ÁREA DE JUEGO', 15, 30, primaryTextColor);
 
         // Espejo con icono
-        drawTextWithShadow('🪞 ESPEJO', MIRROR_LINE + 15, 30, primaryTextColor);
+        drawTextWithShadow(' ESPEJO', MIRROR_LINE + 15, 30, primaryTextColor);
 
         // Piezas disponibles
-        drawTextWithShadow('🧩 PIEZAS DISPONIBLES', 15, GAME_AREA_HEIGHT + 30, primaryTextColor);
+        drawTextWithShadow(' PIEZAS DISPONIBLES', 15, GAME_AREA_HEIGHT + 30, primaryTextColor);
 
         // Agregar subtítulos descriptivos
         ctx.font = '13px "Segoe UI", sans-serif';

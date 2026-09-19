@@ -1,5 +1,5 @@
 import React from 'react';
-import { FlipHorizontal, RotateCcw, RotateCw } from 'lucide-react';
+import { FlipHorizontal, RotateCcw, RotateCw } from './ui/AtelierIcons';
 
 interface MobileGameActionsProps {
   selectedPieceId: number | null;

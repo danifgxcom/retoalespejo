@@ -106,9 +106,9 @@ export class CanvasDrawing {
     ctx.font = 'bold 18px Arial';
     ctx.textAlign = 'left';
 
-    ctx.fillText('🎯 ÁREA DE JUEGO', 20, 35);
-    ctx.fillText('🪞 ÁREA DEL ESPEJO', MIRROR_LINE + 20, 35);
-    ctx.fillText('🧩 PIEZAS DISPONIBLES', 20, GAME_AREA_HEIGHT + 35);
+    ctx.fillText(' ÁREA DE JUEGO', 20, 35);
+    ctx.fillText(' ÁREA DEL ESPEJO', MIRROR_LINE + 20, 35);
+    ctx.fillText(' PIEZAS DISPONIBLES', 20, GAME_AREA_HEIGHT + 35);
     
     ctx.restore();
   }

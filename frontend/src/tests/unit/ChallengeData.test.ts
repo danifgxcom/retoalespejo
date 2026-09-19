@@ -1,6 +1,5 @@
 import * as fs from 'fs';
 import { GameGeometry } from '@reto/geometry';
-import golden from '../fixtures/piece-geometry.golden.json';
 import { CANVAS_CONSTANTS } from '../../utils/canvas/CanvasConstants';
 
 /**
@@ -9,7 +8,7 @@ import { CANVAS_CONSTANTS } from '../../utils/canvas/CanvasConstants';
  * juego, no con una inventada para el test.
  */
 describe('public/challenges.json', () => {
-  const config = golden.config as any;
+  const config = { width: CANVAS_CONSTANTS.GAME_AREA_WIDTH, height: CANVAS_CONSTANTS.GAME_AREA_HEIGHT, mirrorLineX: CANVAS_CONSTANTS.MIRROR_LINE, pieceSize: CANVAS_CONSTANTS.PIECE_SIZE };
   const geometry = new GameGeometry(config);
   const challenges = JSON.parse(fs.readFileSync('./public/challenges.json', 'utf8'));
 

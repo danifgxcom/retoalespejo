@@ -166,13 +166,13 @@ export class GameAreaRenderer {
     ctx.textAlign = 'left';
 
     // Game area
-    this.drawTextWithShadow(ctx, '🎮 ÁREA DE JUEGO', 15, 30, '#1e293b');
+    this.drawTextWithShadow(ctx, ' ÁREA DE JUEGO', 15, 30, '#1e293b');
 
     // Mirror
-    this.drawTextWithShadow(ctx, '🪞 ESPEJO', mirrorLine + 15, 30, '#1e293b');
+    this.drawTextWithShadow(ctx, ' ESPEJO', mirrorLine + 15, 30, '#1e293b');
 
     // Storage area (spans full width)
-    this.drawTextWithShadow(ctx, '🧩 ALMACÉN DE PIEZAS', 15, gameAreaHeight + 30, '#1e293b');
+    this.drawTextWithShadow(ctx, ' ALMACÉN DE PIEZAS', 15, gameAreaHeight + 30, '#1e293b');
 
     // Descriptive subtitles
     ctx.font = '13px "Segoe UI", sans-serif';

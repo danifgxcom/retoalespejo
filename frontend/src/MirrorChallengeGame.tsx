@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { RotateCw, X } from 'lucide-react';
+import { RotateCw, X } from './components/ui/AtelierIcons';
 import GameCanvas, { GameCanvasRef } from './components/GameCanvas';
 import GameControls from './components/GameControls';
 import LeftSidebar from './components/LeftSidebar';
@@ -17,6 +17,12 @@ import { GAME_NAME } from './branding';
 import SkipLink from './components/accessibility/SkipLink';
 import MobileGameActions from './components/MobileGameActions';
 import { CANVAS_CONSTANTS } from './utils/canvas/CanvasConstants';
+import { MirrorMark, SymmetryArt } from './components/Identity';
+import { SoundControl } from './components/SoundControl';
+import { sound } from './services/SoundService';
+import Modal from './components/ui/Modal';
+import { CampaignAtlas } from './components/CampaignAtlas';
+import FreePlayLibrary from './components/FreePlayLibrary';
 
 const ChallengeEditorApp = import.meta.env.DEV
   ? React.lazy(async () => ({ default: (await import('./ChallengeEditorApp')).ChallengeEditorApp }))
@@ -24,6 +30,8 @@ const ChallengeEditorApp = import.meta.env.DEV
 
 const MirrorChallengeGame: React.FC = () => {
   const canvasRef = useRef<GameCanvasRef>(null);
+  const [showFreeLibrary, setShowFreeLibrary] = useState(false);
+  const [completedStudy, setCompletedStudy] = useState<{ time?: number } | null>(null);
   const [showChallengeEditor, setShowChallengeEditor] = useState(false);
   // F10: id de la pieza señalada por la última validación fallida (si la
   // hubo), para resaltarla en el lienzo. Se limpia en cuanto el jugador
@@ -72,6 +80,10 @@ const MirrorChallengeGame: React.FC = () => {
   const MULTIPLAYER_ENABLED = true;
 
   const {
+    playMode,
+    sessionRevision,
+    startCampaign,
+    startFreePlay,
     currentChallenge,
     pieces,
     draggedPiece,
@@ -197,6 +209,7 @@ const MirrorChallengeGame: React.FC = () => {
 
   // Startup menu handlers
   const handleStartOffline = () => {
+    void sound.unlock().then(() => sound.play('transition'));
     setGameMode('offline');
     setShowStartupMenu(false);
     setIsGameActive(true);
@@ -213,12 +226,14 @@ const MirrorChallengeGame: React.FC = () => {
 
   const handleCheckSolution = (elapsedSeconds?: number) => {
     const result = checkSolutionWithMirrors(elapsedSeconds);
+    sound.play(result.isCorrect ? 'success' : 'error');
 
     // F10: resalta en el lienzo la pieza que señala explainMismatch, si la hay.
     const mismatchedPiece = result.pieceIndex !== undefined ? pieces[result.pieceIndex] : undefined;
     setHighlightedPieceId(result.isCorrect ? null : mismatchedPiece?.id ?? null);
 
     if (result.isCorrect) {
+      setCompletedStudy({ time: elapsedSeconds });
       setIsGamePaused(true);
       setPausedBy('SYSTEM');
     }
@@ -234,6 +249,8 @@ const MirrorChallengeGame: React.FC = () => {
   }, [pieces]);
 
   const handleStartMultiplayer = () => {
+    startCampaign();
+    void sound.unlock().then(() => sound.play('transition'));
     setGameMode('multiplayer');
     setShowStartupMenu(false);
 
@@ -380,11 +397,16 @@ const MirrorChallengeGame: React.FC = () => {
 
   if (showStartupMenu && MULTIPLAYER_ENABLED) {
     return (
+      <>
       <StartupMenu
-        onStartOffline={handleStartOffline}
+        onStartOffline={() => { startCampaign(); handleStartOffline(); }}
         onStartMultiplayer={handleStartMultiplayer}
         isMultiplayerEnabled={MULTIPLAYER_ENABLED}
+        onSelectChallenge={(index) => { startCampaign(index); handleStartOffline(); }}
+        onFreePlay={() => setShowFreeLibrary(true)}
       />
+      <FreePlayLibrary open={showFreeLibrary} onClose={() => setShowFreeLibrary(false)} onSelect={(deck, index) => { startFreePlay(deck, index); setShowFreeLibrary(false); handleStartOffline(); }} />
+      </>
     );
   }
 
@@ -412,13 +434,22 @@ const MirrorChallengeGame: React.FC = () => {
 
   return (
     <div
-      className="min-h-[100dvh] overflow-y-auto p-2 xl:h-[100dvh] xl:overflow-hidden"
+      className="game-shell min-h-[100dvh] overflow-y-auto xl:h-[100dvh] xl:overflow-hidden"
       style={{ 
         background: 'var(--bg-primary)',
         color: 'var(--text-primary)'
       }}
     >
       <SkipLink />
+      <header className="game-brandbar">
+        <button className="wordmark" aria-label="Volver al inicio" onClick={() => { socketService.disconnect(); setShowStartupMenu(true); }}>
+          <MirrorMark /><span>{GAME_NAME}<small>GABINETE DE SIMETRÍA</small></span>
+        </button>
+        {gameMode === 'offline' && (playMode === 'free'
+          ? <button className="text-link session-collection" onClick={() => setShowFreeLibrary(true)}>Elegir tarjeta</button>
+          : <CampaignAtlas className="session-collection" onSelect={setCurrentChallenge} />)}
+        <SoundControl />
+      </header>
       {/*
         Sólo se muestra en vertical Y en pantallas estrechas (móvil, no la
         tablet de 768px): el tablero es 1.4:1, así que girar el aparato es
@@ -515,6 +546,7 @@ const MirrorChallengeGame: React.FC = () => {
               canUndo={canUndo}
               canRedo={canRedo}
               compact={true}
+              freePlay={playMode === 'free'}
               gameMode={gameMode}
               /* El cronómetro de móvil vive en el HUD flotante (MobileHud):
                  aquí sería el mismo dato dos veces en la misma pantalla. */
@@ -522,7 +554,13 @@ const MirrorChallengeGame: React.FC = () => {
           </div>
 
           {/* Game Canvas */}
-          <div className="bg-card border border-card rounded-2xl shadow-lg p-2 flex-1 flex flex-col min-h-0 relative">
+          {challenges[currentChallenge] && (
+            <MobileHud challenge={challenges[currentChallenge]} index={currentChallenge} total={challenges.length}
+              timerText={mobileTimer.text} timerPaused={mobileTimer.isPaused}
+              onCheckSolution={gameMode === 'offline' ? () => mobileCheckSolutionRef.current() : undefined} />
+          )}
+          <div className="board-panel bg-card border border-card rounded-2xl shadow-lg p-2 flex-1 flex flex-col min-h-0 relative">
+            <div className="board-strip"><span>02 / TU COMPOSICIÓN</span><span>SU REFLEJO / 1 : 1</span></div>
             {/*
               Por debajo de xl el tutorial es una banda propia EN EL FLUJO
               (ver TutorialOverlay), fuera del lienzo: en un tablero de
@@ -554,7 +592,7 @@ const MirrorChallengeGame: React.FC = () => {
                 challenges={challenges}
                 onPointerDown={handleCanvasPointerDown}
                 onPointerMove={handlePointerMove}
-                onPointerUp={handlePointerUp}
+                onPointerUp={(event) => { if (draggedPiece) sound.play('move'); handlePointerUp(event); }}
                 onPointerCancel={handlePointerCancel}
                 onPointerLeave={handlePointerLeave}
                 onContextMenu={handleContextMenu}
@@ -591,7 +629,7 @@ const MirrorChallengeGame: React.FC = () => {
             {/* Footer */}
             <div className="text-center pt-1">
               <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                Inspirado en un clásico de puzles de simetría
+                MUEVE UNA MITAD · DESCUBRE EL TODO
               </p>
             </div>
           </div>
@@ -661,7 +699,7 @@ const MirrorChallengeGame: React.FC = () => {
               aria-describedby="waiting-room-description"
             >
               <div className="bg-white rounded-lg p-8 max-w-lg text-center shadow-xl">
-                <h2 id="waiting-room-title" className="text-3xl font-bold text-gray-800 mb-6">🎮 Sala de Espera</h2>
+                <h2 id="waiting-room-title" className="text-3xl font-bold text-gray-800 mb-6"> Sala de Espera</h2>
                 <p id="waiting-room-description" className="text-gray-600 mb-6 text-lg">
                   Esperando a que todos los jugadores estén listos para comenzar el desafío.
                 </p>
@@ -693,7 +731,7 @@ const MirrorChallengeGame: React.FC = () => {
                 aria-describedby="pause-description"
               >
                 <div className="bg-white rounded-lg p-6 max-w-md text-center shadow-xl">
-                  <h2 id="pause-title" className="text-2xl font-bold text-gray-800 mb-4">⏸️ Juego en Pausa</h2>
+                  <h2 id="pause-title" className="text-2xl font-bold text-gray-800 mb-4">Ⅱ Juego en Pausa</h2>
                   <p id="pause-description" className="text-gray-600 mb-4">
                     {pausedBy 
                       ? `Partida pausada por ${pausedBy}`
@@ -702,7 +740,7 @@ const MirrorChallengeGame: React.FC = () => {
                   </p>
                   <div role="region" aria-label="Información adicional">
                     <p className="text-gray-500 text-sm mb-2">
-                      ⛔ Juego bloqueado para evitar trampas
+                       Juego bloqueado para evitar trampas
                     </p>
                     <p className="text-gray-600 text-xs">
                       Nadie puede ver ni interactuar con el juego hasta reanudar
@@ -723,7 +761,7 @@ const MirrorChallengeGame: React.FC = () => {
               aria-describedby="solution-description"
             >
               <div className="bg-white rounded-lg p-6 max-w-md text-center shadow-xl">
-                <h2 id="solution-title" className="text-2xl font-bold text-green-600 mb-4">🏆 ¡Solución!</h2>
+                <h2 id="solution-title" className="text-2xl font-bold text-green-600 mb-4"> ¡Solución!</h2>
                 <div id="solution-description">
                   <p className="text-gray-600 mb-4">
                     Eres el último jugador activo. ¡Has ganado un punto!
@@ -741,6 +779,7 @@ const MirrorChallengeGame: React.FC = () => {
         {/* Right Sidebar - Wider for better usability */}
         <div className="min-w-0 min-h-0 max-h-[70dvh] xl:max-h-none xl:h-full overflow-y-auto">
           <RightSidebar
+            key={`session-${sessionRevision}`}
             currentChallenge={currentChallenge}
             totalChallenges={challenges.length}
             challenges={challenges}
@@ -778,7 +817,7 @@ const MirrorChallengeGame: React.FC = () => {
                 aria-label="Probar diseño responsivo"
                 type="button"
               >
-                <span aria-hidden="true">🧪</span> Test Responsive
+                <span aria-hidden="true"></span> Test Responsive
               </button>
             </div>
             <p className="text-xs text-yellow-700">Modo depuración: muestra etiquetas y contornos sobre las piezas.</p>
@@ -791,16 +830,18 @@ const MirrorChallengeGame: React.FC = () => {
         porque ahí la cuenta atrás del servidor ya cumple ese papel y el
         arranque de la partida no lo manda el reloj de este cliente.
       */}
-      {challenges[currentChallenge] && (
-        <MobileHud
-          challenge={challenges[currentChallenge]}
-          index={currentChallenge}
-          total={challenges.length}
-          timerText={mobileTimer.text}
-          timerPaused={mobileTimer.isPaused}
-          onCheckSolution={gameMode === 'offline' ? () => mobileCheckSolutionRef.current() : undefined}
-        />
-      )}
+      <FreePlayLibrary open={showFreeLibrary} onClose={() => setShowFreeLibrary(false)} onSelect={(deck, index) => { startFreePlay(deck, index); setShowFreeLibrary(false); setCompletedStudy(null); setIsGamePaused(false); setPausedBy(null); }} />
+      <Modal isOpen={completedStudy !== null} onClose={() => setCompletedStudy(null)} title={playMode === 'free' ? 'Tarjeta resuelta · Juego libre' : isLastChallenge ? 'Colección completada' : 'Estudio completado'}>
+        <div className="success-sheet">
+          <SymmetryArt />
+          <p className="eyebrow">RETO {String(currentChallenge + 1).padStart(2, '0')} / {String(challenges.length).padStart(2, '0')}</p>
+          <h2>{isLastChallenge && playMode !== 'free' ? 'Una nueva forma de mirar.' : 'Las dos mitades encajan.'}</h2>
+          <p>{isLastChallenge && playMode !== 'free' ? 'Has completado todos los estudios de simetría. Puedes volver a explorarlos a tu ritmo.' : challenges[currentChallenge]?.name}</p>
+          {completedStudy?.time !== undefined && <span className="result-time">{Math.floor(completedStudy.time / 60).toString().padStart(2, '0')}:{Math.floor(completedStudy.time % 60).toString().padStart(2, '0')}</span>}
+          <button className="brand-button" onClick={() => { setCompletedStudy(null); if (playMode === 'free') setShowFreeLibrary(true); else if (isLastChallenge) setShowStartupMenu(true); else { nextChallenge(); sound.play('transition'); } }}>{playMode === 'free' ? 'Elegir otra tarjeta' : isLastChallenge ? 'Volver al gabinete' : 'Descubrir el siguiente reto'} ↗</button>
+          <button className="text-link" onClick={() => setCompletedStudy(null)}>Contemplar la figura</button>
+        </div>
+      </Modal>
 
       {gameMode === 'offline' && challenges[currentChallenge] && (
         <ChallengeIntro

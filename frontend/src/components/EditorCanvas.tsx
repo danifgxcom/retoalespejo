@@ -104,13 +104,13 @@ const EditorCanvas = forwardRef<EditorCanvasRef, EditorCanvasProps>(
       ctx.textAlign = 'left';
 
       // Etiqueta del área de juego
-      ctx.fillText('🎯 ÁREA DE JUEGO', 20, 35);
+      ctx.fillText(' ÁREA DE JUEGO', 20, 35);
 
       // Etiqueta del área del espejo
-      ctx.fillText('🪞 ÁREA DEL ESPEJO', MIRROR_LINE + 20, 35);
+      ctx.fillText(' ÁREA DEL ESPEJO', MIRROR_LINE + 20, 35);
 
       // Etiqueta del área de piezas disponibles
-      ctx.fillText('🧩 PIEZAS DISPONIBLES', 20, GAME_AREA_HEIGHT + 35);
+      ctx.fillText(' PIEZAS DISPONIBLES', 20, GAME_AREA_HEIGHT + 35);
     };
 
     // Dibujar grid de referencia (solo en modo debug)

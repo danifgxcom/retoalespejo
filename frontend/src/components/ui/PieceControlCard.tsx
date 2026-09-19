@@ -1,5 +1,5 @@
 import React from 'react';
-import { RotateCcw, RotateCw, FlipHorizontal } from 'lucide-react';
+import { RotateCcw, RotateCw, FlipHorizontal } from './AtelierIcons';
 import Card from './Card';
 import Button from './Button';
 import StatusBadge from './StatusBadge';

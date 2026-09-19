@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Clock, Users, User, Play, Pause, RotateCcw, Link } from 'lucide-react';
+import { Clock, Users, User, Play, Pause, RotateCcw, Link } from './ui/AtelierIcons';
 import ValidationFeedback from './ValidationFeedback';
+import Modal from './ui/Modal';
 import { Player } from '../services/SocketService';
 import socketService from '../services/SocketService';
 import ChallengeObjective from './ChallengeObjective';
@@ -75,6 +76,7 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
     onTimerChange?.(formatTime(time), effectiveIsPaused);
   }, [time, effectiveIsPaused, onTimerChange, formatTime]);
   const [validationResult, setValidationResult] = useState<{isCorrect: boolean; message: string} | null>(null);
+  useEffect(() => { setValidationResult(null); }, [currentChallenge]);
   const [showJoinRoomDialog, setShowJoinRoomDialog] = useState(false);
   const [joinRoomId, setJoinRoomId] = useState('');
 
@@ -568,7 +570,8 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
   }, [showUsernameDialog]);
 
   return (
-    <div className="w-full h-full rounded-lg shadow-lg p-4 space-y-6 flex flex-col" style={{ backgroundColor: 'var(--card-bg)', color: 'var(--text-primary)' }}>
+    <div className="session-panel w-full h-full rounded-lg shadow-lg p-4 space-y-6 flex flex-col" style={{ backgroundColor: 'var(--card-bg)', color: 'var(--text-primary)' }}>
+      <p className="panel-eyebrow">03 / REGISTRO DEL RETO</p>
       {/* Aviso de error del servidor (p.ej. acción restringida al anfitrión) */}
       {socketErrorMessage && (
         <div
@@ -605,7 +608,7 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
               {formatTime(time)}
             </div>
             <div className="text-sm mt-2" style={{ color: 'var(--text-secondary)' }}>
-              <span aria-hidden="true">{effectiveIsPaused ? '⏸️' : '⏱️'}</span> {effectiveIsPaused ? 'Pausado' : 'En curso'}
+              <span aria-hidden="true">{effectiveIsPaused ? 'Ⅱ' : ''}</span> {effectiveIsPaused ? 'Pausado' : 'En curso'}
             </div>
           </div>
         </div>
@@ -623,7 +626,7 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
           >
             {effectiveIsPaused ? <Play size={16} className="sm:w-5 sm:h-5" aria-hidden="true" /> : <Pause size={16} className="sm:w-5 sm:h-5" aria-hidden="true" />}
             <span className="hidden sm:inline">{effectiveIsPaused ? 'Reanudar' : 'Pausar'}</span>
-            <span className="sm:hidden" aria-hidden="true">{effectiveIsPaused ? '▶️' : '⏸️'}</span>
+            <span className="sm:hidden" aria-hidden="true">{effectiveIsPaused ? '▷' : 'Ⅱ'}</span>
           </button>
 
           <button
@@ -652,7 +655,7 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
           >
             <RotateCcw size={16} className="sm:w-5 sm:h-5" aria-hidden="true" />
             <span className="hidden sm:inline">Reset</span>
-            <span className="sm:hidden" aria-hidden="true">🔄</span>
+            <span className="sm:hidden" aria-hidden="true">↻</span>
           </button>
         </div>
       </div>
@@ -728,7 +731,7 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
           aria-label="Reiniciar nivel actual"
           type="button"
         >
-          <span aria-hidden="true">🔄</span>
+          <span aria-hidden="true">↻</span>
           <span>Reiniciar Nivel</span>
         </button>
       </div>
@@ -909,10 +912,7 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
           })()}
 
           {/* Join Room Dialog */}
-          {showJoinRoomDialog && (
-            <div className="fixed inset-0 bg-modal-overlay flex items-center justify-center z-50" role="dialog" aria-modal="true" aria-labelledby="join-room-title">
-              <div className="bg-modal rounded-lg p-4 max-w-sm w-full">
-                <h3 id="join-room-title" className="text-lg font-bold mb-3">Unirse a una Sala</h3>
+<Modal isOpen={showJoinRoomDialog} onClose={() => setShowJoinRoomDialog(false)} title="Unirse a una sala" subtitle="Comparte el mismo reto, desde otra mirada." maxWidth="sm">
                 <div className="mb-3">
                   <label htmlFor="room-id-input" className="block text-sm font-medium text-gray-700 mb-1">
                     ID de la Sala
@@ -976,22 +976,10 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
                     Unirse
                   </button>
                 </div>
-              </div>
-            </div>
-          )}
+          </Modal>
 
           {/* Username Dialog (sustituye a prompt()) */}
-          {showUsernameDialog && (
-            <div
-              className="fixed inset-0 bg-modal-overlay flex items-center justify-center z-50"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="username-dialog-title"
-            >
-              <div className="bg-modal rounded-lg p-4 max-w-sm w-full">
-                <h3 id="username-dialog-title" className="text-lg font-bold mb-3">
-                  {usernameDialogAction === 'create' ? 'Crear Sala' : 'Unirse a Sala'}
-                </h3>
+<Modal isOpen={showUsernameDialog} onClose={handleUsernameDialogCancel} title={usernameDialogAction === 'create' ? 'Crear sala' : 'Unirse a la sala'} subtitle="Tu nombre en este gabinete compartido." maxWidth="sm">
                 <div className="mb-3">
                   <label htmlFor="username-input" className="block text-sm font-medium text-gray-700 mb-1">
                     Nombre de usuario
@@ -1066,9 +1054,8 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
                     Confirmar
                   </button>
                 </div>
-              </div>
-            </div>
-          )}
+          </Modal>
+
         </div>
       )}
 
@@ -1088,7 +1075,7 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
       {showResetVoting && resetVoteData && (
         <div className="fixed inset-0 bg-modal-overlay flex items-center justify-center z-50" role="dialog" aria-modal="true" aria-labelledby="reset-vote-title">
           <div className="bg-modal rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 id="reset-vote-title" className="text-xl font-bold mb-4 text-center">🔄 Solicitud de Reinicio</h3>
+            <h3 id="reset-vote-title" className="text-xl font-bold mb-4 text-center">↻ Solicitud de Reinicio</h3>
             {resetVoteData.requesterUsername && (
               <p className="text-gray-600 mb-4 text-center">
                 <span className="font-semibold">{resetVoteData.requesterUsername}</span> quiere reiniciar el reto.

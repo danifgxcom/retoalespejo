@@ -4,6 +4,7 @@ import MirrorChallengeGame from './MirrorChallengeGame.tsx'
 import './index.css'
 import './styles/theme.css' // Accessible color theme system
 import './styles/accessibility.css' // Global accessibility styles
+import './styles/atelier.css'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { GAME_NAME } from './branding'
 

@@ -2,6 +2,8 @@ import * as fs from 'fs';
 import { GameGeometry } from '@reto/geometry';
 import { ValidationService, SOLUTION_TOLERANCE } from '@reto/geometry';
 import { createRotationAwareGrid } from '../../utils/grid/RotationAwareGrid';
+import { CANVAS_CONSTANTS } from '../../utils/canvas/CanvasConstants';
+import freeChallenges from '../../../../shared/free-challenges.json';
 
 /**
  * ¿Se puede ganar el juego?
@@ -14,11 +16,11 @@ import { createRotationAwareGrid } from '../../utils/grid/RotationAwareGrid';
  * encaja en una retícula de 10 px o la pega a sus vecinas y al espejo. Estos
  * tests recorren ese mismo camino.
  */
-const CONFIG = { width: 700, height: 500, mirrorLineX: 700, pieceSize: 100 };
+const CONFIG = { width: CANVAS_CONSTANTS.GAME_AREA_WIDTH, height: CANVAS_CONSTANTS.GAME_AREA_HEIGHT, mirrorLineX: CANVAS_CONSTANTS.MIRROR_LINE, pieceSize: CANVAS_CONSTANTS.PIECE_SIZE };
 const REJILLA = 10;
 
 const geometry = new GameGeometry(CONFIG);
-const challenges = JSON.parse(fs.readFileSync('./public/challenges.json', 'utf8'));
+const challenges = [...JSON.parse(fs.readFileSync('./public/challenges.json', 'utf8')), ...freeChallenges];
 const comoPieza = (p: any, id: number) => ({ ...p, id, placed: true, centerColor: '#000', triangleColor: '#000' });
 
 describe('cada reto se puede resolver', () => {

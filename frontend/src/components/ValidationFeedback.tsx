@@ -1,5 +1,6 @@
 import React from 'react';
-import { CheckCircle, XCircle, X } from 'lucide-react';
+import { X } from './ui/AtelierIcons';
+import { MirrorMark } from './Identity';
 
 interface ValidationFeedbackProps {
   result: {
@@ -32,7 +33,7 @@ const ValidationFeedback: React.FC<ValidationFeedbackProps> = ({ result, onClose
     <div
       role="status"
       aria-live="polite"
-      className="fixed bottom-4 right-4 z-50 max-w-sm rounded-xl border-2 p-4 shadow-2xl"
+      className="result-note fixed bottom-4 right-4 z-50 max-w-sm rounded-xl border-2 p-4 shadow-2xl"
       style={{
         backgroundColor: 'var(--card-bg)',
         borderColor: `var(${accentVar})`,
@@ -45,11 +46,11 @@ const ValidationFeedback: React.FC<ValidationFeedbackProps> = ({ result, onClose
           style={{ backgroundColor: `var(${accentVar})`, color: `var(${textOnAccentVar})` }}
           aria-hidden="true"
         >
-          {result.isCorrect ? <CheckCircle size={20} /> : <XCircle size={20} />}
+          <MirrorMark className="result-mark" />
         </span>
 
         <div className="min-w-0 flex-1 pt-1">
-          <p className="font-semibold">{result.isCorrect ? '¡Excelente!' : 'Casi ahí'}</p>
+          <p className="font-semibold">{result.isCorrect ? 'Simetría encontrada' : 'Ajusta la composición'}</p>
           <p className="mt-1 text-sm leading-relaxed">{result.message}</p>
         </div>
 

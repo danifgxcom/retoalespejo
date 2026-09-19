@@ -1,0 +1,386 @@
+[
+  {
+    "id": 201,
+    "name": "Búho de sobremesa",
+    "description": "Dos ojos cuadrados bajo un par de orejas; el cuerpo cierra en rombos.",
+    "piecesNeeded": 2,
+    "difficulty": "Fácil",
+    "chapter": "Bestiario de papel",
+    "skill": "Combinar fichas A y B",
+    "targetPattern": "custom",
+    "objective": {
+      "playerPieces": [
+        {
+          "type": "A",
+          "face": "front",
+          "rotation": 270,
+          "x": 636,
+          "y": 222.745166,
+          "anchor": "center"
+        },
+        {
+          "type": "B",
+          "face": "front",
+          "rotation": 225,
+          "x": 609.490332,
+          "y": 414.745166,
+          "anchor": "center"
+        }
+      ]
+    },
+    "targetPieces": [
+      {
+        "type": "A",
+        "face": "front",
+        "rotation": 270,
+        "x": 636,
+        "y": 222.745166,
+        "anchor": "center"
+      },
+      {
+        "type": "B",
+        "face": "front",
+        "rotation": 225,
+        "x": 609.490332,
+        "y": 414.745166,
+        "anchor": "center"
+      }
+    ]
+  },
+  {
+    "id": 202,
+    "name": "Raya del arrecife",
+    "description": "Aletas anchas y una cola en punta: una criatura vista desde arriba.",
+    "piecesNeeded": 2,
+    "difficulty": "Fácil",
+    "chapter": "Bestiario de papel",
+    "skill": "Combinar fichas A y B",
+    "targetPattern": "custom",
+    "objective": {
+      "playerPieces": [
+        {
+          "type": "A",
+          "face": "front",
+          "rotation": 270,
+          "x": 636,
+          "y": 300,
+          "anchor": "center"
+        },
+        {
+          "type": "B",
+          "face": "front",
+          "rotation": 180,
+          "x": 508,
+          "y": 172,
+          "anchor": "center"
+        }
+      ]
+    },
+    "targetPieces": [
+      {
+        "type": "A",
+        "face": "front",
+        "rotation": 270,
+        "x": 636,
+        "y": 300,
+        "anchor": "center"
+      },
+      {
+        "type": "B",
+        "face": "front",
+        "rotation": 180,
+        "x": 508,
+        "y": 172,
+        "anchor": "center"
+      }
+    ]
+  },
+  {
+    "id": 203,
+    "name": "Nave exploradora",
+    "description": "Cabina central, alas triangulares y un motor de dos rombos.",
+    "piecesNeeded": 3,
+    "difficulty": "Intermedio",
+    "chapter": "Pequeños mundos",
+    "skill": "Combinar fichas A y B",
+    "targetPattern": "custom",
+    "objective": {
+      "playerPieces": [
+        {
+          "type": "A",
+          "face": "front",
+          "rotation": 135,
+          "x": 609.490332,
+          "y": 473.254834,
+          "anchor": "center"
+        },
+        {
+          "type": "B",
+          "face": "front",
+          "rotation": 270,
+          "x": 636,
+          "y": 228.235498,
+          "anchor": "center"
+        },
+        {
+          "type": "A",
+          "face": "front",
+          "rotation": 0,
+          "x": 481.490332,
+          "y": 382.745166,
+          "anchor": "center"
+        }
+      ]
+    },
+    "targetPieces": [
+      {
+        "type": "A",
+        "face": "front",
+        "rotation": 135,
+        "x": 609.490332,
+        "y": 473.254834,
+        "anchor": "center"
+      },
+      {
+        "type": "B",
+        "face": "front",
+        "rotation": 270,
+        "x": 636,
+        "y": 228.235498,
+        "anchor": "center"
+      },
+      {
+        "type": "A",
+        "face": "front",
+        "rotation": 0,
+        "x": 481.490332,
+        "y": 382.745166,
+        "anchor": "center"
+      }
+    ]
+  },
+  {
+    "id": 204,
+    "name": "Bailarina de papel",
+    "description": "Una cabeza ligera, brazos abiertos y una falda plegada.",
+    "piecesNeeded": 3,
+    "difficulty": "Intermedio",
+    "chapter": "Pequeños mundos",
+    "skill": "Combinar fichas A y B",
+    "targetPattern": "custom",
+    "objective": {
+      "playerPieces": [
+        {
+          "type": "A",
+          "face": "front",
+          "rotation": 135,
+          "x": 609.490332,
+          "y": 473.254834,
+          "anchor": "center"
+        },
+        {
+          "type": "B",
+          "face": "front",
+          "rotation": 270,
+          "x": 636,
+          "y": 228.235498,
+          "anchor": "center"
+        },
+        {
+          "type": "B",
+          "face": "front",
+          "rotation": 180,
+          "x": 481.490332,
+          "y": 382.745166,
+          "anchor": "center"
+        }
+      ]
+    },
+    "targetPieces": [
+      {
+        "type": "A",
+        "face": "front",
+        "rotation": 135,
+        "x": 609.490332,
+        "y": 473.254834,
+        "anchor": "center"
+      },
+      {
+        "type": "B",
+        "face": "front",
+        "rotation": 270,
+        "x": 636,
+        "y": 228.235498,
+        "anchor": "center"
+      },
+      {
+        "type": "B",
+        "face": "front",
+        "rotation": 180,
+        "x": 481.490332,
+        "y": 382.745166,
+        "anchor": "center"
+      }
+    ]
+  },
+  {
+    "id": 205,
+    "name": "Cangrejo de mosaico",
+    "description": "Un caparazón ancho protege dos pinzas que bajan hacia el suelo.",
+    "piecesNeeded": 4,
+    "difficulty": "Difícil",
+    "chapter": "Bestiario de papel",
+    "skill": "Combinar fichas A y B",
+    "targetPattern": "custom",
+    "objective": {
+      "playerPieces": [
+        {
+          "type": "A",
+          "face": "front",
+          "x": 609.490332,
+          "y": 300,
+          "rotation": 135,
+          "anchor": "center"
+        },
+        {
+          "type": "A",
+          "face": "front",
+          "x": 609.490332,
+          "y": 118.980664,
+          "rotation": 315,
+          "anchor": "center"
+        },
+        {
+          "type": "A",
+          "face": "front",
+          "x": 430,
+          "y": 209.490332,
+          "rotation": 135,
+          "anchor": "center"
+        },
+        {
+          "type": "B",
+          "face": "front",
+          "rotation": 45,
+          "x": 428.470996,
+          "y": 390.509668,
+          "anchor": "center"
+        }
+      ]
+    },
+    "targetPieces": [
+      {
+        "type": "A",
+        "face": "front",
+        "x": 609.490332,
+        "y": 300,
+        "rotation": 135,
+        "anchor": "center"
+      },
+      {
+        "type": "A",
+        "face": "front",
+        "x": 609.490332,
+        "y": 118.980664,
+        "rotation": 315,
+        "anchor": "center"
+      },
+      {
+        "type": "A",
+        "face": "front",
+        "x": 430,
+        "y": 209.490332,
+        "rotation": 135,
+        "anchor": "center"
+      },
+      {
+        "type": "B",
+        "face": "front",
+        "rotation": 45,
+        "x": 428.470996,
+        "y": 390.509668,
+        "anchor": "center"
+      }
+    ]
+  },
+  {
+    "id": 206,
+    "name": "Árbol de rombos",
+    "description": "Una copa de rombos se apoya sobre un tronco y dos raíces.",
+    "piecesNeeded": 4,
+    "difficulty": "Difícil",
+    "chapter": "Pequeños mundos",
+    "skill": "Combinar fichas A y B",
+    "targetPattern": "custom",
+    "objective": {
+      "playerPieces": [
+        {
+          "type": "A",
+          "face": "front",
+          "x": 609.490332,
+          "y": 300,
+          "rotation": 135,
+          "anchor": "center"
+        },
+        {
+          "type": "A",
+          "face": "front",
+          "x": 609.490332,
+          "y": 118.980664,
+          "rotation": 315,
+          "anchor": "center"
+        },
+        {
+          "type": "A",
+          "face": "front",
+          "x": 430,
+          "y": 209.490332,
+          "rotation": 135,
+          "anchor": "center"
+        },
+        {
+          "type": "B",
+          "face": "front",
+          "rotation": 135,
+          "x": 609.490332,
+          "y": 481.019336,
+          "anchor": "center"
+        }
+      ]
+    },
+    "targetPieces": [
+      {
+        "type": "A",
+        "face": "front",
+        "x": 609.490332,
+        "y": 300,
+        "rotation": 135,
+        "anchor": "center"
+      },
+      {
+        "type": "A",
+        "face": "front",
+        "x": 609.490332,
+        "y": 118.980664,
+        "rotation": 315,
+        "anchor": "center"
+      },
+      {
+        "type": "A",
+        "face": "front",
+        "x": 430,
+        "y": 209.490332,
+        "rotation": 135,
+        "anchor": "center"
+      },
+      {
+        "type": "B",
+        "face": "front",
+        "rotation": 135,
+        "x": 609.490332,
+        "y": 481.019336,
+        "anchor": "center"
+      }
+    ]
+  }
+]
