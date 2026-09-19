@@ -249,13 +249,31 @@ const MirrorChallengeGame: React.FC = () => {
   }, [pieces]);
 
   const handleStartMultiplayer = () => {
-    startCampaign();
+    startCampaign(0);
+    socketService.disconnect();
+    setRoomId(null);
+    setConnectedPlayers([]);
+    setIsGameActive(false);
+    setIsGamePaused(true);
+    setGamePhase('waiting');
+    setChallengeWinner(null);
+    setShowSolution(false);
+    setCompletedStudy(null);
     void sound.unlock().then(() => sound.play('transition'));
     setGameMode('multiplayer');
     setShowStartupMenu(false);
 
     // Connect to server
     socketService.connect();
+    socketService.socketInstance?.on('disconnect', () => {
+      setRoomId(null);
+      setConnectedPlayers([]);
+      setIsGameActive(false);
+      setIsGamePaused(true);
+      setGamePhase('waiting');
+      setChallengeWinner(null);
+      setShowSolution(false);
+    });
 
     // Clear existing listeners to prevent duplicates
     socketService.socketInstance?.off('playerJoined');
@@ -281,6 +299,7 @@ const MirrorChallengeGame: React.FC = () => {
     });
 
     socketService.onRoomHistory((data) => {
+      if (Number.isInteger(data.currentChallengeIndex)) setCurrentChallenge(data.currentChallengeIndex!);
       if (data.gameState) {
         setIsGameActive(data.gameState.isActive || false);
         setIsGamePaused(data.gameState.isPaused ?? true); // `|| true` forzaba pausa SIEMPRE
@@ -432,9 +451,12 @@ const MirrorChallengeGame: React.FC = () => {
     );
   }
 
+  const isMultiplayerLobby = gameMode === 'multiplayer' && !isGameActive && gamePhase === 'waiting';
+  const leaveMultiplayer = () => { socketService.disconnect(); setRoomId(null); setConnectedPlayers([]); setIsGameActive(false); setGamePhase('waiting'); setShowStartupMenu(true); };
+
   return (
     <div
-      className="game-shell min-h-[100dvh] overflow-y-auto xl:h-[100dvh] xl:overflow-hidden"
+      className={`game-shell ${isMultiplayerLobby ? 'is-lobby' : ''} min-h-[100dvh] overflow-y-auto xl:h-[100dvh] xl:overflow-hidden`}
       style={{ 
         background: 'var(--bg-primary)',
         color: 'var(--text-primary)'
@@ -455,7 +477,7 @@ const MirrorChallengeGame: React.FC = () => {
         tablet de 768px): el tablero es 1.4:1, así que girar el aparato es
         literalmente la forma en que encaja mejor. Descartable, no bloquea.
       */}
-      {showRotateHint && (
+      {showRotateHint && !isMultiplayerLobby && (
         <div
           className="hidden max-[640px]:portrait:flex items-center gap-2 rounded-xl border px-3 py-1.5 mb-2 text-xs"
           style={{ backgroundColor: 'var(--card-elevated-bg)', borderColor: 'var(--border-medium)', color: 'var(--text-secondary)' }}
@@ -491,9 +513,9 @@ const MirrorChallengeGame: React.FC = () => {
           espacio aunque el navegador esté con zoom. Por debajo de xl la rejilla
           se apila y la página hace scroll en vez de recortar contenido.
         */}
-        <div className="w-full grid gap-2 xl:h-full xl:grid-rows-[minmax(0,1fr)] xl:grid-cols-[clamp(10rem,16vw,18rem)_minmax(0,1fr)_clamp(12rem,20vw,22rem)]">
+        <div className={isMultiplayerLobby ? 'lobby-layout' : 'w-full grid gap-2 xl:h-full xl:grid-rows-[minmax(0,1fr)] xl:grid-cols-[clamp(10rem,16vw,18rem)_minmax(0,1fr)_clamp(12rem,20vw,22rem)]'}>
         {/* Left Sidebar - Wider for better usability */}
-        <div className="min-w-0 min-h-0 max-h-[60dvh] xl:max-h-none xl:h-full overflow-y-auto">
+        {!isMultiplayerLobby && <div className="min-w-0 min-h-0 max-h-[60dvh] xl:max-h-none xl:h-full overflow-y-auto">
           <LeftSidebar
             pieces={pieces}
             challenges={challenges}
@@ -503,7 +525,7 @@ const MirrorChallengeGame: React.FC = () => {
             onFlipPiece={flipPiece}
             setControlEffect={setControlEffect}
           />
-        </div>
+        </div>}
 
         {/* Main Game Area - Only shrinks after sidebars reach minimum */}
         {/*
@@ -514,7 +536,7 @@ const MirrorChallengeGame: React.FC = () => {
           pie) y lo que sobra pasa, sin pelea, al contenido secundario
           (inventario, panel de sala) bajo scroll de página.
         */}
-        <div className="order-first xl:order-none flex flex-col min-w-0 xl:h-full xl:min-h-0 relative">
+        {!isMultiplayerLobby && <div className="order-first xl:order-none flex flex-col min-w-0 xl:h-full xl:min-h-0 relative">
           {/* Top Navigation */}
           <div className="mb-2 shrink-0">
             <GameControls
@@ -774,11 +796,13 @@ const MirrorChallengeGame: React.FC = () => {
             </div>
           )}
 
-        </div>
+        </div>}
 
-        {/* Right Sidebar - Wider for better usability */}
-        <div className="min-w-0 min-h-0 max-h-[70dvh] xl:max-h-none xl:h-full overflow-y-auto">
+        {/* Right Sidebar stays mounted through waiting/countdown/playing. */}
+        <div className={isMultiplayerLobby ? 'lobby-container' : 'min-w-0 min-h-0 max-h-[70dvh] xl:max-h-none xl:h-full overflow-y-auto'}>
           <RightSidebar
+            lobbyMode={isMultiplayerLobby}
+            onLeaveMultiplayer={leaveMultiplayer}
             key={`session-${sessionRevision}`}
             currentChallenge={currentChallenge}
             totalChallenges={challenges.length}

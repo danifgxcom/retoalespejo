@@ -277,6 +277,10 @@ const registerConnectionHandler = (socket) => {
     if (!join) return emitError(socket, 'Invalid room or username');
     const { roomId, username } = join;
 
+    if (payload.requireExisting === true && !gameRooms.has(roomId)) {
+      return emitError(socket, 'No encontramos esa sala. Comprueba el código o pide una nueva invitación.');
+    }
+
     // Create room if it doesn't exist
     if (!gameRooms.has(roomId)) {
       if (gameRooms.size >= MAX_ROOMS) {
@@ -320,6 +324,7 @@ const registerConnectionHandler = (socket) => {
 
     // Send room history to the new player
     socket.emit('roomHistory', {
+      currentChallengeIndex: room.currentChallengeIndex,
       messages: room.messages,
       gameState: room.gameState,
       hostId: room.hostId

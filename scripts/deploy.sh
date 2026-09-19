@@ -50,7 +50,7 @@ pct exec $CT -- bash -lc '
   test -d "$BASE/web" || { echo "no existe $BASE/web"; exit 1; }
 
   # Copia de seguridad antes de tocar nada
-  tar -czf "/root/backup-$STAMP.tar.gz" -C "$BASE" web shared
+  tar -czf "/root/backup-$STAMP.tar.gz" -C "$BASE" web shared app/src app/package.json
   echo "copia de seguridad: /root/backup-$STAMP.tar.gz"
 
   # Web: despliegue atómico. Se monta al lado y se cambia de sitio al final,
@@ -105,6 +105,6 @@ cat <<FIN
 
 Volver atrás:
   ssh $HOST "pct exec $CT -- bash -lc 'rm -rf $BASE/web && mv $BASE/web.old $BASE/web \\
-    && tar -xzf /root/backup-$STAMP.tar.gz -C $BASE shared \\
+    && tar -xzf /root/backup-$STAMP.tar.gz -C $BASE shared app/src app/package.json \\
     && systemctl restart desafia-al-reflejo'"
 FIN

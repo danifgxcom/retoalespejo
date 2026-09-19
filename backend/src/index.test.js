@@ -56,6 +56,24 @@ const solutionFor = (challenge) => challenge.objective.playerPieces.map((piece) 
 }));
 
 describe('socket payload validation', () => {
+  test('joining a nonexistent room does not create it when requireExisting is set', () => {
+    const { socket, handlers } = createSocket('lobby-guest');
+    handlers.joinRoom({ roomId: 'missing-lobby-test', username: 'Ada', requireExisting: true });
+    expect(gameRooms.has('missing-lobby-test')).toBe(false);
+    expect(socket.emit).toHaveBeenCalledWith('error', expect.objectContaining({ message: expect.stringContaining('No encontramos') }));
+  });
+
+  test('creating and joining an existing room preserves host and returns the current challenge', () => {
+    const host = createSocket('lobby-host');
+    const guest = createSocket('lobby-guest');
+    host.handlers.joinRoom({ roomId: 'lobby-test', username: 'Ada', requireExisting: false });
+    gameRooms.get('lobby-test').currentChallengeIndex = 3;
+    guest.handlers.joinRoom({ roomId: 'lobby-test', username: 'Lin', requireExisting: true });
+    expect(gameRooms.get('lobby-test').players.size).toBe(2);
+    expect(guest.socket.emit).toHaveBeenCalledWith('roomHistory', expect.objectContaining({ hostId: 'lobby-host', currentChallengeIndex: 3 }));
+    gameRooms.delete('lobby-test');
+  });
+
   test('accepts valid payloads and rejects invalid ones', () => {
     expect(validateJoinPayload({ roomId: 'room_42-A', username: '  Ada  ' }))
       .toEqual({ roomId: 'room_42-A', username: 'Ada' });

@@ -11,6 +11,11 @@ El script hace copia de seguridad, despliega de forma atómica, reinicia el
 backend y comprueba que el sitio responde. Al terminar imprime el comando
 exacto para volver atrás.
 
+La copia incluye `web`, `shared`, `app/src` y `app/package.json`. El comando de
+vuelta atrás restaura también el backend: una actualización de salas puede cambiar
+el protocolo y no basta con recuperar solo la web y la geometría. Las copias
+anteriores a esta ampliación pueden no contener `app/`.
+
 ## Dónde vive
 
 | Qué | Dónde |

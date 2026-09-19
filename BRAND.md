@@ -34,6 +34,20 @@ Los aciertos y mejores tiempos se guardan en `reto-al-espejo:progress:v1:free`,
 separados de la campaña. Ganar en libre no desbloquea la campaña. El modo contra
 el reloj queda fuera de esta primera ampliación.
 
+## Multijugador: primero la mesa
+
+Entrada dedicada (nombre + crear sala / entrar con código), seguida de sala de
+espera (código copiable, jugadores, anfitrión, salir). El tablero no se monta
+hasta iniciar la partida. Solo el anfitrión puede comenzar, con al menos dos
+jugadores. Se conserva el límite real del servidor: 16. Un código inexistente
+se rechaza explícitamente; no crea una sala accidental. Los clientes anteriores
+siguen siendo compatibles. Al perder conexión se vuelve al acceso a salas.
+
+`MultiplayerLobby` presenta la entrada y espera; `RightSidebar` conserva su
+suscripción durante espera/cuenta atrás/partida, y elimina únicamente sus propios
+listeners al desmontarse. El índice del reto se sincroniza también al entrar en
+una sala existente. Estos cambios requieren desplegar frontend y backend juntos.
+
 ## Assets
 
 - Marca y arte geométrico: `frontend/src/components/Identity.tsx`.

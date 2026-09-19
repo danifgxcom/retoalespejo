@@ -12,10 +12,10 @@ jest.mock('../../services/SocketService', () => {
   };
 
   const mockSocketService = {
-    socketInstance: { off: jest.fn() },
+    socketInstance: { off: jest.fn(), on: jest.fn() },
     getSocketId: jest.fn(() => 'me'),
     getRoomId: jest.fn(() => 'room-1'),
-    getUsername: jest.fn(() => 'Tester'),
+    getUsername: jest.fn(() => null),
     isConnected: jest.fn(() => true),
     connect: jest.fn(),
     disconnect: jest.fn(),
@@ -86,32 +86,55 @@ describe('RightSidebar - control de anfitrión', () => {
   });
 
   test('muestra los controles para crear o unirse a una sala en modo multijugador', () => {
-    render(<RightSidebar {...baseProps} roomId={null} isGameActive={false} />);
+    render(<RightSidebar {...baseProps} lobbyMode roomId={null} isGameActive={false} />);
 
-    expect(screen.getByRole('button', { name: 'Crear sala de multijugador' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Unirse a sala existente' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Crear sala' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Entrar en la sala' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Verificar solución actual' })).not.toBeInTheDocument();
   });
 
   test('pide un nombre antes de crear la sala', () => {
-    render(<RightSidebar {...baseProps} roomId={null} isGameActive={false} />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'Crear sala de multijugador' }));
-    fireEvent.change(screen.getByLabelText('Nombre de usuario'), { target: { value: 'Ada' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Confirmar nombre de usuario' }));
+    render(<RightSidebar {...baseProps} lobbyMode roomId={null} isGameActive={false} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Crear sala' }));
+    expect(mockSocketService.createRoom).not.toHaveBeenCalled();
+    fireEvent.change(screen.getByLabelText('Tu nombre en la mesa'), { target: { value: 'Ada' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Crear sala' }));
 
     expect(mockSocketService.createRoom).toHaveBeenCalledWith('Ada');
   });
 
   test('pide identificador y nombre antes de unirse a una sala', () => {
-    render(<RightSidebar {...baseProps} roomId={null} isGameActive={false} />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'Unirse a sala existente' }));
-    fireEvent.change(screen.getByLabelText('ID de la Sala'), { target: { value: 'room-42' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Confirmar unirse a sala' }));
-    fireEvent.change(screen.getByLabelText('Nombre de usuario'), { target: { value: 'Lin' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Confirmar nombre de usuario' }));
+    render(<RightSidebar {...baseProps} lobbyMode roomId={null} isGameActive={false} />);
+    fireEvent.change(screen.getByLabelText('Código de la sala'), { target: { value: 'room-42' } });
+    fireEvent.change(screen.getByLabelText('Tu nombre en la mesa'), { target: { value: 'Lin' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Entrar en la sala' }));
 
     expect(mockSocketService.joinRoom).toHaveBeenCalledWith('room-42', 'Lin');
+  });
+
+  test('waiting room tracks host transfer and requires two players to start', () => {
+    const players = [{ id: 'me', username: 'Ada', isActive: true }];
+    const { rerender } = render(<RightSidebar {...baseProps} lobbyMode isGameActive={false} connectedPlayers={players} />);
+    act(() => mockSocketService.__trigger('playerJoined', { hostId: 'me' }));
+    expect(screen.getByRole('button', { name: 'Comenzar partida' })).toBeDisabled();
+    rerender(<RightSidebar {...baseProps} lobbyMode isGameActive={false} connectedPlayers={[...players, { id: 'other', username: 'Lin', isActive: true }]} />);
+    expect(screen.getByRole('button', { name: 'Comenzar partida' })).toBeEnabled();
+    act(() => mockSocketService.__trigger('hostChanged', { hostId: 'other' }));
+    expect(screen.queryByRole('button', { name: 'Comenzar partida' })).not.toBeInTheDocument();
+    expect(screen.getByText('Esperando a que el anfitrión comience la partida.')).toBeInTheDocument();
+  });
+
+  test('server error preserves entered name and code and allows retry', () => {
+    render(<RightSidebar {...baseProps} lobbyMode roomId={null} isGameActive={false} />);
+    fireEvent.change(screen.getByLabelText('Tu nombre en la mesa'), { target: { value: 'Ada' } });
+    fireEvent.change(screen.getByLabelText('Código de la sala'), { target: { value: 'missing' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Entrar en la sala' }));
+    expect(screen.getByRole('button', { name: 'Entrar en la sala' })).toBeDisabled();
+    act(() => mockSocketService.__trigger('error', { message: 'No encontramos esa sala.' }));
+    expect(screen.getByRole('alert')).toHaveTextContent('No encontramos esa sala.');
+    expect(screen.getByLabelText('Tu nombre en la mesa')).toHaveValue('Ada');
+    expect(screen.getByLabelText('Código de la sala')).toHaveValue('missing');
+    expect(screen.getByRole('button', { name: 'Entrar en la sala' })).toBeEnabled();
   });
 
   test('envía las piezas al servidor sin validar ni eliminar localmente', () => {
@@ -123,6 +146,13 @@ describe('RightSidebar - control de anfitrión', () => {
 
     expect(mockSocketService.reportSolvedPiece).toHaveBeenCalledWith(pieces);
     expect(onCheckSolution).not.toHaveBeenCalled();
+  });
+
+  test('joining an active match restores server timer and scores', () => {
+    render(<RightSidebar {...baseProps} connectedPlayers={[{ id: 'me', username: 'Ada', isActive: true }]} />);
+    act(() => mockSocketService.__trigger('roomHistory', { hostId: 'me', gameState: { timer: 42, isActive: true, isPaused: true, scores: { me: 3 }, winner: null } }));
+    expect(screen.getByText('00:42')).toBeInTheDocument();
+    expect(screen.getByText('3 pt')).toBeInTheDocument();
   });
 
   test('el botón de reiniciar cronómetro está deshabilitado si no eres el anfitrión', () => {

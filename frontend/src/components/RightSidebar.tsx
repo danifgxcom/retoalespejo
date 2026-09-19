@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Clock, Users, User, Play, Pause, RotateCcw, Link } from './ui/AtelierIcons';
+import { Clock, Users, Play, Pause, RotateCcw } from './ui/AtelierIcons';
 import ValidationFeedback from './ValidationFeedback';
-import Modal from './ui/Modal';
+import MultiplayerLobby from './MultiplayerLobby';
 import { Player } from '../services/SocketService';
 import socketService from '../services/SocketService';
 import ChallengeObjective from './ChallengeObjective';
@@ -9,6 +9,8 @@ import { Challenge } from './ChallengeCard';
 import type { Piece } from '@reto/geometry';
 
 interface RightSidebarProps {
+  lobbyMode?: boolean;
+  onLeaveMultiplayer?: () => void;
   currentChallenge: number;
   totalChallenges: number;
   challenges: Challenge[];
@@ -34,6 +36,8 @@ interface RightSidebarProps {
 }
 
 const RightSidebar: React.FC<RightSidebarProps> = ({
+  lobbyMode = false,
+  onLeaveMultiplayer = () => {},
   currentChallenge,
   totalChallenges,
   challenges,
@@ -77,19 +81,10 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
   }, [time, effectiveIsPaused, onTimerChange, formatTime]);
   const [validationResult, setValidationResult] = useState<{isCorrect: boolean; message: string} | null>(null);
   useEffect(() => { setValidationResult(null); }, [currentChallenge]);
-  const [showJoinRoomDialog, setShowJoinRoomDialog] = useState(false);
-  const [joinRoomId, setJoinRoomId] = useState('');
-
   // Anfitrión de la sala y errores del servidor (acciones no autorizadas)
   const [hostId, setHostId] = useState<string | null>(null);
   const [socketErrorMessage, setSocketErrorMessage] = useState<string | null>(null);
   const esAnfitrion = hostId !== null && hostId === socketService.getSocketId();
-
-  // Diálogo propio para pedir el nombre de usuario (sustituye a prompt())
-  const [showUsernameDialog, setShowUsernameDialog] = useState(false);
-  const [usernameDialogAction, setUsernameDialogAction] = useState<'join' | 'create' | null>(null);
-  const [usernameInput, setUsernameInput] = useState('');
-  const [usernameError, setUsernameError] = useState<string | null>(null);
 
   // Game state for multiplayer
   const [scores, setScores] = useState<Record<string, number>>({});
@@ -107,11 +102,12 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
   // Listen for game events
   useEffect(() => {
     if (gameMode === 'multiplayer') {
+      const subscriptions: Array<(() => void) | void> = [];
       // El estado de partida (sala, fase y overlays) también lo escucha el
       // componente raíz. No eliminar listeners por nombre: Socket.io borraría
       // los del raíz y el tablero dejaría de reflejar al servidor.
       // Game started event
-      socketService.onGameStarted((data) => {
+      subscriptions.push(socketService.onGameStarted((data) => {
         try {
           if (data && data.gameState) {
             setScores(data.gameState.scores || {});
@@ -166,7 +162,7 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
             setInternalIsPaused(true);
           }
         }
-      });
+      }));
 
       // El marcador ya no llega por 'scoreUpdated' (el servidor eliminó ese
       // evento). Los marcadores y el ganador se actualizan desde
@@ -174,26 +170,34 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
 
       // Anfitrión: se asigna al primer jugador de la sala y solo él puede
       // arrancar la partida o reiniciar el cronómetro.
-      socketService.onPlayerJoined((data) => {
+      subscriptions.push(socketService.onPlayerJoined((data) => {
         setHostId(data.hostId);
-      });
+      }));
 
-      socketService.onRoomHistory((data) => {
+      subscriptions.push(socketService.onRoomHistory((data) => {
         setHostId(data.hostId);
-      });
+        if (data.gameState) {
+          setTime(data.gameState.timer || 0);
+          setScores(data.gameState.scores || {});
+          setCurrentWinner(data.gameState.winner || null);
+          setIsRunning(data.gameState.isActive);
+          if (onPauseChange) onPauseChange(data.gameState.isPaused);
+          else setInternalIsPaused(data.gameState.isPaused);
+        }
+      }));
 
-      socketService.onHostChanged((data) => {
+      subscriptions.push(socketService.onHostChanged((data) => {
         setHostId(data.hostId);
-      });
+      }));
 
       // El servidor rechaza acciones no autorizadas (p.ej. no ser anfitrión)
       // con un evento 'error' que hay que mostrar al usuario.
-      socketService.onError((data) => {
+      subscriptions.push(socketService.onError((data) => {
         setSocketErrorMessage(data.message);
-      });
+      }));
 
       // Timer state changed event
-      socketService.onTimerStateChanged((data) => {
+      subscriptions.push(socketService.onTimerStateChanged((data) => {
         if (onPauseChange) {
           onPauseChange(data.isPaused);
         } else {
@@ -204,26 +208,26 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
         if (onPausedByChange) {
           onPausedByChange(pausedByUser);
         }
-      });
+      }));
 
       // Timer reset event
-      socketService.onTimerReset((data) => {
+      subscriptions.push(socketService.onTimerReset((data) => {
         setTime(data.time);
         setPausedBy(null);
         if (onPausedByChange) {
           onPausedByChange(null);
         }
-      });
+      }));
 
       // Timer update event
-      socketService.onTimerUpdate((data) => {
+      subscriptions.push(socketService.onTimerUpdate((data) => {
         // Ensure timer value is valid
         const timerValue = Number.isFinite(data.time) ? data.time : 0;
         setTime(timerValue);
-      });
+      }));
 
       // Challenge solved event
-      socketService.onChallengeSolved((data) => {
+      subscriptions.push(socketService.onChallengeSolved((data) => {
         setScores(data.scores);
         setCurrentWinner(data.winner);
         // Show notification
@@ -231,19 +235,19 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
           isCorrect: true,
           message: `¡${data.username} ha resuelto el desafío y gana un punto!`
         });
-      });
+      }));
 
       // Player eliminated event
-      socketService.onPlayerEliminated((data) => {
+      subscriptions.push(socketService.onPlayerEliminated((data) => {
         // Show different messages based on whether it's the current player
         setValidationResult({
           isCorrect: false,
           message: data.message
         });
-      });
+      }));
 
       // Last player standing event
-      socketService.onLastPlayerStanding((data) => {
+      subscriptions.push(socketService.onLastPlayerStanding((data) => {
         setScores(data.scores);
         setCurrentWinner(data.winner);
         setShowSolution(data.showSolution);
@@ -262,10 +266,10 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
             message: `${data.username} ha ganado al ser el último jugador en pie.`
           });
         }
-      });
+      }));
 
       // Reset vote events
-      socketService.onResetVoteUpdate((data) => {
+      subscriptions.push(socketService.onResetVoteUpdate((data) => {
         setResetVoteData(data);
         setShowResetVoting(true);
 
@@ -275,16 +279,16 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
             setShowResetVoting(false);
           }
         }, 5000);
-      });
+      }));
 
-      socketService.onChallengeReset(() => {
+      subscriptions.push(socketService.onChallengeReset(() => {
         setResetVoteData(null);
         setShowResetVoting(false);
         // No mostramos mensaje local, viene del servidor como gameNotification
-      });
+      }));
 
       // New timer system
-      socketService.onStartTimer((data) => {
+      subscriptions.push(socketService.onStartTimer((data) => {
         setTime(data.startTime);
         setIsRunning(true);
         if (onPauseChange) {
@@ -292,9 +296,9 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
         } else {
           setInternalIsPaused(false);
         }
-      });
+      }));
 
-      socketService.onTimerCommand((data) => {
+      subscriptions.push(socketService.onTimerCommand((data) => {
         switch (data.command) {
           case 'pause':
             if (onPauseChange) {
@@ -332,10 +336,10 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
             }
             break;
         }
-      });
+      }));
 
       // Listen for synchronized game notifications
-      socketService.onGameNotification((data) => {
+      subscriptions.push(socketService.onGameNotification((data) => {
         // Only show validation-style notifications for certain types
         const validationTypes = ['challengeReset', 'challengeSolved', 'playerEliminated'];
         if (validationTypes.includes(data.type)) {
@@ -346,7 +350,8 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
         }
         // For pause/resume notifications, we could show them differently in the future
         // but for now, just log them without showing the toast
-      });
+      }));
+      return () => subscriptions.forEach(unsubscribe => unsubscribe?.());
     }
   }, [gameMode, onPauseChange, onPausedByChange]);
 
@@ -489,85 +494,7 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
     onExposeCheckSolution?.(handleCheckSolution);
   }, [handleCheckSolution, onExposeCheckSolution]);
 
-  const handleJoinRoom = () => {
-    setShowJoinRoomDialog(true);
-  };
-
-  // Pide el ID de sala y, si es válido, pasa al diálogo de nombre de usuario
-  const handleJoinRoomSubmit = () => {
-    if (joinRoomId.trim()) {
-      setShowJoinRoomDialog(false);
-      setUsernameError(null);
-      setUsernameInput('');
-      setUsernameDialogAction('join');
-      setShowUsernameDialog(true);
-    }
-  };
-
-  const handleCreateRoom = () => {
-    setUsernameError(null);
-    setUsernameInput('');
-    setUsernameDialogAction('create');
-    setShowUsernameDialog(true);
-  };
-
-  // Misma validación que aplica el servidor: 1-32 caracteres tras recortar espacios
-  const validateUsername = (raw: string): string | null => {
-    const trimmed = raw.trim();
-    if (trimmed.length < 1 || trimmed.length > 32) {
-      return 'El nombre de usuario debe tener entre 1 y 32 caracteres.';
-    }
-    return null;
-  };
-
-  const handleUsernameDialogCancel = () => {
-    setShowUsernameDialog(false);
-    setUsernameDialogAction(null);
-    setUsernameInput('');
-    setUsernameError(null);
-  };
-
-  const handleUsernameDialogSubmit = () => {
-    const error = validateUsername(usernameInput);
-    if (error) {
-      setUsernameError(error);
-      return;
-    }
-
-    const username = usernameInput.trim();
-    if (usernameDialogAction === 'join') {
-      socketService.joinRoom(joinRoomId.trim(), username);
-      setJoinRoomId('');
-    } else if (usernameDialogAction === 'create') {
-      socketService.createRoom(username);
-    }
-
-    setShowUsernameDialog(false);
-    setUsernameDialogAction(null);
-    setUsernameInput('');
-    setUsernameError(null);
-  };
-
-  const handleStartGame = () => {
-    socketService.startGame();
-  };
-
-  // Cierra el diálogo de nombre de usuario con Escape (como el Modal compartido)
-  useEffect(() => {
-    if (!showUsernameDialog) return;
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setShowUsernameDialog(false);
-        setUsernameDialogAction(null);
-        setUsernameInput('');
-        setUsernameError(null);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showUsernameDialog]);
+  if (lobbyMode) return <MultiplayerLobby roomId={roomId} players={connectedPlayers} hostId={hostId} error={socketErrorMessage} onClearError={() => setSocketErrorMessage(null)} onExit={onLeaveMultiplayer} />;
 
   return (
     <div className="session-panel w-full h-full rounded-lg shadow-lg p-4 space-y-6 flex flex-col" style={{ backgroundColor: 'var(--card-bg)', color: 'var(--text-primary)' }}>
@@ -737,326 +664,13 @@ const RightSidebar: React.FC<RightSidebarProps> = ({
       </div>
 
 
-      {gameMode === 'multiplayer' && (
-        <div className="border-t pt-4">
-          <div className="flex items-center justify-center gap-2 mb-3">
-            <Users size={20} className="text-secondary-600" aria-hidden="true" />
-            <h3 className="font-bold text-gray-800">Multijugador</h3>
-          </div>
-
-          {!roomId && (
-            <div className="space-y-2 mb-3">
-              <button 
-                onClick={handleCreateRoom}
-                className="w-full py-2 px-4 rounded-lg transition-colors text-sm flex items-center justify-center gap-2"
-                style={{
-                  backgroundColor: 'var(--button-secondary-bg)',
-                  color: 'var(--text-on-secondary)'
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.backgroundColor = 'var(--button-secondary-hover)';
-                }}
-                onFocus={(e) => {
-                  e.currentTarget.style.backgroundColor = 'var(--button-secondary-hover)';
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.backgroundColor = 'var(--button-secondary-bg)';
-                }}
-                onBlur={(e) => {
-                  e.currentTarget.style.backgroundColor = 'var(--button-secondary-bg)';
-                }}
-                aria-label="Crear sala de multijugador"
-                type="button"
-              >
-                <Play size={16} aria-hidden="true" />
-                Crear Sala
-              </button>
-              <button 
-                onClick={handleJoinRoom}
-                className="w-full py-2 px-4 rounded-lg transition-colors text-sm flex items-center justify-center gap-2"
-                style={{
-                  backgroundColor: 'var(--button-primary-bg)',
-                  color: 'var(--text-on-primary)'
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.backgroundColor = 'var(--button-primary-hover)';
-                }}
-                onFocus={(e) => {
-                  e.currentTarget.style.backgroundColor = 'var(--button-primary-hover)';
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.backgroundColor = 'var(--button-primary-bg)';
-                }}
-                onBlur={(e) => {
-                  e.currentTarget.style.backgroundColor = 'var(--button-primary-bg)';
-                }}
-                aria-label="Unirse a sala existente"
-                type="button"
-              >
-                <Link size={16} aria-hidden="true" />
-                Unirse a Sala
-              </button>
-            </div>
-          )}
-
-          {roomId && (
-            <div className="p-2 rounded-lg mb-3" style={{ backgroundColor: 'var(--card-elevated-bg)', border: '1px solid var(--border-light)' }}>
-              <p className="text-xs font-medium text-center" style={{ color: 'var(--text-primary)' }}>
-                Sala: {roomId}
-              </p>
-            </div>
-          )}
-
-          {/* Current Winner Display (if game is active) */}
-          {isGameActive && currentWinner && (
-            <div className="p-2 rounded-lg mb-3" style={{ backgroundColor: 'var(--card-elevated-bg)', border: '1px solid var(--border-medium)' }}>
-              <p className="text-xs text-center font-medium">
-                <span style={{ color: 'var(--text-secondary)' }}>Ganando: </span>
-                <span className="font-bold" style={{ color: 'var(--text-primary)' }}>
-                  {connectedPlayers.find(p => p.id === currentWinner)?.username || 'Desconocido'}
-                </span>
-              </p>
-            </div>
-          )}
-
-          {/* Players List with Scores */}
-          <div className="rounded-lg p-2 mb-3" style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-light)' }}>
-            <h4 className="text-sm font-semibold mb-2 flex items-center gap-1" style={{ color: 'var(--text-primary)' }}>
-              <Users size={14} aria-hidden="true" />
-              Jugadores Conectados
-            </h4>
-
-            <div className="max-h-32 overflow-y-auto">
-              {connectedPlayers.length > 0 ? (
-                <ul className="space-y-1">
-                  {connectedPlayers.map((player) => (
-                    <li key={player.id} className="flex items-center justify-between gap-2 text-sm">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--button-success-bg)' }} aria-hidden="true"></span>
-                        <span style={{ color: 'var(--text-primary)' }}>
-                          {player.username}
-                          {player.id === hostId && (
-                            <span className="ml-1 text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>
-                              (Anfitrión)
-                            </span>
-                          )}
-                        </span>
-                      </div>
-                      {isGameActive && (
-                        <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ backgroundColor: 'var(--card-elevated-bg)', color: 'var(--text-primary)' }}>
-                          {scores[player.id] || 0}
-                        </span>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-xs text-center" style={{ color: 'var(--text-tertiary)' }}>No hay jugadores conectados</p>
-              )}
-            </div>
-
-            <div className="text-xs text-center mt-2" style={{ color: 'var(--text-secondary)' }}>
-              <div className="flex items-center justify-center gap-1">
-                <User size={12} aria-hidden="true" />
-                Jugadores: {connectedPlayers.length}/4
-              </div>
-            </div>
-          </div>
-
-          {/* Game Start Button (only show when multiple players and game not active) */}
-          {(() => {
-            const shouldShowStartButton = roomId && connectedPlayers.length > 1 && !isGameActive;
-            const shouldShowActiveIndicator = roomId && isGameActive;
-
-            if (shouldShowStartButton) {
-              return (
-                <button
-                  onClick={handleStartGame}
-                  disabled={!esAnfitrion}
-                  title={esAnfitrion ? undefined : 'Solo el anfitrión puede comenzar la partida'}
-                  className="w-full py-2 px-4 rounded-lg transition-colors text-sm font-medium flex items-center justify-center gap-2 mb-3 disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{
-                    backgroundColor: 'var(--button-success-bg)',
-                    color: 'var(--text-on-success)'
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.backgroundColor = 'var(--button-success-hover)';
-                  }}
-                  onFocus={(e) => {
-                    e.currentTarget.style.backgroundColor = 'var(--button-success-hover)';
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.backgroundColor = 'var(--button-success-bg)';
-                  }}
-                  onBlur={(e) => {
-                    e.currentTarget.style.backgroundColor = 'var(--button-success-bg)';
-                  }}
-                  aria-label="Comenzar partida multijugador"
-                >
-                  <Play size={16} aria-hidden="true" />
-                  Comenzar Partida
-                </button>
-              );
-            }
-
-            if (shouldShowActiveIndicator) {
-              return (
-                <div className="w-full bg-primary-100 border border-primary-300 text-primary-800 py-2 px-4 rounded-lg text-sm font-medium flex items-center justify-center gap-2 mb-3">
-                  <div className="w-2 h-2 bg-primary-500 rounded-full animate-pulse" aria-hidden="true"></div>
-                  Partida en Curso
-                </div>
-              );
-            }
-
-            return null;
-          })()}
-
-          {/* Join Room Dialog */}
-<Modal isOpen={showJoinRoomDialog} onClose={() => setShowJoinRoomDialog(false)} title="Unirse a una sala" subtitle="Comparte el mismo reto, desde otra mirada." maxWidth="sm">
-                <div className="mb-3">
-                  <label htmlFor="room-id-input" className="block text-sm font-medium text-gray-700 mb-1">
-                    ID de la Sala
-                  </label>
-                  <input
-                    id="room-id-input"
-                    type="text"
-                    value={joinRoomId}
-                    onChange={(e) => setJoinRoomId(e.target.value)}
-                    className="w-full px-3 py-2 border border-card rounded-md focus:outline-none focus:ring-2 focus:ring-focus"
-                    placeholder="Ingresa el ID de la sala"
-                  />
-                </div>
-                <div className="flex justify-end gap-2">
-                  <button
-                    onClick={() => setShowJoinRoomDialog(false)}
-                    className="px-4 py-2 rounded-md"
-                    style={{
-                      backgroundColor: 'var(--button-gray-bg)',
-                      color: 'var(--text-on-dark)'
-                    }}
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.backgroundColor = 'var(--button-gray-hover)';
-                    }}
-                    onFocus={(e) => {
-                      e.currentTarget.style.backgroundColor = 'var(--button-gray-hover)';
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.backgroundColor = 'var(--button-gray-bg)';
-                    }}
-                    onBlur={(e) => {
-                      e.currentTarget.style.backgroundColor = 'var(--button-gray-bg)';
-                    }}
-                    aria-label="Cancelar unirse a sala"
-                    type="button"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={handleJoinRoomSubmit}
-                    className="px-4 py-2 rounded-md"
-                    style={{
-                      backgroundColor: 'var(--button-primary-bg)',
-                      color: 'var(--text-on-primary)'
-                    }}
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.backgroundColor = 'var(--button-primary-hover)';
-                    }}
-                    onFocus={(e) => {
-                      e.currentTarget.style.backgroundColor = 'var(--button-primary-hover)';
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.backgroundColor = 'var(--button-primary-bg)';
-                    }}
-                    onBlur={(e) => {
-                      e.currentTarget.style.backgroundColor = 'var(--button-primary-bg)';
-                    }}
-                    aria-label="Confirmar unirse a sala"
-                    type="button"
-                  >
-                    Unirse
-                  </button>
-                </div>
-          </Modal>
-
-          {/* Username Dialog (sustituye a prompt()) */}
-<Modal isOpen={showUsernameDialog} onClose={handleUsernameDialogCancel} title={usernameDialogAction === 'create' ? 'Crear sala' : 'Unirse a la sala'} subtitle="Tu nombre en este gabinete compartido." maxWidth="sm">
-                <div className="mb-3">
-                  <label htmlFor="username-input" className="block text-sm font-medium text-gray-700 mb-1">
-                    Nombre de usuario
-                  </label>
-                  <input
-                    id="username-input"
-                    type="text"
-                    value={usernameInput}
-                    onChange={(e) => {
-                      setUsernameInput(e.target.value);
-                      setUsernameError(null);
-                    }}
-                    className="w-full px-3 py-2 border border-card rounded-md focus:outline-none focus:ring-2 focus:ring-focus"
-                    placeholder="Ingresa tu nombre de usuario"
-                    maxLength={32}
-                    aria-invalid={usernameError !== null}
-                    aria-describedby={usernameError ? 'username-input-error' : undefined}
-                  />
-                  {usernameError && (
-                    <p id="username-input-error" role="alert" className="text-xs mt-1" style={{ color: 'var(--button-danger-bg)' }}>
-                      {usernameError}
-                    </p>
-                  )}
-                </div>
-                <div className="flex justify-end gap-2">
-                  <button
-                    onClick={handleUsernameDialogCancel}
-                    className="px-4 py-2 rounded-md"
-                    style={{
-                      backgroundColor: 'var(--button-gray-bg)',
-                      color: 'var(--text-on-dark)'
-                    }}
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.backgroundColor = 'var(--button-gray-hover)';
-                    }}
-                    onFocus={(e) => {
-                      e.currentTarget.style.backgroundColor = 'var(--button-gray-hover)';
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.backgroundColor = 'var(--button-gray-bg)';
-                    }}
-                    onBlur={(e) => {
-                      e.currentTarget.style.backgroundColor = 'var(--button-gray-bg)';
-                    }}
-                    aria-label="Cancelar"
-                    type="button"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={handleUsernameDialogSubmit}
-                    className="px-4 py-2 rounded-md"
-                    style={{
-                      backgroundColor: 'var(--button-primary-bg)',
-                      color: 'var(--text-on-primary)'
-                    }}
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.backgroundColor = 'var(--button-primary-hover)';
-                    }}
-                    onFocus={(e) => {
-                      e.currentTarget.style.backgroundColor = 'var(--button-primary-hover)';
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.backgroundColor = 'var(--button-primary-bg)';
-                    }}
-                    onBlur={(e) => {
-                      e.currentTarget.style.backgroundColor = 'var(--button-primary-bg)';
-                    }}
-                    aria-label="Confirmar nombre de usuario"
-                    type="button"
-                  >
-                    Confirmar
-                  </button>
-                </div>
-          </Modal>
-
-        </div>
+      {gameMode === 'multiplayer' && roomId && (
+        <section className="match-roster" aria-label="Sala y jugadores">
+          <h3>Vuestra mesa</h3><p className="match-room-code">{roomId}</p>
+          <ul>{connectedPlayers.map(player => <li key={player.id}><span>{player.username}{player.id === hostId ? ' · Anfitrión' : ''}</span><span>{scores[player.id] || 0} pt</span></li>)}</ul>
+          {currentWinner && <p>Último acierto: {connectedPlayers.find(p => p.id === currentWinner)?.username}</p>}
+          <button className="text-link" onClick={onLeaveMultiplayer}>Salir de la sala</button>
+        </section>
       )}
 
       {/* Multiplayer Section Removed */}

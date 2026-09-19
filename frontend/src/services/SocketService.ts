@@ -49,7 +49,10 @@ class SocketService {
   connect(): void {
     if (this.socket) return;
 
-    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
+    // Production nginx proxies /socket.io on the same public origin. A localhost
+    // fallback there would connect to each player's computer, not our server.
+    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL
+      || (import.meta.env.DEV ? 'http://localhost:3000' : window.location.origin);
     this.socket = io(BACKEND_URL);
 
 
@@ -69,7 +72,7 @@ class SocketService {
   }
 
   // Join a room
-  joinRoom(roomId: string, username: string): void {
+  joinRoom(roomId: string, username: string, requireExisting = true): void {
     if (!this.socket) {
       this.connect();
     }
@@ -77,30 +80,36 @@ class SocketService {
     this.roomId = roomId;
     this.username = username;
 
-    this.socket?.emit('joinRoom', { roomId, username });
+    this.socket?.emit('joinRoom', { roomId, username, requireExisting });
   }
 
   // Create a new room and join it
   createRoom(username: string): string {
     const roomId = `room_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-    this.joinRoom(roomId, username);
+    this.joinRoom(roomId, username, false);
     return roomId;
   }
 
   // Listen for player joined event
-  onPlayerJoined(callback: (data: { playerId: string; username: string; players: Player[]; hostId: string | null }) => void): void {
-    this.socket?.on('playerJoined', callback);
+  onPlayerJoined(callback: (data: { playerId: string; username: string; players: Player[]; hostId: string | null }) => void): () => void {
+    const socket = this.socket;
+    socket?.on('playerJoined', callback);
+    return () => { socket?.off('playerJoined', callback); };
   }
 
   // El anfitrión es el único que puede arrancar la partida o reiniciar el
   // cronómetro; el servidor lo reasigna solo si se marcha.
-  onHostChanged(callback: (data: { hostId: string | null }) => void): void {
-    this.socket?.on('hostChanged', callback);
+  onHostChanged(callback: (data: { hostId: string | null }) => void): () => void {
+    const socket = this.socket;
+    socket?.on('hostChanged', callback);
+    return () => { socket?.off('hostChanged', callback); };
   }
 
   // El servidor rechaza acciones no autorizadas con este evento.
-  onError(callback: (data: { message: string }) => void): void {
-    this.socket?.on('error', callback);
+  onError(callback: (data: { message: string }) => void): () => void {
+    const socket = this.socket;
+    socket?.on('error', callback);
+    return () => { socket?.off('error', callback); };
   }
 
   // Id de socket propio, para compararlo con el hostId.
@@ -109,8 +118,10 @@ class SocketService {
   }
 
   // Listen for room history event
-  onRoomHistory(callback: (data: { messages: SocketMessage[]; gameState: MultiplayerGameState; hostId: string | null }) => void): void {
-    this.socket?.on('roomHistory', callback);
+  onRoomHistory(callback: (data: { messages: SocketMessage[]; gameState: MultiplayerGameState; hostId: string | null; currentChallengeIndex?: number }) => void): () => void {
+    const socket = this.socket;
+    socket?.on('roomHistory', callback);
+    return () => { socket?.off('roomHistory', callback); };
   }
 
   // Get current room ID
@@ -136,8 +147,10 @@ class SocketService {
   }
 
   // Listen for game started event
-  onGameStarted(callback: (data: { gameState?: MultiplayerGameState; winner?: string | null; timer?: number }) => void): void {
-    this.socket?.on('gameStarted', callback);
+  onGameStarted(callback: (data: { gameState?: MultiplayerGameState; winner?: string | null; timer?: number }) => void): () => void {
+    const socket = this.socket;
+    socket?.on('gameStarted', callback);
+    return () => { socket?.off('gameStarted', callback); };
   }
 
   // Toggle timer (pause/resume)
@@ -183,18 +196,24 @@ class SocketService {
   }
 
   // Listen for timer state changed event
-  onTimerStateChanged(callback: (data: { isPaused: boolean; pausedBy?: string }) => void): void {
-    this.socket?.on('timerStateChanged', callback);
+  onTimerStateChanged(callback: (data: { isPaused: boolean; pausedBy?: string }) => void): () => void {
+    const socket = this.socket;
+    socket?.on('timerStateChanged', callback);
+    return () => { socket?.off('timerStateChanged', callback); };
   }
 
   // Listen for timer reset event
-  onTimerReset(callback: (data: { time: number; resetBy: string }) => void): void {
-    this.socket?.on('timerReset', callback);
+  onTimerReset(callback: (data: { time: number; resetBy: string }) => void): () => void {
+    const socket = this.socket;
+    socket?.on('timerReset', callback);
+    return () => { socket?.off('timerReset', callback); };
   }
 
   // Listen for timer update event
-  onTimerUpdate(callback: (data: { time: number }) => void): void {
-    this.socket?.on('timerUpdate', callback);
+  onTimerUpdate(callback: (data: { time: number }) => void): () => void {
+    const socket = this.socket;
+    socket?.on('timerUpdate', callback);
+    return () => { socket?.off('timerUpdate', callback); };
   }
 
   // Listen for challenge solved event
@@ -205,8 +224,10 @@ class SocketService {
     winner: string | null,
     completionTime?: number,
     challengeStats?: ChallengeStat[]
-  }) => void): void {
-    this.socket?.on('challengeSolved', callback);
+  }) => void): () => void {
+    const socket = this.socket;
+    socket?.on('challengeSolved', callback);
+    return () => { socket?.off('challengeSolved', callback); };
   }
 
   // Listen for player eliminated event
@@ -215,8 +236,10 @@ class SocketService {
     username: string,
     isCurrentPlayer: boolean,
     message: string
-  }) => void): void {
-    this.socket?.on('playerEliminated', callback);
+  }) => void): () => void {
+    const socket = this.socket;
+    socket?.on('playerEliminated', callback);
+    return () => { socket?.off('playerEliminated', callback); };
   }
 
   // Listen for last player standing event
@@ -228,18 +251,24 @@ class SocketService {
     showSolution: boolean,
     isCurrentPlayer: boolean,
     completionTime?: number
-  }) => void): void {
-    this.socket?.on('lastPlayerStanding', callback);
+  }) => void): () => void {
+    const socket = this.socket;
+    socket?.on('lastPlayerStanding', callback);
+    return () => { socket?.off('lastPlayerStanding', callback); };
   }
 
   // Listen for countdown event
-  onCountdown(callback: (data: { value: number | string }) => void): void {
-    this.socket?.on('countdown', callback);
+  onCountdown(callback: (data: { value: number | string }) => void): () => void {
+    const socket = this.socket;
+    socket?.on('countdown', callback);
+    return () => { socket?.off('countdown', callback); };
   }
 
   // Listen for phase changed event
-  onPhaseChanged(callback: (data: { phase: string; gameState: MultiplayerGameState; currentChallengeIndex?: number }) => void): void {
-    this.socket?.on('phaseChanged', callback);
+  onPhaseChanged(callback: (data: { phase: string; gameState: MultiplayerGameState; currentChallengeIndex?: number }) => void): () => void {
+    const socket = this.socket;
+    socket?.on('phaseChanged', callback);
+    return () => { socket?.off('phaseChanged', callback); };
   }
 
   // Request reset challenge
@@ -269,23 +298,31 @@ class SocketService {
     votes: number; 
     totalPlayers: number; 
     needsVotes: number;
-  }) => void): void {
-    this.socket?.on('resetVoteUpdate', callback);
+  }) => void): () => void {
+    const socket = this.socket;
+    socket?.on('resetVoteUpdate', callback);
+    return () => { socket?.off('resetVoteUpdate', callback); };
   }
 
   // Listen for challenge reset
-  onChallengeReset(callback: (data: { resetBy: string }) => void): void {
-    this.socket?.on('challengeReset', callback);
+  onChallengeReset(callback: (data: { resetBy: string }) => void): () => void {
+    const socket = this.socket;
+    socket?.on('challengeReset', callback);
+    return () => { socket?.off('challengeReset', callback); };
   }
 
   // Listen for player left event
-  onPlayerLeft(callback: (data: { playerId: string; username: string }) => void): void {
-    this.socket?.on('playerLeft', callback);
+  onPlayerLeft(callback: (data: { playerId: string; username: string }) => void): () => void {
+    const socket = this.socket;
+    socket?.on('playerLeft', callback);
+    return () => { socket?.off('playerLeft', callback); };
   }
 
   // Listen for timer start command
-  onStartTimer(callback: (data: { startTime: number }) => void): void {
-    this.socket?.on('startTimer', callback);
+  onStartTimer(callback: (data: { startTime: number }) => void): () => void {
+    const socket = this.socket;
+    socket?.on('startTimer', callback);
+    return () => { socket?.off('startTimer', callback); };
   }
 
   // Listen for timer commands (pause/resume/reset)
@@ -293,8 +330,10 @@ class SocketService {
     command: 'pause' | 'resume' | 'reset';
     pausedBy?: string;
     resetBy?: string;
-  }) => void): void {
-    this.socket?.on('timerCommand', callback);
+  }) => void): () => void {
+    const socket = this.socket;
+    socket?.on('timerCommand', callback);
+    return () => { socket?.off('timerCommand', callback); };
   }
 
   // Listen for game notifications (synchronized messages)
@@ -302,8 +341,10 @@ class SocketService {
     type: string;
     message: string;
     isCorrect: boolean;
-  }) => void): void {
-    this.socket?.on('gameNotification', callback);
+  }) => void): () => void {
+    const socket = this.socket;
+    socket?.on('gameNotification', callback);
+    return () => { socket?.off('gameNotification', callback); };
   }
 
   // Signal player ready for next challenge
@@ -323,8 +364,10 @@ class SocketService {
     totalPlayers: number;
     readyPlayers: string[];
     playerUsername: string;
-  }) => void): void {
-    this.socket?.on('playersReadyUpdate', callback);
+  }) => void): () => void {
+    const socket = this.socket;
+    socket?.on('playersReadyUpdate', callback);
+    return () => { socket?.off('playersReadyUpdate', callback); };
   }
 }
 
