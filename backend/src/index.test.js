@@ -191,7 +191,7 @@ describe('countdown', () => {
     jest.advanceTimersByTime(6000);
 
     expect(events.filter(({ event }) => event === 'startTimer')).toHaveLength(1);
-    expect(events.filter(({ event, data }) => event === 'countdown' && data.value === '¡Reto al espejo!')).toHaveLength(1);
+    expect(events.filter(({ event, data }) => event === 'countdown' && data.value === '¡Desafía al reflejo!')).toHaveLength(1);
     expect(rooms.get('room').players.get('player-1').isActive).toBe(true);
   });
 });

@@ -693,7 +693,7 @@ const MirrorChallengeGame: React.FC = () => {
               <div className="text-center relative z-10">
                 <div 
                   id="countdown-title"
-                  className="text-9xl font-bold text-white mb-4 animate-pulse"
+                  className={`font-bold text-white mb-4 animate-pulse ${typeof countdownValue === 'string' ? 'text-3xl md:text-4xl leading-tight px-4' : 'text-9xl'}`}
                   aria-live="assertive"
                 >
                   {countdownValue}

@@ -1,6 +1,6 @@
-# Reto al Espejo - Backend
+# Desafía al reflejo - Backend
 
-This is the backend server for the Reto al Espejo multiplayer game. It provides real-time communication between players using WebSockets and manages game rooms and state.
+This is the backend server for the Desafía al reflejo multiplayer game. It provides real-time communication between players using WebSockets and manages game rooms and state.
 
 ## Features
 

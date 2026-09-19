@@ -1,6 +1,6 @@
-# Reto al Espejo - Frontend
+# Desafía al reflejo - Frontend
 
-This is the frontend application for the Reto al Espejo game. It's a React application that allows users to play the mirror challenge game.
+This is the frontend application for the Desafía al reflejo game. It's a React application that allows users to play the mirror challenge game.
 
 ## Features
 

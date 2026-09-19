@@ -155,7 +155,7 @@ const startCountdown = (roomId, dependencies = {}) => {
     } else {
       // Send final message and start the game
       clearInterval(countdownInterval);
-      socketServer.to(roomId).emit('countdown', { value: '¡Reto al espejo!' });
+      socketServer.to(roomId).emit('countdown', { value: '¡Desafía al reflejo!' });
 
       countdownState.startTimeout = setTimeout(() => {
         // Update game state to playing
@@ -181,7 +181,7 @@ const startCountdown = (roomId, dependencies = {}) => {
         if (countdowns.get(roomId) === countdownState) {
           countdowns.delete(roomId);
         }
-      }, 2000); // Show "¡Reto al espejo!" for 2 seconds
+      }, 2000); // Show the game name for 2 seconds
     }
   }, 1000);
   const countdownState = { interval: countdownInterval, startTimeout: null };
