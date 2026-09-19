@@ -1,0 +1,1562 @@
+[
+  {
+    "id": "bestiario",
+    "name": "Bestiario de papel",
+    "cards": [
+      {
+        "id": 301,
+        "name": "Lince de la escarcha",
+        "description": "Orejas altas y un hocico que termina en punta.",
+        "piecesNeeded": 2,
+        "difficulty": "Fácil",
+        "chapter": "Bestiario de papel",
+        "skill": "Leer el contorno y orientar las puntas",
+        "targetPattern": "custom",
+        "objective": {
+          "playerPieces": [
+            {
+              "type": "A",
+              "face": "front",
+              "rotation": 45,
+              "x": 609.4903320081219,
+              "y": 435.7645019878171,
+              "anchor": "center"
+            },
+            {
+              "type": "A",
+              "face": "front",
+              "rotation": 135,
+              "x": 518.9806640162437,
+              "y": 254.74516600406096,
+              "anchor": "center"
+            }
+          ]
+        },
+        "targetPieces": [
+          {
+            "type": "A",
+            "face": "front",
+            "rotation": 45,
+            "x": 609.4903320081219,
+            "y": 435.7645019878171,
+            "anchor": "center"
+          },
+          {
+            "type": "A",
+            "face": "front",
+            "rotation": 135,
+            "x": 518.9806640162437,
+            "y": 254.74516600406096,
+            "anchor": "center"
+          }
+        ]
+      },
+      {
+        "id": 302,
+        "name": "Golondrina de tejado",
+        "description": "Dos alas extendidas y un pequeño pico central.",
+        "piecesNeeded": 2,
+        "difficulty": "Fácil",
+        "chapter": "Bestiario de papel",
+        "skill": "Construir alrededor de un hueco",
+        "targetPattern": "custom",
+        "objective": {
+          "playerPieces": [
+            {
+              "type": "A",
+              "face": "front",
+              "rotation": 90,
+              "x": 572,
+              "y": 318.74516600406093,
+              "anchor": "center"
+            },
+            {
+              "type": "A",
+              "face": "front",
+              "rotation": 45,
+              "x": 417.4903320081219,
+              "y": 382.74516600406093,
+              "anchor": "center"
+            }
+          ]
+        },
+        "targetPieces": [
+          {
+            "type": "A",
+            "face": "front",
+            "rotation": 90,
+            "x": 572,
+            "y": 318.74516600406093,
+            "anchor": "center"
+          },
+          {
+            "type": "A",
+            "face": "front",
+            "rotation": 45,
+            "x": 417.4903320081219,
+            "y": 382.74516600406093,
+            "anchor": "center"
+          }
+        ]
+      },
+      {
+        "id": 303,
+        "name": "Cisnes del estanque",
+        "description": "Cuellos erguidos que dejan un estanque vacío entre ellos.",
+        "piecesNeeded": 3,
+        "difficulty": "Intermedio",
+        "chapter": "Bestiario de papel",
+        "skill": "Alternar orientaciones y reconocer las caras",
+        "targetPattern": "custom",
+        "objective": {
+          "playerPieces": [
+            {
+              "type": "A",
+              "face": "front",
+              "rotation": 45,
+              "x": 609.4903320081219,
+              "y": 486.509667991878,
+              "anchor": "center"
+            },
+            {
+              "type": "A",
+              "face": "back",
+              "rotation": 135,
+              "x": 518.9806640162437,
+              "y": 305.49033200812187,
+              "anchor": "center"
+            },
+            {
+              "type": "A",
+              "face": "front",
+              "rotation": 0,
+              "x": 454.98066401624374,
+              "y": 150.98066401624385,
+              "anchor": "center"
+            }
+          ]
+        },
+        "targetPieces": [
+          {
+            "type": "A",
+            "face": "front",
+            "rotation": 45,
+            "x": 609.4903320081219,
+            "y": 486.509667991878,
+            "anchor": "center"
+          },
+          {
+            "type": "A",
+            "face": "back",
+            "rotation": 135,
+            "x": 518.9806640162437,
+            "y": 305.49033200812187,
+            "anchor": "center"
+          },
+          {
+            "type": "A",
+            "face": "front",
+            "rotation": 0,
+            "x": 454.98066401624374,
+            "y": 150.98066401624385,
+            "anchor": "center"
+          }
+        ]
+      },
+      {
+        "id": 304,
+        "name": "Polilla de medianoche",
+        "description": "Alas en diagonal alrededor de un cuerpo de rombos.",
+        "piecesNeeded": 3,
+        "difficulty": "Intermedio",
+        "chapter": "Bestiario de papel",
+        "skill": "Combinar fichas A y B sin cerrar el vacío",
+        "targetPattern": "custom",
+        "objective": {
+          "playerPieces": [
+            {
+              "type": "A",
+              "face": "front",
+              "rotation": 45,
+              "x": 609.4903320081219,
+              "y": 441.254833995939,
+              "anchor": "center"
+            },
+            {
+              "type": "A",
+              "face": "back",
+              "rotation": 135,
+              "x": 518.9806640162437,
+              "y": 260.23549801218286,
+              "anchor": "center"
+            },
+            {
+              "type": "B",
+              "face": "front",
+              "rotation": 180,
+              "x": 428.4709960243656,
+              "y": 132.23549801218286,
+              "anchor": "center"
+            }
+          ]
+        },
+        "targetPieces": [
+          {
+            "type": "A",
+            "face": "front",
+            "rotation": 45,
+            "x": 609.4903320081219,
+            "y": 441.254833995939,
+            "anchor": "center"
+          },
+          {
+            "type": "A",
+            "face": "back",
+            "rotation": 135,
+            "x": 518.9806640162437,
+            "y": 260.23549801218286,
+            "anchor": "center"
+          },
+          {
+            "type": "B",
+            "face": "front",
+            "rotation": 180,
+            "x": 428.4709960243656,
+            "y": 132.23549801218286,
+            "anchor": "center"
+          }
+        ]
+      },
+      {
+        "id": 305,
+        "name": "Dragón de dos cabezas",
+        "description": "Dos cabezas vigilan mientras las alas rozan el suelo.",
+        "piecesNeeded": 4,
+        "difficulty": "Difícil",
+        "chapter": "Bestiario de papel",
+        "skill": "Planificar los apoyos antes de encajar",
+        "targetPattern": "custom",
+        "objective": {
+          "playerPieces": [
+            {
+              "type": "A",
+              "face": "front",
+              "rotation": 45,
+              "x": 609.4903320081219,
+              "y": 486.509667991878,
+              "anchor": "center"
+            },
+            {
+              "type": "A",
+              "face": "back",
+              "rotation": 135,
+              "x": 518.9806640162437,
+              "y": 305.49033200812187,
+              "anchor": "center"
+            },
+            {
+              "type": "A",
+              "face": "front",
+              "rotation": 0,
+              "x": 454.98066401624374,
+              "y": 150.98066401624385,
+              "anchor": "center"
+            },
+            {
+              "type": "A",
+              "face": "back",
+              "rotation": 0,
+              "x": 364.4709960243657,
+              "y": 460,
+              "anchor": "center"
+            }
+          ]
+        },
+        "targetPieces": [
+          {
+            "type": "A",
+            "face": "front",
+            "rotation": 45,
+            "x": 609.4903320081219,
+            "y": 486.509667991878,
+            "anchor": "center"
+          },
+          {
+            "type": "A",
+            "face": "back",
+            "rotation": 135,
+            "x": 518.9806640162437,
+            "y": 305.49033200812187,
+            "anchor": "center"
+          },
+          {
+            "type": "A",
+            "face": "front",
+            "rotation": 0,
+            "x": 454.98066401624374,
+            "y": 150.98066401624385,
+            "anchor": "center"
+          },
+          {
+            "type": "A",
+            "face": "back",
+            "rotation": 0,
+            "x": 364.4709960243657,
+            "y": 460,
+            "anchor": "center"
+          }
+        ]
+      },
+      {
+        "id": 306,
+        "name": "Ciervo del bosque",
+        "description": "Una cornamenta ramificada sobre un rostro estrecho.",
+        "piecesNeeded": 4,
+        "difficulty": "Difícil",
+        "chapter": "Bestiario de papel",
+        "skill": "Resolver contorno, huecos y color a la vez",
+        "targetPattern": "custom",
+        "objective": {
+          "playerPieces": [
+            {
+              "type": "A",
+              "face": "front",
+              "rotation": 45,
+              "x": 609.4903320081219,
+              "y": 473.25483399593895,
+              "anchor": "center"
+            },
+            {
+              "type": "A",
+              "face": "back",
+              "rotation": 135,
+              "x": 518.9806640162437,
+              "y": 292.2354980121829,
+              "anchor": "center"
+            },
+            {
+              "type": "B",
+              "face": "front",
+              "rotation": 180,
+              "x": 428.4709960243656,
+              "y": 164.23549801218286,
+              "anchor": "center"
+            },
+            {
+              "type": "B",
+              "face": "back",
+              "rotation": 90,
+              "x": 172.4709960243656,
+              "y": 164.23549801218292,
+              "anchor": "center"
+            }
+          ]
+        },
+        "targetPieces": [
+          {
+            "type": "A",
+            "face": "front",
+            "rotation": 45,
+            "x": 609.4903320081219,
+            "y": 473.25483399593895,
+            "anchor": "center"
+          },
+          {
+            "type": "A",
+            "face": "back",
+            "rotation": 135,
+            "x": 518.9806640162437,
+            "y": 292.2354980121829,
+            "anchor": "center"
+          },
+          {
+            "type": "B",
+            "face": "front",
+            "rotation": 180,
+            "x": 428.4709960243656,
+            "y": 164.23549801218286,
+            "anchor": "center"
+          },
+          {
+            "type": "B",
+            "face": "back",
+            "rotation": 90,
+            "x": 172.4709960243656,
+            "y": 164.23549801218292,
+            "anchor": "center"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "maquinas",
+    "name": "Pequeñas máquinas",
+    "cards": [
+      {
+        "id": 307,
+        "name": "Pinza de precisión",
+        "description": "Dos mordazas largas alrededor de una ranura.",
+        "piecesNeeded": 2,
+        "difficulty": "Fácil",
+        "chapter": "Pequeñas máquinas",
+        "skill": "Leer el contorno y orientar las puntas",
+        "targetPattern": "custom",
+        "objective": {
+          "playerPieces": [
+            {
+              "type": "A",
+              "face": "front",
+              "rotation": 90,
+              "x": 572,
+              "y": 428,
+              "anchor": "center"
+            },
+            {
+              "type": "A",
+              "face": "front",
+              "rotation": 270,
+              "x": 572,
+              "y": 172,
+              "anchor": "center"
+            }
+          ]
+        },
+        "targetPieces": [
+          {
+            "type": "A",
+            "face": "front",
+            "rotation": 90,
+            "x": 572,
+            "y": 428,
+            "anchor": "center"
+          },
+          {
+            "type": "A",
+            "face": "front",
+            "rotation": 270,
+            "x": 572,
+            "y": 172,
+            "anchor": "center"
+          }
+        ]
+      },
+      {
+        "id": 308,
+        "name": "Balanza de rombos",
+        "description": "Un travesaño une los extremos de esta balanza.",
+        "piecesNeeded": 2,
+        "difficulty": "Fácil",
+        "chapter": "Pequeñas máquinas",
+        "skill": "Construir alrededor de un hueco",
+        "targetPattern": "custom",
+        "objective": {
+          "playerPieces": [
+            {
+              "type": "A",
+              "face": "front",
+              "rotation": 225,
+              "x": 518.9806640162438,
+              "y": 241.49033200812187,
+              "anchor": "center"
+            },
+            {
+              "type": "A",
+              "face": "front",
+              "rotation": 270,
+              "x": 364.4709960243658,
+              "y": 268,
+              "anchor": "center"
+            }
+          ]
+        },
+        "targetPieces": [
+          {
+            "type": "A",
+            "face": "front",
+            "rotation": 225,
+            "x": 518.9806640162438,
+            "y": 241.49033200812187,
+            "anchor": "center"
+          },
+          {
+            "type": "A",
+            "face": "front",
+            "rotation": 270,
+            "x": 364.4709960243658,
+            "y": 268,
+            "anchor": "center"
+          }
+        ]
+      },
+      {
+        "id": 309,
+        "name": "Motor de dos pistones",
+        "description": "Dos columnas terminan en bases anchas.",
+        "piecesNeeded": 3,
+        "difficulty": "Intermedio",
+        "chapter": "Pequeñas máquinas",
+        "skill": "Alternar orientaciones y reconocer las caras",
+        "targetPattern": "custom",
+        "objective": {
+          "playerPieces": [
+            {
+              "type": "A",
+              "face": "front",
+              "rotation": 90,
+              "x": 572,
+              "y": 428,
+              "anchor": "center"
+            },
+            {
+              "type": "A",
+              "face": "back",
+              "rotation": 270,
+              "x": 572,
+              "y": 172,
+              "anchor": "center"
+            },
+            {
+              "type": "B",
+              "face": "front",
+              "rotation": 270,
+              "x": 444.00000000000006,
+              "y": 428,
+              "anchor": "center"
+            }
+          ]
+        },
+        "targetPieces": [
+          {
+            "type": "A",
+            "face": "front",
+            "rotation": 90,
+            "x": 572,
+            "y": 428,
+            "anchor": "center"
+          },
+          {
+            "type": "A",
+            "face": "back",
+            "rotation": 270,
+            "x": 572,
+            "y": 172,
+            "anchor": "center"
+          },
+          {
+            "type": "B",
+            "face": "front",
+            "rotation": 270,
+            "x": 444.00000000000006,
+            "y": 428,
+            "anchor": "center"
+          }
+        ]
+      },
+      {
+        "id": 310,
+        "name": "Grúa del astillero",
+        "description": "Un puente horizontal sostiene dos apoyos interiores.",
+        "piecesNeeded": 3,
+        "difficulty": "Intermedio",
+        "chapter": "Pequeñas máquinas",
+        "skill": "Combinar fichas A y B sin cerrar el vacío",
+        "targetPattern": "custom",
+        "objective": {
+          "playerPieces": [
+            {
+              "type": "A",
+              "face": "front",
+              "rotation": 180,
+              "x": 508,
+              "y": 172,
+              "anchor": "center"
+            },
+            {
+              "type": "B",
+              "face": "back",
+              "rotation": 0,
+              "x": 252,
+              "y": 172,
+              "anchor": "center"
+            },
+            {
+              "type": "B",
+              "face": "front",
+              "rotation": 270,
+              "x": 508.00000000000006,
+              "y": 428,
+              "anchor": "center"
+            }
+          ]
+        },
+        "targetPieces": [
+          {
+            "type": "A",
+            "face": "front",
+            "rotation": 180,
+            "x": 508,
+            "y": 172,
+            "anchor": "center"
+          },
+          {
+            "type": "B",
+            "face": "back",
+            "rotation": 0,
+            "x": 252,
+            "y": 172,
+            "anchor": "center"
+          },
+          {
+            "type": "B",
+            "face": "front",
+            "rotation": 270,
+            "x": 508.00000000000006,
+            "y": 428,
+            "anchor": "center"
+          }
+        ]
+      },
+      {
+        "id": 311,
+        "name": "Autómata de cuerda",
+        "description": "Brazos elevados y pies anchos para un pequeño robot.",
+        "piecesNeeded": 4,
+        "difficulty": "Difícil",
+        "chapter": "Pequeñas máquinas",
+        "skill": "Planificar los apoyos antes de encajar",
+        "targetPattern": "custom",
+        "objective": {
+          "playerPieces": [
+            {
+              "type": "A",
+              "face": "front",
+              "rotation": 90,
+              "x": 572,
+              "y": 428,
+              "anchor": "center"
+            },
+            {
+              "type": "A",
+              "face": "back",
+              "rotation": 270,
+              "x": 572,
+              "y": 172,
+              "anchor": "center"
+            },
+            {
+              "type": "B",
+              "face": "front",
+              "rotation": 270,
+              "x": 444.00000000000006,
+              "y": 428,
+              "anchor": "center"
+            },
+            {
+              "type": "A",
+              "face": "back",
+              "rotation": 225,
+              "x": 326.98066401624385,
+              "y": 145.49033200812192,
+              "anchor": "center"
+            }
+          ]
+        },
+        "targetPieces": [
+          {
+            "type": "A",
+            "face": "front",
+            "rotation": 90,
+            "x": 572,
+            "y": 428,
+            "anchor": "center"
+          },
+          {
+            "type": "A",
+            "face": "back",
+            "rotation": 270,
+            "x": 572,
+            "y": 172,
+            "anchor": "center"
+          },
+          {
+            "type": "B",
+            "face": "front",
+            "rotation": 270,
+            "x": 444.00000000000006,
+            "y": 428,
+            "anchor": "center"
+          },
+          {
+            "type": "A",
+            "face": "back",
+            "rotation": 225,
+            "x": 326.98066401624385,
+            "y": 145.49033200812192,
+            "anchor": "center"
+          }
+        ]
+      },
+      {
+        "id": 312,
+        "name": "Pórtico articulado",
+        "description": "Patas articuladas bajo una viga con dos extremos en punta.",
+        "piecesNeeded": 4,
+        "difficulty": "Difícil",
+        "chapter": "Pequeñas máquinas",
+        "skill": "Resolver contorno, huecos y color a la vez",
+        "targetPattern": "custom",
+        "objective": {
+          "playerPieces": [
+            {
+              "type": "A",
+              "face": "front",
+              "rotation": 180,
+              "x": 508,
+              "y": 172,
+              "anchor": "center"
+            },
+            {
+              "type": "B",
+              "face": "back",
+              "rotation": 0,
+              "x": 252,
+              "y": 172,
+              "anchor": "center"
+            },
+            {
+              "type": "B",
+              "face": "front",
+              "rotation": 270,
+              "x": 508.00000000000006,
+              "y": 428,
+              "anchor": "center"
+            },
+            {
+              "type": "A",
+              "face": "back",
+              "rotation": 225,
+              "x": 289.490332008122,
+              "y": 428,
+              "anchor": "center"
+            }
+          ]
+        },
+        "targetPieces": [
+          {
+            "type": "A",
+            "face": "front",
+            "rotation": 180,
+            "x": 508,
+            "y": 172,
+            "anchor": "center"
+          },
+          {
+            "type": "B",
+            "face": "back",
+            "rotation": 0,
+            "x": 252,
+            "y": 172,
+            "anchor": "center"
+          },
+          {
+            "type": "B",
+            "face": "front",
+            "rotation": 270,
+            "x": 508.00000000000006,
+            "y": 428,
+            "anchor": "center"
+          },
+          {
+            "type": "A",
+            "face": "back",
+            "rotation": 225,
+            "x": 289.490332008122,
+            "y": 428,
+            "anchor": "center"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "arquitecturas",
+    "name": "Arquitecturas imposibles",
+    "cards": [
+      {
+        "id": 313,
+        "name": "Pasadizo triangular",
+        "description": "Un hueco triangular bajo una cubierta inclinada.",
+        "piecesNeeded": 2,
+        "difficulty": "Fácil",
+        "chapter": "Arquitecturas imposibles",
+        "skill": "Leer el contorno y orientar las puntas",
+        "targetPattern": "custom",
+        "objective": {
+          "playerPieces": [
+            {
+              "type": "A",
+              "face": "front",
+              "rotation": 180,
+              "x": 508,
+              "y": 236,
+              "anchor": "center"
+            },
+            {
+              "type": "B",
+              "face": "front",
+              "rotation": 0,
+              "x": 380,
+              "y": 364,
+              "anchor": "center"
+            }
+          ]
+        },
+        "targetPieces": [
+          {
+            "type": "A",
+            "face": "front",
+            "rotation": 180,
+            "x": 508,
+            "y": 236,
+            "anchor": "center"
+          },
+          {
+            "type": "B",
+            "face": "front",
+            "rotation": 0,
+            "x": 380,
+            "y": 364,
+            "anchor": "center"
+          }
+        ]
+      },
+      {
+        "id": 314,
+        "name": "Viaducto de bolsillo",
+        "description": "Tejados y apoyos dibujan un puente muy bajo.",
+        "piecesNeeded": 2,
+        "difficulty": "Fácil",
+        "chapter": "Arquitecturas imposibles",
+        "skill": "Construir alrededor de un hueco",
+        "targetPattern": "custom",
+        "objective": {
+          "playerPieces": [
+            {
+              "type": "A",
+              "face": "front",
+              "rotation": 180,
+              "x": 508,
+              "y": 300,
+              "anchor": "center"
+            },
+            {
+              "type": "B",
+              "face": "front",
+              "rotation": 0,
+              "x": 252,
+              "y": 300,
+              "anchor": "center"
+            }
+          ]
+        },
+        "targetPieces": [
+          {
+            "type": "A",
+            "face": "front",
+            "rotation": 180,
+            "x": 508,
+            "y": 300,
+            "anchor": "center"
+          },
+          {
+            "type": "B",
+            "face": "front",
+            "rotation": 0,
+            "x": 252,
+            "y": 300,
+            "anchor": "center"
+          }
+        ]
+      },
+      {
+        "id": 315,
+        "name": "Puerta del sol",
+        "description": "Una cúspide de rombos corona una entrada abierta.",
+        "piecesNeeded": 3,
+        "difficulty": "Intermedio",
+        "chapter": "Arquitecturas imposibles",
+        "skill": "Alternar orientaciones y reconocer las caras",
+        "targetPattern": "custom",
+        "objective": {
+          "playerPieces": [
+            {
+              "type": "A",
+              "face": "front",
+              "rotation": 180,
+              "x": 508,
+              "y": 371.76450198781714,
+              "anchor": "center"
+            },
+            {
+              "type": "B",
+              "face": "back",
+              "rotation": 0,
+              "x": 380,
+              "y": 499.76450198781714,
+              "anchor": "center"
+            },
+            {
+              "type": "A",
+              "face": "front",
+              "rotation": 135,
+              "x": 609.4903320081219,
+              "y": 217.254833995939,
+              "anchor": "center"
+            }
+          ]
+        },
+        "targetPieces": [
+          {
+            "type": "A",
+            "face": "front",
+            "rotation": 180,
+            "x": 508,
+            "y": 371.76450198781714,
+            "anchor": "center"
+          },
+          {
+            "type": "B",
+            "face": "back",
+            "rotation": 0,
+            "x": 380,
+            "y": 499.76450198781714,
+            "anchor": "center"
+          },
+          {
+            "type": "A",
+            "face": "front",
+            "rotation": 135,
+            "x": 609.4903320081219,
+            "y": 217.254833995939,
+            "anchor": "center"
+          }
+        ]
+      },
+      {
+        "id": 316,
+        "name": "Escalinata suspendida",
+        "description": "Peldaños que suben desde los extremos hacia el centro.",
+        "piecesNeeded": 3,
+        "difficulty": "Intermedio",
+        "chapter": "Arquitecturas imposibles",
+        "skill": "Combinar fichas A y B sin cerrar el vacío",
+        "targetPattern": "custom",
+        "objective": {
+          "playerPieces": [
+            {
+              "type": "A",
+              "face": "front",
+              "rotation": 180,
+              "x": 508,
+              "y": 140,
+              "anchor": "center"
+            },
+            {
+              "type": "B",
+              "face": "back",
+              "rotation": 0,
+              "x": 380,
+              "y": 268,
+              "anchor": "center"
+            },
+            {
+              "type": "A",
+              "face": "front",
+              "rotation": 180,
+              "x": 252,
+              "y": 396,
+              "anchor": "center"
+            }
+          ]
+        },
+        "targetPieces": [
+          {
+            "type": "A",
+            "face": "front",
+            "rotation": 180,
+            "x": 508,
+            "y": 140,
+            "anchor": "center"
+          },
+          {
+            "type": "B",
+            "face": "back",
+            "rotation": 0,
+            "x": 380,
+            "y": 268,
+            "anchor": "center"
+          },
+          {
+            "type": "A",
+            "face": "front",
+            "rotation": 180,
+            "x": 252,
+            "y": 396,
+            "anchor": "center"
+          }
+        ]
+      },
+      {
+        "id": 317,
+        "name": "Templo de las aves",
+        "description": "Dos aves custodian el tejado de una puerta ceremonial.",
+        "piecesNeeded": 4,
+        "difficulty": "Difícil",
+        "chapter": "Arquitecturas imposibles",
+        "skill": "Planificar los apoyos antes de encajar",
+        "targetPattern": "custom",
+        "objective": {
+          "playerPieces": [
+            {
+              "type": "A",
+              "face": "front",
+              "rotation": 180,
+              "x": 508,
+              "y": 377.254833995939,
+              "anchor": "center"
+            },
+            {
+              "type": "B",
+              "face": "back",
+              "rotation": 0,
+              "x": 380,
+              "y": 505.254833995939,
+              "anchor": "center"
+            },
+            {
+              "type": "A",
+              "face": "front",
+              "rotation": 135,
+              "x": 609.4903320081219,
+              "y": 222.74516600406088,
+              "anchor": "center"
+            },
+            {
+              "type": "A",
+              "face": "back",
+              "rotation": 0,
+              "x": 454.98066401624374,
+              "y": 158.745166004061,
+              "anchor": "center"
+            }
+          ]
+        },
+        "targetPieces": [
+          {
+            "type": "A",
+            "face": "front",
+            "rotation": 180,
+            "x": 508,
+            "y": 377.254833995939,
+            "anchor": "center"
+          },
+          {
+            "type": "B",
+            "face": "back",
+            "rotation": 0,
+            "x": 380,
+            "y": 505.254833995939,
+            "anchor": "center"
+          },
+          {
+            "type": "A",
+            "face": "front",
+            "rotation": 135,
+            "x": 609.4903320081219,
+            "y": 222.74516600406088,
+            "anchor": "center"
+          },
+          {
+            "type": "A",
+            "face": "back",
+            "rotation": 0,
+            "x": 454.98066401624374,
+            "y": 158.745166004061,
+            "anchor": "center"
+          }
+        ]
+      },
+      {
+        "id": 318,
+        "name": "Claustro del rombo",
+        "description": "Un patio en forma de rombo rodeado de contrafuertes.",
+        "piecesNeeded": 4,
+        "difficulty": "Difícil",
+        "chapter": "Arquitecturas imposibles",
+        "skill": "Resolver contorno, huecos y color a la vez",
+        "targetPattern": "custom",
+        "objective": {
+          "playerPieces": [
+            {
+              "type": "A",
+              "face": "front",
+              "rotation": 180,
+              "x": 508,
+              "y": 140,
+              "anchor": "center"
+            },
+            {
+              "type": "B",
+              "face": "back",
+              "rotation": 0,
+              "x": 380,
+              "y": 268,
+              "anchor": "center"
+            },
+            {
+              "type": "A",
+              "face": "front",
+              "rotation": 180,
+              "x": 252,
+              "y": 396,
+              "anchor": "center"
+            },
+            {
+              "type": "B",
+              "face": "back",
+              "rotation": 135,
+              "x": 433.01933598375615,
+              "y": 433.49033200812187,
+              "anchor": "center"
+            }
+          ]
+        },
+        "targetPieces": [
+          {
+            "type": "A",
+            "face": "front",
+            "rotation": 180,
+            "x": 508,
+            "y": 140,
+            "anchor": "center"
+          },
+          {
+            "type": "B",
+            "face": "back",
+            "rotation": 0,
+            "x": 380,
+            "y": 268,
+            "anchor": "center"
+          },
+          {
+            "type": "A",
+            "face": "front",
+            "rotation": 180,
+            "x": 252,
+            "y": 396,
+            "anchor": "center"
+          },
+          {
+            "type": "B",
+            "face": "back",
+            "rotation": 135,
+            "x": 433.01933598375615,
+            "y": 433.49033200812187,
+            "anchor": "center"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "objetos",
+    "name": "Objetos con historia",
+    "cards": [
+      {
+        "id": 319,
+        "name": "Antifaz del viajero",
+        "description": "Un antifaz largo con dos puntas bajo los ojos.",
+        "piecesNeeded": 2,
+        "difficulty": "Fácil",
+        "chapter": "Objetos con historia",
+        "skill": "Leer el contorno y orientar las puntas",
+        "targetPattern": "custom",
+        "objective": {
+          "playerPieces": [
+            {
+              "type": "A",
+              "face": "front",
+              "rotation": 180,
+              "x": 508,
+              "y": 300,
+              "anchor": "center"
+            },
+            {
+              "type": "B",
+              "face": "front",
+              "rotation": 180,
+              "x": 316,
+              "y": 236,
+              "anchor": "center"
+            }
+          ]
+        },
+        "targetPieces": [
+          {
+            "type": "A",
+            "face": "front",
+            "rotation": 180,
+            "x": 508,
+            "y": 300,
+            "anchor": "center"
+          },
+          {
+            "type": "B",
+            "face": "front",
+            "rotation": 180,
+            "x": 316,
+            "y": 236,
+            "anchor": "center"
+          }
+        ]
+      },
+      {
+        "id": 320,
+        "name": "Broche de la abuela",
+        "description": "Una joya abierta: el vacío central también es parte del dibujo.",
+        "piecesNeeded": 2,
+        "difficulty": "Fácil",
+        "chapter": "Objetos con historia",
+        "skill": "Construir alrededor de un hueco",
+        "targetPattern": "custom",
+        "objective": {
+          "playerPieces": [
+            {
+              "type": "A",
+              "face": "front",
+              "rotation": 315,
+              "x": 609.4903320081219,
+              "y": 209.49033200812198,
+              "anchor": "center"
+            },
+            {
+              "type": "A",
+              "face": "front",
+              "rotation": 135,
+              "x": 428.4709960243658,
+              "y": 390.509667991878,
+              "anchor": "center"
+            }
+          ]
+        },
+        "targetPieces": [
+          {
+            "type": "A",
+            "face": "front",
+            "rotation": 315,
+            "x": 609.4903320081219,
+            "y": 209.49033200812198,
+            "anchor": "center"
+          },
+          {
+            "type": "A",
+            "face": "front",
+            "rotation": 135,
+            "x": 428.4709960243658,
+            "y": 390.509667991878,
+            "anchor": "center"
+          }
+        ]
+      },
+      {
+        "id": 321,
+        "name": "Máscara del carnaval",
+        "description": "Un ojo de rombo sobre una barbilla puntiaguda.",
+        "piecesNeeded": 3,
+        "difficulty": "Intermedio",
+        "chapter": "Objetos con historia",
+        "skill": "Alternar orientaciones y reconocer las caras",
+        "targetPattern": "custom",
+        "objective": {
+          "playerPieces": [
+            {
+              "type": "A",
+              "face": "front",
+              "rotation": 180,
+              "x": 508,
+              "y": 204,
+              "anchor": "center"
+            },
+            {
+              "type": "B",
+              "face": "back",
+              "rotation": 180,
+              "x": 316,
+              "y": 140,
+              "anchor": "center"
+            },
+            {
+              "type": "A",
+              "face": "front",
+              "rotation": 270,
+              "x": 636,
+              "y": 332,
+              "anchor": "center"
+            }
+          ]
+        },
+        "targetPieces": [
+          {
+            "type": "A",
+            "face": "front",
+            "rotation": 180,
+            "x": 508,
+            "y": 204,
+            "anchor": "center"
+          },
+          {
+            "type": "B",
+            "face": "back",
+            "rotation": 180,
+            "x": 316,
+            "y": 140,
+            "anchor": "center"
+          },
+          {
+            "type": "A",
+            "face": "front",
+            "rotation": 270,
+            "x": 636,
+            "y": 332,
+            "anchor": "center"
+          }
+        ]
+      },
+      {
+        "id": 322,
+        "name": "Farol del zaguán",
+        "description": "Un marco inclinado deja pasar la luz por su centro.",
+        "piecesNeeded": 3,
+        "difficulty": "Intermedio",
+        "chapter": "Objetos con historia",
+        "skill": "Combinar fichas A y B sin cerrar el vacío",
+        "targetPattern": "custom",
+        "objective": {
+          "playerPieces": [
+            {
+              "type": "A",
+              "face": "front",
+              "rotation": 315,
+              "x": 609.4903320081219,
+              "y": 118.98066401624385,
+              "anchor": "center"
+            },
+            {
+              "type": "A",
+              "face": "back",
+              "rotation": 135,
+              "x": 428.4709960243658,
+              "y": 299.9999999999999,
+              "anchor": "center"
+            },
+            {
+              "type": "B",
+              "face": "front",
+              "rotation": 225,
+              "x": 609.490332008122,
+              "y": 481.01933598375615,
+              "anchor": "center"
+            }
+          ]
+        },
+        "targetPieces": [
+          {
+            "type": "A",
+            "face": "front",
+            "rotation": 315,
+            "x": 609.4903320081219,
+            "y": 118.98066401624385,
+            "anchor": "center"
+          },
+          {
+            "type": "A",
+            "face": "back",
+            "rotation": 135,
+            "x": 428.4709960243658,
+            "y": 299.9999999999999,
+            "anchor": "center"
+          },
+          {
+            "type": "B",
+            "face": "front",
+            "rotation": 225,
+            "x": 609.490332008122,
+            "y": 481.01933598375615,
+            "anchor": "center"
+          }
+        ]
+      },
+      {
+        "id": 323,
+        "name": "Máscara del guardián",
+        "description": "Pómulos anchos y dos apéndices cuelgan del antifaz.",
+        "piecesNeeded": 4,
+        "difficulty": "Difícil",
+        "chapter": "Objetos con historia",
+        "skill": "Planificar los apoyos antes de encajar",
+        "targetPattern": "custom",
+        "objective": {
+          "playerPieces": [
+            {
+              "type": "A",
+              "face": "front",
+              "rotation": 180,
+              "x": 508,
+              "y": 204,
+              "anchor": "center"
+            },
+            {
+              "type": "B",
+              "face": "back",
+              "rotation": 180,
+              "x": 316,
+              "y": 140,
+              "anchor": "center"
+            },
+            {
+              "type": "A",
+              "face": "front",
+              "rotation": 270,
+              "x": 636,
+              "y": 332,
+              "anchor": "center"
+            },
+            {
+              "type": "A",
+              "face": "back",
+              "rotation": 270,
+              "x": 252,
+              "y": 332,
+              "anchor": "center"
+            }
+          ]
+        },
+        "targetPieces": [
+          {
+            "type": "A",
+            "face": "front",
+            "rotation": 180,
+            "x": 508,
+            "y": 204,
+            "anchor": "center"
+          },
+          {
+            "type": "B",
+            "face": "back",
+            "rotation": 180,
+            "x": 316,
+            "y": 140,
+            "anchor": "center"
+          },
+          {
+            "type": "A",
+            "face": "front",
+            "rotation": 270,
+            "x": 636,
+            "y": 332,
+            "anchor": "center"
+          },
+          {
+            "type": "A",
+            "face": "back",
+            "rotation": 270,
+            "x": 252,
+            "y": 332,
+            "anchor": "center"
+          }
+        ]
+      },
+      {
+        "id": 324,
+        "name": "Medallón de las mareas",
+        "description": "Un colgante de rombo con dos engastes laterales.",
+        "piecesNeeded": 4,
+        "difficulty": "Difícil",
+        "chapter": "Objetos con historia",
+        "skill": "Resolver contorno, huecos y color a la vez",
+        "targetPattern": "custom",
+        "objective": {
+          "playerPieces": [
+            {
+              "type": "A",
+              "face": "front",
+              "rotation": 315,
+              "x": 609.4903320081219,
+              "y": 118.98066401624385,
+              "anchor": "center"
+            },
+            {
+              "type": "A",
+              "face": "back",
+              "rotation": 135,
+              "x": 428.4709960243658,
+              "y": 299.9999999999999,
+              "anchor": "center"
+            },
+            {
+              "type": "B",
+              "face": "front",
+              "rotation": 225,
+              "x": 609.490332008122,
+              "y": 481.01933598375615,
+              "anchor": "center"
+            },
+            {
+              "type": "B",
+              "face": "back",
+              "rotation": 315,
+              "x": 247.45166004060957,
+              "y": 299.9999999999999,
+              "anchor": "center"
+            }
+          ]
+        },
+        "targetPieces": [
+          {
+            "type": "A",
+            "face": "front",
+            "rotation": 315,
+            "x": 609.4903320081219,
+            "y": 118.98066401624385,
+            "anchor": "center"
+          },
+          {
+            "type": "A",
+            "face": "back",
+            "rotation": 135,
+            "x": 428.4709960243658,
+            "y": 299.9999999999999,
+            "anchor": "center"
+          },
+          {
+            "type": "B",
+            "face": "front",
+            "rotation": 225,
+            "x": 609.490332008122,
+            "y": 481.01933598375615,
+            "anchor": "center"
+          },
+          {
+            "type": "B",
+            "face": "back",
+            "rotation": 315,
+            "x": 247.45166004060957,
+            "y": 299.9999999999999,
+            "anchor": "center"
+          }
+        ]
+      }
+    ]
+  }
+]

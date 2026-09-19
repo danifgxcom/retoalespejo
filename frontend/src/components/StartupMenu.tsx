@@ -29,7 +29,7 @@ const StartupMenu: React.FC<StartupMenuProps> = ({ onStartOffline, onStartMultip
           <button className="mode-ticket primary-ticket" onClick={onStartOffline}>
             <span className="ticket-number">01</span><span><strong>Jugar solo</strong><small>A tu ritmo, pieza a pieza</small></span><span className="ticket-arrow" aria-hidden="true">↗</span>
           </button>
-          <button className="mode-ticket free-ticket" onClick={onFreePlay}><span className="ticket-number">02</span><span><strong>Juego libre</strong><small>Tus tarjetas y seis nuevos aperitivos</small></span><span className="ticket-arrow" aria-hidden="true">↗</span></button>
+          <button className="mode-ticket free-ticket" onClick={onFreePlay}><span className="ticket-number">02</span><span><strong>Juego libre</strong><small>Cuatro colecciones nuevas por descubrir</small></span><span className="ticket-arrow" aria-hidden="true">↗</span></button>
           <button className="mode-ticket" onClick={onStartMultiplayer} disabled={!isMultiplayerEnabled}>
             <span className="ticket-number">03</span><span><strong>Multijugador</strong><small>{isMultiplayerEnabled ? 'Un mismo reto. Distintas miradas.' : 'No disponible'}</small></span><span className="ticket-arrow" aria-hidden="true">↗</span>
           </button>

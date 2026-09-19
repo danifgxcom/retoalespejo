@@ -4,6 +4,7 @@ import { ValidationService, SOLUTION_TOLERANCE } from '@reto/geometry';
 import { createRotationAwareGrid } from '../../utils/grid/RotationAwareGrid';
 import { CANVAS_CONSTANTS } from '../../utils/canvas/CanvasConstants';
 import freeChallenges from '../../../../shared/free-challenges.json';
+import collections from '../../../../shared/collections.json';
 
 /**
  * ¿Se puede ganar el juego?
@@ -20,7 +21,7 @@ const CONFIG = { width: CANVAS_CONSTANTS.GAME_AREA_WIDTH, height: CANVAS_CONSTAN
 const REJILLA = 10;
 
 const geometry = new GameGeometry(CONFIG);
-const challenges = [...JSON.parse(fs.readFileSync('./public/challenges.json', 'utf8')), ...freeChallenges];
+const challenges = [...JSON.parse(fs.readFileSync('./public/challenges.json', 'utf8')), ...freeChallenges, ...collections.flatMap(c => c.cards)];
 const comoPieza = (p: any, id: number) => ({ ...p, id, placed: true, centerColor: '#000', triangleColor: '#000' });
 
 describe('cada reto se puede resolver', () => {
